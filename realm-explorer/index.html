@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ember</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&family=Alegreya+Sans:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../realm-nav.css">
+</head>
+<body>
+  <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
+  <div class="wrap">
+    <header>
+      <h1>Ember</h1>
+      <p class="sub">Explore the realm, visit the market square in Lavender Village, or join Lila-Bella at the mirror to try on Ember&rsquo;s enchanted gowns.</p>
+    </header>
+
+    <div class="stage" id="stage">
+      <canvas id="game" aria-label="The party walking through the realm"></canvas>
+
+      <div class="hud">
+        <div class="pill" id="placePill"><b id="placeName">Castle Valley</b><span id="placeNum">1 of 3</span></div>
+        <div class="hud-right">
+          <button class="door" id="talkBtn" type="button" hidden><span id="talkLabel"></span> <kbd aria-hidden="true">E</kbd></button>
+          <button class="door" id="doorBtn" type="button" hidden><span aria-hidden="true">&#9650;</span> <span id="doorLabel"></span> <kbd aria-hidden="true">&uarr;</kbd></button>
+          <button class="mapbtn" id="mapBtn" type="button">Map <kbd aria-hidden="true">G</kbd></button>
+        </div>
+      </div>
+
+      <div class="placard" id="placard" aria-hidden="true"></div>
+      <div class="caption" id="caption" role="status"></div>
+      <div class="speech" id="speech" aria-live="polite"></div>
+      <div class="caption on" id="loadStatus" role="status">Opening the wardrobe&hellip;</div>
+
+      <div class="touch" id="touch">
+        <button class="tbtn" id="tLeft" type="button" aria-label="Walk left">&#9664;</button>
+        <button class="tbtn" id="tRight" type="button" aria-label="Walk right">&#9654;</button>
+      </div>
+    </div>
+
+    <!-- The atlas: click a land to travel there. Lands without places yet are shown but can't be visited. -->
+    <dialog class="atlas" id="mapDialog" aria-labelledby="mapTitle">
+      <div class="atlas-head">
+        <h2 id="mapTitle">Xanthe&rsquo;s Celadonia</h2>
+        <p>Choose a land to travel there.</p>
+        <button class="atlas-close" id="mapClose" type="button" aria-label="Close the map">&times;</button>
+      </div>
+      <div class="atlas-frame" id="atlasFrame">
+        <img src="atlas.jpg" alt="The atlas of Xanthe&rsquo;s Celadonia: Xanthe in the west, Celadonia in the north-east, Azurea and Byzantine in the south-west and Sangria in the south-east, around a great blue sea" width="1312" height="1199">
+      </div>
+    </dialog>
+
+    <section class="dress" id="dressPanel" hidden aria-labelledby="dressTitle">
+      <div class="dress-head">
+        <h2 id="dressTitle">Ember&rsquo;s gowns <span class="now">wearing: <b id="gownName"></b></span></h2>
+        <div class="dress-actions">
+          <button class="place" id="surpriseGown" type="button">Surprise me</button>
+          <button class="place" id="saveLook" type="button">Save a picture</button>
+          <button class="done" id="dressDone" type="button">Done dressing up</button>
+        </div>
+      </div>
+      <div class="gowns" id="gowns"></div>
+      <p class="dress-keys">Ember will wear your chosen gown when walking with her friends.</p>
+      <p class="dress-keys"><kbd>&larr;</kbd><kbd>&rarr;</kbd> or <kbd>1</kbd>&ndash;<kbd>7</kbd> try on a gown &middot; <kbd>Esc</kbd> done</p>
+    </section>
+
+    <div class="controls">
+      <button class="done" id="dressStart" type="button" disabled>Dress up Ember</button>
+      <fieldset class="group">
+        <legend>Leading the way</legend>
+        <div class="walkers" id="walkers"></div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Places</legend>
+        <div class="places" id="places"></div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Company</legend>
+        <label class="toggle" for="together">
+          <input type="checkbox" id="together" checked>
+          <span>Walk together</span>
+        </label>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Music</legend>
+        <label class="toggle" for="music">
+          <input type="checkbox" id="music" checked>
+          <span>Ember&rsquo;s theme</span>
+        </label>
+      </fieldset>
+    </div>
+
+    <ul class="legend">
+      <li><kbd>&larr;</kbd><kbd>&rarr;</kbd> walk</li>
+      <li><kbd>&uarr;</kbd> go in, out, up or down at a door</li>
+      <li>At the mirror in the Rose Bedroom, <kbd>&uarr;</kbd> to dress up Ember</li>
+      <li>In the Lavender Fields, <kbd>&uarr;</kbd> at the village path to visit the market square</li>
+      <li><kbd>G</kbd> or the Map button opens the atlas: click Celadonia or Azurea to travel there</li>
+      <li>Under the old oak in Castle Valley, <kbd>&uarr;</kbd> to take the road to Azurea, the blue continent</li>
+      <li>At the Castle Valley gate, <kbd>&uarr;</kbd> to enter. The ballroom is left of the castle hall</li>
+      <li>At the hall&rsquo;s grand staircase, <kbd>&uarr;</kbd> to go upstairs. Left wing: light-green bedroom and nursery/playroom; right wing: dark-green bedroom</li>
+      <li>Near Evelynn in the treehouse kitchen or Hendrix in the library, press <kbd>E</kbd> or click Talk. Talk again to hear more.</li>
+      <li>hold <kbd>Shift</kbd> to hurry</li>
+      <li><kbd>1</kbd>&ndash;<kbd>4</kbd> change who leads</li>
+      <li><kbd>T</kbd> walk together or alone</li>
+      <li><kbd>M</kbd> music on or off</li>
+      <li>Keep walking past the edge to reach the next place</li>
+    </ul>
+  </div>
+
+  <p class="legend"><a href="../forgotten-beginning/index.html" style="color:var(--gold)">Explore Forgotten Beginning — a separate world</a></p>
+  <script src="game.js"></script>
+</body>
+</html>

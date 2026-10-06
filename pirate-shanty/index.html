@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Shanty Showdown</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pirata+One&family=IM+Fell+English:ital@0;1&family=Alegreya+Sans:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .opts{display:flex;gap:.8cqw;flex-wrap:wrap;justify-content:center}
+    .opt{padding:.45em 1em;border-radius:999px;border:1px solid rgba(58,40,22,.3);background:#fbf3e2;color:var(--sailcloth-ink);font:500 max(13px,1.6cqw) var(--ui);cursor:pointer}
+    .opt[aria-pressed="true"]{background:var(--brass);border-color:var(--brass-deep);color:#24170a;font-weight:700}
+    .opt:focus-visible{outline:3px solid var(--brass);outline-offset:2px}
+    .pick .who[aria-pressed="true"]{border-color:var(--brass);background:#fff3d6;box-shadow:inset 0 0 0 2px var(--brass)}
+  </style>
+  <link rel="stylesheet" href="../realm-nav.css">
+</head>
+<body>
+  <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
+  <div class="wrap">
+    <header>
+      <h1>Shanty Showdown</h1>
+      <p class="sub">Two crews, one shanty, zero mercy. Hit the notes to roast the other captain in song. Miss, and somebody faceplants.</p>
+    </header>
+
+    <div class="stage flat" id="stage">
+      <canvas id="game" aria-label="Two pirate crews singing against each other on deck"></canvas>
+
+      <div class="hud">
+        <div class="pill">Score <b id="score">0</b></div>
+        <div class="right">
+          <div class="pill">Combo <b id="combo">0</b></div>
+          <button class="pill mute" id="mute" type="button" aria-pressed="false">Sound on</button>
+        </div>
+      </div>
+
+      <div class="overlay" id="titleCard">
+        <div class="card wide">
+          <p class="eyebrow">A sing-off on deck</p>
+          <h2>Shanty Showdown</h2>
+          <p>Your crew and the other captain’s crew take turns singing. On your turn, hit each note as it reaches the line with <b>&larr; &darr; &uarr; &rarr;</b> (or <b>D F J K</b>, or tap the lanes). Every hit plays the tune. Every miss honks, and one of your crew falls flat on their face.</p>
+          <p class="eyebrow">Whose crew are you on?</p>
+          <div class="pick" id="pick"></div>
+          <p class="eyebrow">Difficulty</p>
+          <div class="opts" id="diff"></div>
+          <button class="btn" id="startBtn" type="button">Start the showdown</button>
+        </div>
+      </div>
+
+      <div class="overlay" id="endCard" hidden>
+        <div class="card">
+          <p class="eyebrow" id="endEyebrow"></p>
+          <h2 id="endTitle"></h2>
+          <p id="endText"></p>
+          <button class="btn" id="againBtn" type="button">Sing it again</button>
+        </div>
+      </div>
+    </div>
+
+    <ul class="legend">
+      <li><kbd>&larr;</kbd><kbd>&darr;</kbd><kbd>&uarr;</kbd><kbd>&rarr;</kbd> or <kbd>D</kbd><kbd>F</kbd><kbd>J</kbd><kbd>K</kbd> hit the lanes</li>
+      <li>On a phone, tap the lane</li>
+      <li>Every 10 hits in a row raises your combo bonus</li>
+    </ul>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

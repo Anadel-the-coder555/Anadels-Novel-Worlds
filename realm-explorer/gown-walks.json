@@ -1,0 +1,38 @@
+{
+  "sapphire": {
+    "frames": 4,
+    "fw": 286,
+    "fh": 357,
+    "ax": 161
+  },
+  "ruby": {
+    "frames": 4,
+    "fw": 278,
+    "fh": 357,
+    "ax": 168
+  },
+  "gold": {
+    "frames": 4,
+    "fw": 275,
+    "fh": 357,
+    "ax": 156
+  },
+  "lilac": {
+    "frames": 4,
+    "fw": 277,
+    "fh": 357,
+    "ax": 156
+  },
+  "ivory": {
+    "frames": 4,
+    "fw": 285,
+    "fh": 357,
+    "ax": 174
+  },
+  "blush": {
+    "frames": 4,
+    "fw": 287,
+    "fh": 357,
+    "ax": 173
+  }
+}

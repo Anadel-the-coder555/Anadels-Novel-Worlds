@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Prank Wars</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pirata+One&family=IM+Fell+English:ital@0;1&family=Alegreya+Sans:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../realm-nav.css">
+</head>
+<body>
+  <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
+  <div class="wrap">
+    <header>
+      <h1>Prank Wars</h1>
+      <p class="sub">Captain Cutlass has no sense of humour. Set up five pranks on his own deck without getting caught, then sit back and enjoy the show.</p>
+    </header>
+
+    <div class="stage flat" id="stage">
+      <canvas id="game" aria-label="A crewmate sneaking around the ship's deck while Captain Cutlass patrols"></canvas>
+
+      <div class="hud">
+        <div class="pill">Pranks set <b id="done">0</b>/<span id="total">5</span></div>
+        <div class="right">
+          <div class="pill" id="livesPill">Mops left <span class="lives" id="lives"></span></div>
+          <button class="pill mute" id="mute" type="button" aria-pressed="false">Sound on</button>
+        </div>
+      </div>
+      <div class="toast" id="toast" role="status"></div>
+
+      <div class="touch">
+        <div class="grp">
+          <button class="tbtn" id="tLeft" type="button" aria-label="Sneak left">&#9664;</button>
+          <button class="tbtn" id="tRight" type="button" aria-label="Sneak right">&#9654;</button>
+        </div>
+        <div class="grp">
+          <button class="tbtn" id="tHide" type="button">Hide</button>
+          <button class="tbtn" id="tPrank" type="button">Prank</button>
+        </div>
+      </div>
+
+      <div class="overlay" id="titleCard">
+        <div class="card wide">
+          <p class="eyebrow">A stealth comedy</p>
+          <h2>Prank Wars</h2>
+          <p>Captain Cutlass patrols the deck. Sneak to each prank spot and hold <b>E</b> to set it up. If he’s facing you and you’re in his sight, his suspicion climbs. Duck into a barrel with <b>&darr;</b> before it fills. Get caught and you’re on mop duty. Three mops and you’re done.</p>
+          <p>Every prank you finish makes him a little more paranoid.</p>
+          <p class="eyebrow">Pick your prankster</p>
+          <div class="pick" id="pick"></div>
+        </div>
+      </div>
+
+      <div class="overlay" id="endCard" hidden>
+        <div class="card">
+          <p class="eyebrow" id="endEyebrow"></p>
+          <h2 id="endTitle"></h2>
+          <p id="endText"></p>
+          <button class="btn" id="againBtn" type="button">Play again</button>
+        </div>
+      </div>
+    </div>
+
+    <ul class="legend">
+      <li><kbd>&larr;</kbd><kbd>&rarr;</kbd> sneak</li>
+      <li>hold <kbd>&darr;</kbd> at a barrel to hide</li>
+      <li>hold <kbd>E</kbd> or <kbd>Space</kbd> at a prank spot</li>
+      <li>The shaded cone is what the captain can see</li>
+    </ul>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

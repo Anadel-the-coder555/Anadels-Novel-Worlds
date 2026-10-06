@@ -1,0 +1,123 @@
+/* Layout: a 16:9 painted stage with the party, and a row of controls beneath it
+   (who leads, which place, walk together). Deliberately single-theme: a dark frame for painted scenes. */
+:root{
+  --ink:#141b1d;
+  --ink-2:#1f292b;
+  --parchment:#f4e7c9;
+  --parchment-ink:#3a2a1a;
+  --gold:#d8a446;
+  --gold-deep:#a7772a;
+  --text:#ece6d6;
+  --muted:#a3afaa;
+  --display:"IM Fell English SC","Iowan Old Style",Georgia,serif;
+  --story:"IM Fell English","Iowan Old Style",Georgia,serif;
+  --ui:"Alegreya Sans","Gill Sans","Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+*,*::before,*::after{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;background:var(--ink);color:var(--text);font-family:var(--ui);font-size:16px;padding-inline:16px;padding-block:20px 28px}
+.wrap{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:2px 20px}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(26px,3.6vw,42px);margin:0;color:var(--parchment);letter-spacing:.01em}
+.sub{font-family:var(--story);font-style:italic;color:var(--muted);font-size:clamp(15px,1.5vw,18px);margin:0;max-width:62ch}
+
+.stage{position:relative;width:100%;max-width:100%;aspect-ratio:16/9;container-type:inline-size;border-radius:6px;overflow:hidden;background:#86b1d6;box-shadow:0 24px 60px -24px rgba(0,0,0,.7),0 0 0 1px rgba(244,231,201,.08);user-select:none;-webkit-user-select:none;touch-action:none}
+canvas{display:block;width:100%;height:100%}
+
+.hud{position:absolute;inset:0 0 auto 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:1.6cqw 1.8cqw;pointer-events:none}
+.pill{display:flex;align-items:baseline;gap:.6em;background:rgba(244,231,201,.9);color:var(--parchment-ink);font-size:max(11px,1.55cqw);padding:.35em .85em;border-radius:3px;box-shadow:0 2px 0 rgba(58,42,26,.25)}
+.pill b{font-family:var(--display);font-weight:400;font-size:1.15em}
+.pill span{font-variant-numeric:tabular-nums;color:#7a6142;font-size:.9em}
+
+/* appears when the leader stands at a door (treehouse stair, front door, stairs) */
+.door{pointer-events:auto;display:flex;align-items:center;gap:.5em;background:var(--gold);color:#2a1d0c;border:0;border-radius:3px;font:700 max(13px,1.6cqw) var(--ui);padding:.45em .9em;min-height:44px;cursor:pointer;box-shadow:0 2px 0 var(--gold-deep),0 8px 20px -8px rgba(0,0,0,.6)}
+.door:hover{background:#e6b55a}
+.door:focus-visible{outline:3px solid var(--parchment);outline-offset:2px}
+.door kbd{background:rgba(42,29,12,.15);color:#2a1d0c;border-color:rgba(42,29,12,.3)}
+
+/* big place name shown on arrival */
+.placard{position:absolute;left:50%;top:36%;transform:translate(-50%,-50%);font-family:var(--display);font-size:max(26px,5.6cqw);color:#fffaf0;text-shadow:0 2px 18px rgba(0,0,0,.55),0 1px 2px rgba(0,0,0,.6);opacity:0;transition:opacity .6s;pointer-events:none;white-space:nowrap}
+.placard.on{opacity:1}
+
+.caption{position:absolute;left:50%;bottom:3cqw;transform:translate(-50%,6px);max-width:min(66cqw,620px);background:rgba(244,231,201,.94);color:var(--parchment-ink);font-family:var(--story);font-size:max(12px,1.75cqw);line-height:1.3;padding:.5em 1em;border-radius:3px;box-shadow:0 6px 18px -8px rgba(30,20,10,.6);opacity:0;transition:opacity .35s,transform .35s;pointer-events:none;text-align:center;text-wrap:balance}
+.caption.on{opacity:1;transform:translate(-50%,0)}
+
+.touch{position:absolute;inset:auto 0 0 0;display:none;justify-content:space-between;padding:0 2cqw 2cqw;pointer-events:none}
+.tbtn{pointer-events:auto;width:max(48px,8cqw);height:max(48px,8cqw);border-radius:50%;border:2px solid rgba(244,231,201,.75);background:rgba(20,30,28,.35);color:var(--parchment);font-size:max(14px,2cqw);display:grid;place-items:center;touch-action:none;-webkit-tap-highlight-color:transparent}
+.tbtn.held{background:rgba(216,164,70,.55)}
+@media (pointer:coarse){.touch{display:flex}}
+
+/* ---- controls under the stage ---- */
+.controls{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-start}
+.group{border:0;margin:0;padding:0;min-width:0;display:flex;flex-direction:column;gap:8px}
+.group legend{padding:0;margin-bottom:8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.walkers,.places{display:flex;flex-wrap:wrap;gap:8px}
+.walker{display:flex;align-items:center;gap:10px;padding:5px 12px 5px 5px;border-radius:4px;border:1px solid rgba(244,231,201,.16);background:var(--ink-2);color:var(--text);font:500 15px var(--ui);cursor:pointer}
+.walker .face{width:44px;height:44px;border-radius:50%;background-repeat:no-repeat;background-color:#2c3a3a;flex:none;box-shadow:inset 0 0 0 1px rgba(244,231,201,.2)}
+.walker kbd{margin-left:2px}
+.walker[aria-pressed="true"]{border-color:var(--gold);background:#2e2a1e;box-shadow:inset 0 0 0 1px var(--gold)}
+.walker[aria-pressed="true"] .face{box-shadow:0 0 0 2px var(--gold)}
+.place{padding:8px 14px;border-radius:4px;border:1px solid rgba(244,231,201,.16);background:var(--ink-2);color:var(--text);font:400 16px var(--display);cursor:pointer}
+.place[aria-current="true"]{border-color:var(--gold);color:var(--parchment);box-shadow:inset 0 0 0 1px var(--gold)}
+.walker:hover,.place:hover{background:#28332f}
+.walker:focus-visible,.place:focus-visible,.toggle input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.toggle{display:flex;align-items:center;gap:10px;font-size:15px;cursor:pointer;padding:8px 0}
+.toggle input{width:18px;height:18px;accent-color:var(--gold);margin:0}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 22px;color:var(--muted);font-size:15px;margin:0;padding:0;list-style:none}
+.legend li{display:flex;align-items:center;gap:6px}
+kbd{font-family:var(--ui);font-size:13px;font-weight:700;color:var(--parchment);background:var(--ink-2);border:1px solid rgba(244,231,201,.18);border-bottom-width:2px;border-radius:3px;padding:1px 7px;min-width:1.2em;text-align:center}
+
+/* ---- dress-up (Rose Bedroom mirror) ---- */
+body.dressing .controls,body.dressing .legend,body.dressing .touch{display:none!important}
+.speech{position:absolute;left:25cqw;top:5cqw;max-width:31cqw;background:#fffaf0;color:var(--parchment-ink);font-family:var(--story);font-size:max(13px,2cqw);line-height:1.3;padding:.6em .95em;border-radius:14px;box-shadow:0 8px 22px -10px rgba(30,20,10,.7);opacity:0;pointer-events:none;text-wrap:balance}
+.speech::after{content:"";position:absolute;left:1.4em;bottom:-.7em;border:.45em solid transparent;border-top:.6em solid #fffaf0;border-left-color:#fffaf0;transform:skewX(-14deg)}
+.speech.on{opacity:1;animation:pop .32s ease-out}
+@keyframes pop{from{transform:scale(.85) translateY(6px);opacity:0}to{transform:none;opacity:1}}
+.dress{display:flex;flex-direction:column;gap:12px}
+.dress-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 20px}
+.dress-actions{display:flex;flex-wrap:wrap;gap:8px}
+button:disabled{opacity:.5;cursor:wait}
+.dress h2{margin:0;font-family:var(--display);font-weight:400;font-size:24px;color:var(--parchment);display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px}
+.dress .now{font-family:var(--ui);font-size:15px;color:var(--muted)}
+.dress .now b{color:var(--gold);font-weight:700}
+.done{padding:10px 18px;min-height:44px;border-radius:4px;border:0;background:var(--gold);color:#2a1d0c;font:700 15px var(--ui);cursor:pointer;box-shadow:0 2px 0 var(--gold-deep)}
+.done:hover{background:#e6b55a}
+.gowns{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
+.gown{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px 8px;border-radius:6px;border:1px solid rgba(244,231,201,.16);background:radial-gradient(ellipse at 50% 40%,#3a3428,var(--ink-2) 70%);color:var(--text);font:500 14px var(--ui);cursor:pointer;text-align:center}
+.gown img{height:130px;width:100%;object-fit:contain;transition:transform .2s}
+.gown:hover{background:radial-gradient(ellipse at 50% 40%,#453d2e,#28332f 70%)}
+.gown:hover img{transform:translateY(-3px)}
+.gown kbd{position:absolute;top:6px;left:6px}
+.gown[aria-pressed="true"]{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold);color:var(--parchment)}
+.gown:focus-visible,.done:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.dress-keys{margin:0;color:var(--muted);font-size:15px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+@media (prefers-reduced-motion:reduce){.placard,.caption{transition:none}.speech.on{animation:none}.gown img{transition:none}}
+
+/* ---- the atlas (map) ---- */
+.hud-right{display:flex;gap:8px;align-items:flex-start}
+.mapbtn{pointer-events:auto;display:flex;align-items:center;gap:.5em;min-height:44px;padding:.35em .9em;border-radius:3px;border:0;background:rgba(244,231,201,.92);color:var(--parchment-ink);font:400 max(13px,1.6cqw) var(--display);cursor:pointer;box-shadow:0 2px 0 rgba(58,42,26,.25)}
+.mapbtn:hover{background:#fff6df}
+.mapbtn kbd{font-size:.75em}
+.atlas{width:min(94vw,860px);max-height:94vh;padding:0;border:0;border-radius:8px;background:#f4e7c9;color:var(--parchment-ink);box-shadow:0 30px 80px -20px rgba(0,0,0,.8);overflow:auto}
+.atlas::backdrop{background:rgba(10,14,16,.72)}
+.atlas-head{position:relative;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;padding:14px 56px 10px 18px}
+.atlas-head h2{margin:0;font:400 clamp(22px,3vw,30px) var(--display)}
+.atlas-head p{margin:0;font-family:var(--story);font-style:italic;color:#6b5236}
+.atlas-close{position:absolute;right:8px;top:8px;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--parchment-ink);font-size:28px;line-height:1;cursor:pointer}
+.atlas-close:hover{background:rgba(58,42,26,.1)}
+.atlas-frame{position:relative;margin:0 12px 12px;container-type:inline-size}
+.atlas-frame img{display:block;width:100%;height:auto;border-radius:4px}
+/* a land: its hit area sits over the painted name; the badge underneath says what clicking does */
+.land{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:0;border:2px solid transparent;border-radius:10px;background:transparent;cursor:pointer;color:inherit;font:inherit}
+.land:hover,.land:focus-visible{border-color:rgba(255,248,230,.95);background:rgba(255,248,230,.18);box-shadow:0 0 0 3px rgba(216,164,70,.8);outline:none}
+.land .badge{position:absolute;top:100%;margin-top:4px;white-space:nowrap;padding:.2em .7em;border-radius:20px;background:rgba(58,42,26,.88);color:#fff6df;font:600 max(11px,1.6cqw) var(--ui)}
+.land.here .badge{background:#d8a446;color:#2a1d0c}
+.land.locked{cursor:default}
+.land.locked .badge{background:rgba(58,42,26,.55);font-weight:400}
+.land.locked:hover{border-color:transparent;background:transparent;box-shadow:none}
+.land.here::before{content:"";position:absolute;left:50%;bottom:calc(100% + 4px);width:14px;height:14px;transform:translateX(-50%) rotate(45deg);background:#d8a446;border:2px solid #fff6df;border-radius:50% 50% 0 50%}
+@media (prefers-reduced-motion:no-preference){.land.here::before{animation:bob 1.6s ease-in-out infinite}}
+@keyframes bob{50%{transform:translateX(-50%) translateY(-4px) rotate(45deg)}}

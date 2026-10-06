@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Grandmother’s Footsteps</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&family=Alegreya+Sans:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../realm-nav.css">
+</head>
+<body>
+  <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
+  <div class="wrap">
+    <header>
+      <h1>Grandmother’s Footsteps</h1>
+      <p class="sub">Creep up while they chant. Freeze when they turn. Tag them before anyone gets sent back to the start.</p>
+    </header>
+
+    <div class="stage" id="stage">
+      <canvas id="game" aria-label="Three friends creeping up behind a fourth in a game of grandmother's footsteps"></canvas>
+
+      <div class="hud">
+        <div class="pill"><b id="placeName">Castle Valley</b><span id="roundNum">Round 1 of 3</span></div>
+        <div class="right">
+          <div class="pill">Caught <b id="caught">0</b></div>
+          <div class="pill">Time <b id="time">0.0</b>s</div>
+          <button class="pill mute" id="mute" type="button" aria-pressed="false">Sound on</button>
+        </div>
+      </div>
+
+      <button class="sneak" id="sneak" type="button">Hold to sneak</button>
+
+      <div class="overlay" id="titleCard">
+        <div class="card">
+          <p class="eyebrow">An old playground game</p>
+          <h2>Grandmother’s Footsteps</h2>
+          <p>Hold <b>Space</b> (or the Sneak button) and everyone creeps forward. Let go and they freeze. While “it” chants, you’re safe. When they spin round, anyone still moving goes back to the start.</p>
+          <p class="note">Your friends don’t all stop at once. Lila-Bella always skips one step too many, and the princes wobble if they freeze with one foot in the air. Stop a little early!</p>
+          <button class="btn" id="startBtn" type="button">Let’s play</button>
+        </div>
+      </div>
+
+      <div class="overlay" id="roundCard" hidden>
+        <div class="card">
+          <p class="eyebrow" id="roundEyebrow">Tag!</p>
+          <h2 id="roundTitle"></h2>
+          <p id="roundText"></p>
+          <div class="stars" id="stars"></div>
+          <button class="btn" id="nextBtn" type="button">Next round</button>
+        </div>
+      </div>
+    </div>
+
+    <ul class="legend">
+      <li>hold <kbd>Space</kbd> or <kbd>&rarr;</kbd> to sneak, let go to freeze</li>
+      <li>Listen to the chant. They turn on the last word</li>
+      <li>From round 2, watch out for the chinchilla</li>
+    </ul>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

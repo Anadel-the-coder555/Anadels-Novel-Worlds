@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Soulmates</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pirata+One&family=IM+Fell+English:ital@0;1&family=Alegreya+Sans:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../realm-nav.css">
+</head>
+<body>
+  <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
+  <div class="wrap">
+    <header>
+      <h1>Soulmates</h1>
+      <p class="sub">Choose a story with Ruby and her crew, or explore the ship with tours and pirate games.</p>
+    </header>
+
+    <dialog id="modeDialog" aria-labelledby="modeTitle">
+      <h2 id="modeTitle">Your Soulmates adventure</h2>
+      <p>How would you like to come aboard?</p>
+      <button id="chooseStory" type="button" disabled><b>Story mode</b><span>Chapter One: Ruby’s visions, a stranded vessel, a mysterious captain, and an ambush. Then on into Chapter Two.</span></button>
+      <button id="chooseChapterTwo" type="button" disabled><b>Story mode · Chapter Two</b><span>Start at the duel: steel on a sinking ship, a surrender, and a captain who won’t wash.</span></button>
+      <button id="chooseFree" type="button" disabled><b>Free exploration</b><span>Wander the boat, take a guided tour, and choose pirate games whenever you please.</span></button>
+      <p id="loadingStatus" role="status">Preparing the ship…</p>
+    </dialog>
+    <div class="adventure-bar"><b id="modeLabel">Choose your adventure</b><button id="changeMode" type="button">Change mode</button></div>
+    <section class="adventure-panel" id="storyPanel" hidden aria-labelledby="storyTitle">
+      <h2 id="storyTitle"></h2><p id="storyText" aria-live="polite"></p><p id="storyDialogue" class="story-dialogue"></p><p id="storyGoal"></p><p class="story-help">Walk with the arrow keys or WASD, or use the touch controls. Choose an action below or press Space to continue.</p>
+      <div id="storyActions"></div>
+    </section>
+    <section class="adventure-panel" id="freePanel" hidden aria-label="Tours and games">
+      <h2>Make yourself at home</h2><p id="tourText" aria-live="polite">Explore at your own pace, or let Ruby show you around.</p>
+      <button id="tourNext" type="button">Start the ship tour</button>
+      <nav class="games" aria-label="Choose a pirate game">
+        <a href="../pirate-duel/index.html">Sword duel</a><a href="../pirate-pranks/index.html">Pirate pranks</a>
+        <a href="../pirate-shanty/index.html">Sea shanties</a><a href="../pirate-ball/index.html">Pirate ball</a>
+      </nav>
+    </section>
+
+    <div class="stage" id="stage">
+      <canvas id="game" aria-label="Soulmates ship exploration"></canvas>
+
+      <div class="hud">
+        <div class="pill"><b id="placeName">The Ship’s Deck</b></div>
+        <div class="pill" id="crewPill" aria-live="polite">Crew aboard <b id="crewCount">0</b> / <span id="crewTotal">9</span></div>
+      </div>
+
+      <div class="story-speech" id="storySpeech" hidden>
+        <div class="speech-content" aria-live="polite" aria-atomic="true"><b id="speechSpeaker"></b><small id="speechLocation"></small><p id="speechText"></p></div>
+        <button id="speechNext" type="button">Next line →</button>
+      </div>
+
+      <div id="duelHud" class="duel-hud" hidden aria-live="polite"><span>Ruby <b id="rubyHealth">5</b> / 5</span><span><span id="rivalLabel">Cutlass</span> <b id="cutlassHealth">6</b> / 6</span></div>
+      <div class="caption" id="caption" role="status"></div>
+
+      <div class="touch" id="touch">
+        <div class="pad">
+          <button class="tbtn up" id="tUp" type="button" aria-label="Walk toward the rail">&#9650;</button>
+          <button class="tbtn left" id="tLeft" type="button" aria-label="Walk left">&#9664;</button>
+          <button class="tbtn right" id="tRight" type="button" aria-label="Walk right">&#9654;</button>
+          <button class="tbtn down" id="tDown" type="button" aria-label="Walk toward the front">&#9660;</button>
+        </div>
+        <button class="tbtn invite" id="tInvite" type="button">Invite</button>
+      </div>
+    </div>
+
+    <div class="controls">
+      <fieldset class="group">
+        <legend>Leading the way</legend>
+        <div class="leaders" id="leaders"></div>
+      </fieldset>
+
+      <fieldset class="group grow">
+        <legend>The crew</legend>
+        <ul class="roster" id="roster"></ul>
+      </fieldset>
+    </div>
+
+    <ul class="legend">
+      <li><kbd>&larr;</kbd><kbd>&rarr;</kbd> walk along the deck</li>
+      <li><kbd>&uarr;</kbd><kbd>&darr;</kbd> walk toward the rail or the front</li>
+      <li><kbd>Space</kbd> invite a crewmate, or go through a door</li>
+      <li>hold <kbd>Shift</kbd> to hurry</li>
+      <li><kbd>1</kbd> <kbd>2</kbd> change which captain leads</li>
+    </ul>
+  </div>
+
+  <script src="chapter.js"></script>
+  <script src="sword-duel.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

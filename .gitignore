@@ -1,0 +1,12 @@
+# Published: the home page and every game folder.
+# Kept private: original source art, unused images, art-prep scripts and editor settings.
+/*.png
+/*.jpg
+/*.jpeg
+/*.webp
+/Fantasy/
+/unused novel images/
+*.py
+__pycache__/
+.vscode/
+.DS_Store

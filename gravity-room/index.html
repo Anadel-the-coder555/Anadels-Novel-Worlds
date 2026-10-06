@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Gravity Thief</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito+Sans:wght@400;600;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../realm-nav.css">
+</head>
+<body>
+  <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
+  <div class="wrap">
+    <header>
+      <h1>Gravity Thief</h1>
+      <p class="sub">Arduan, Lucio, Day, Lilith, Brayden and the cat share a room that’s stopped obeying gravity. Walk up the walls, across the ceiling, and float.</p>
+    </header>
+    <section class="cup" id="cupMenu" aria-labelledby="cupTitle">
+      <div class="cup-heading"><div><h2 id="cupTitle">Gravity Cup</h2><p>Three events. One champion. Make the walls your runway.</p></div><button class="act" id="cupStart" disabled>Enter tournament</button></div>
+      <div class="events">
+        <button class="event" data-event="rings" disabled><b>01 · Orbit Rush</b><span>Steer through neon rings in Zero-G. Chain pickups before your combo expires.</span></button>
+        <button class="event" data-event="parkour" disabled><b>02 · Surface Switch</b><span>Race between marked landing zones on the floor, ceiling and walls.</span></button>
+        <button class="event" data-event="style" disabled><b>03 · Air Freestyle</b><span>Jump, redirect gravity, then stick a new surface. Mix skills to build your multiplier.</span></button>
+      </div>
+      <p class="cup-note">Click an event to practice. Tournament entry uses the character selected below. Rival marks are preset score targets.</p>
+    </section>
+    <section class="competition" id="competition" hidden aria-label="Tournament status">
+      <div class="match-stats"><b id="matchTitle"></b><span>Time <b id="matchTime">60</b></span><span>Score <b id="matchScore">0</b></span><span id="matchCombo">Combo ×1</span><button class="act" id="matchPause">Pause</button><button class="act" id="matchExit">Leave event</button></div>
+      <p id="matchGoal" role="status"></p>
+      <div id="matchResults" hidden aria-live="polite"></div>
+      <button class="act" id="matchNext" hidden>Next event</button>
+    </section>
+
+    <div class="stage" id="stage">
+      <canvas id="game" aria-label="Arduan, Lucio, Day, Lilith, Brayden and the cat walking on the walls and ceiling of a floating bedroom"></canvas>
+
+      <div class="hud">
+        <div class="pill" id="starPill">Stars <b id="stars">0</b>/<span id="starTotal">10</span></div>
+        <div class="right">
+          <div class="pill" id="gravPill">Gravity <b id="gravArrow">↓</b></div>
+          <button class="pill mute" id="mute" type="button" aria-pressed="false">Sound on</button>
+        </div>
+      </div>
+      <div class="banner" id="banner" aria-live="polite"></div>
+
+      <div class="touch" id="touch">
+        <div class="pad">
+          <button class="tbtn up" data-k="up" type="button" aria-label="Up">&#9650;</button>
+          <button class="tbtn left" data-k="left" type="button" aria-label="Left">&#9664;</button>
+          <button class="tbtn right" data-k="right" type="button" aria-label="Right">&#9654;</button>
+          <button class="tbtn down" data-k="down" type="button" aria-label="Down">&#9660;</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="act" id="flipBtn" type="button"><span>Flip the room</span><kbd>F</kbd></button>
+      <button class="act" id="zeroBtn" type="button" aria-pressed="false"><span>Zero-G</span><kbd>Z</kbd></button>
+      <button class="act" id="doorBtn" type="button"><span>Go through the door</span><kbd>E</kbd></button>
+      <button class="act" id="swapBtn" type="button"><span id="swapLabel">Arrows: Arduan</span><kbd>Tab</kbd></button>
+      <button class="act" id="catBtn" type="button" disabled>Play as Cat</button>
+    </div>
+
+    <ul class="legend">
+      <li><b>Arduan</b> <kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd></li>
+      <li><b>Lucio</b> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></li>
+      <li><kbd>Tab</kbd> changes who you control. Everyone else wanders</li>
+      <li>Choose <b>Play as Cat</b> to wall-walk, float and enter the Gravity Cup as the cat</li>
+      <li>Walk along any surface. Walk into a corner to climb onto the wall</li>
+      <li>Press away from the surface to jump. In mid-air, press a direction to fall that way</li>
+      <li>Stand by a door and press <kbd>E</kbd> to go through: bedrooms, the living room, the street and the Academy</li>
+      <li>Leave someone alone and they wander off by themselves</li>
+    </ul>
+  </div>
+
+  <script src="tournament.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>VEGA Racing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;800&family=Saira:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../realm-nav.css">
+</head>
+<body>
+  <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
+  <div class="wrap">
+    <header>
+      <p class="eyebrow">The racing realm</p>
+      <h1>VEGA Racing</h1>
+      <p class="sub">The Golden Hour Grand Prix: four kilometres of sunset circuit against the rest of the VEGA team.</p>
+    </header>
+
+    <div class="stage" id="stage">
+      <canvas id="game" aria-label="The race track, with the VEGA cars on it"></canvas>
+
+      <div class="hud" id="hud" hidden>
+        <div class="pill pos"><b id="pos">1st</b><span>of 3</span></div>
+        <div class="pill progress" aria-hidden="true"><span class="flag">FINISH</span><div class="line" id="trackLine"></div><span class="flag start">START</span></div>
+        <div class="pill time" id="time">0:00.00</div>
+      </div>
+      <div class="hud-low" id="hudLow" hidden>
+        <div class="pill speedo"><b id="speed">0</b><span>km/h</span></div>
+        <div class="pill nitro"><span>NITRO</span><div class="pips" id="nitro"><i></i><i></i><i></i></div></div>
+      </div>
+      <div class="banner" id="banner" aria-live="assertive"></div>
+      <div class="paused" id="paused" hidden>Paused<small>Press P to keep racing</small></div>
+
+    </div>
+
+    <!-- touch screens: a control bar under the track, so the buttons never cover it -->
+    <div class="touch" id="touch" hidden>
+      <div class="lanes">
+        <button class="tbtn" id="tUp" type="button" aria-label="Change lane up">&#9650;</button>
+        <button class="tbtn" id="tDown" type="button" aria-label="Change lane down">&#9660;</button>
+      </div>
+      <div class="pedals">
+        <button class="tbtn nitro-btn" id="tNitro" type="button">Nitro</button>
+        <button class="tbtn" id="tBrake" type="button">Brake</button>
+        <button class="tbtn drive" id="tDrive" type="button">&#9664; Drive</button>
+      </div>
+    </div>
+
+    <section class="panel" id="menu" aria-labelledby="menuTitle">
+      <img class="driver" src="driver.png" alt="A VEGA team driver in a black, white and gold racing suit" width="187" height="520">
+      <div class="panel-body">
+        <h2 id="menuTitle">Choose your car</h2>
+        <div class="cars" id="cars" role="radiogroup" aria-label="Car"></div>
+        <div class="row">
+          <span class="label" id="diffLabel">Rivals</span>
+          <div class="seg" id="diff" role="radiogroup" aria-labelledby="diffLabel">
+            <button type="button" role="radio" data-diff="easy">Easy</button>
+            <button type="button" role="radio" data-diff="normal">Normal</button>
+            <button type="button" role="radio" data-diff="hard">Hard</button>
+          </div>
+          <button class="go" id="start" type="button" disabled>Start race <kbd>Enter</kbd></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="results" hidden aria-labelledby="resultsTitle">
+      <div class="panel-body">
+        <h2 id="resultsTitle"></h2>
+        <ol class="standings" id="standings"></ol>
+        <p class="best" id="bestNote"></p>
+        <div class="row">
+          <button class="go" id="again" type="button">Race again <kbd>Enter</kbd></button>
+          <button class="ghost" id="change" type="button">Choose another car</button>
+        </div>
+      </div>
+    </section>
+
+    <ul class="legend">
+      <li><kbd>&larr;</kbd> hold to drive</li>
+      <li><kbd>&rarr;</kbd> brake</li>
+      <li><kbd>&uarr;</kbd><kbd>&darr;</kbd> change lane</li>
+      <li><kbd>Space</kbd> nitro</li>
+      <li>Dodge cones and oil, drive over gold arrows for speed and nitro</li>
+      <li><kbd>P</kbd> pause · <kbd>M</kbd> sound</li>
+    </ul>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Forgotten Beginning</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../realm-nav.css">
+</head>
+<body>
+  <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
+  <main class="world">
+    <header><div><p class="eyebrow">A world of its own</p><h1>Forgotten Beginning</h1></div><a href="../realm-explorer/index.html">Ember ↗</a></header>
+    <p class="intro">Walk the green city promenade beneath glass towers and hanging gardens.</p>
+    <section class="stage" aria-label="Green city promenade">
+      <canvas id="game" tabindex="0" aria-label="Brielle in blue trousers and Zendayo in a cream suit exploring the promenade"></canvas>
+      <div class="hud"><span>Green City Promenade</span><span id="distance">West entrance</span></div>
+      <p class="loading" id="loading" role="status">Opening the promenade…</p>
+      <p class="caption" id="caption" role="status" hidden></p>
+      <div class="touch"><button id="left" aria-label="Walk left">◀</button><button id="right" aria-label="Walk right">▶</button></div>
+    </section>
+    <section class="controls" aria-label="Exploration controls">
+      <div class="characters"><button id="girl" class="character" aria-pressed="true" disabled><img src="girl-portrait.png" alt=""><span>Brielle<small>1 · lead the way</small></span></button><button id="guy" class="character" aria-pressed="false" disabled><img src="guy-portrait.png" alt=""><span>Zendayo<small>2 · lead the way</small></span></button></div>
+      <label><input type="checkbox" id="together" checked> Walk together</label>
+      <label for="brielleOutfit">Brielle’s outfit <select id="brielleOutfit" disabled><option value="0">Blue trousers</option><option value="1">White &amp; black dress</option></select></label>
+      <button id="reset" disabled>Back to the entrance</button>
+    </section>
+    <p class="instructions"><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> walk · <kbd>Shift</kbd> hurry · <kbd>1</kbd> / <kbd>2</kbd> choose who leads · <kbd>T</kbd> together or alone</p>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>

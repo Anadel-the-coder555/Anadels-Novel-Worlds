@@ -1,0 +1,3 @@
+.realm-home-nav{max-width:1200px;margin:0 auto 16px;font:14px/1.4 "Segoe UI",sans-serif}
+.realm-home-nav a{display:inline-flex;align-items:center;min-height:44px;padding:8px 14px;border-radius:24px;text-decoration:none;background:#eef3e9;color:#294739;border:1px solid #78918560;box-shadow:0 2px 8px #0001}
+.realm-home-nav a:hover{background:#d6e4ce}.realm-home-nav a:focus-visible{outline:3px solid #d8a446;outline-offset:3px}

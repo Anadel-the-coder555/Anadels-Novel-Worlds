@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Nyx’s Realm</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../realm-nav.css">
+</head>
+<body>
+  <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
+  <main class="world">
+    <header><p class="eyebrow">The skycity</p><h1>Nyx’s Realm</h1></header>
+    <p class="intro">Explore with Nyx beneath golden arches, flowering terraces and towers that reach into the clouds.</p>
+    <section class="stage" aria-label="Nyx’s futuristic skycity">
+      <canvas id="game" tabindex="0" aria-label="Nyx in her white outfit and high heels exploring the skycity"></canvas>
+      <div class="hud"><span id="placeName">Skycity Promenade</span><span id="distance">West terrace</span></div>
+      <button id="doorBtn" class="door" type="button" hidden></button>
+      <p class="loading" id="loading" role="status">Opening Nyx’s realm…</p>
+      <p class="caption" id="caption" role="status" hidden></p>
+      <div class="touch"><button id="left" aria-label="Walk left">◀</button><button id="right" aria-label="Walk right">▶</button></div>
+    </section>
+    <section class="controls" aria-label="Exploration controls">
+      <p>Nyx · White outfit &amp; high heels</p>
+      <button id="reset" type="button" disabled>Back to the west terrace</button>
+    </section>
+    <nav class="places" aria-label="Places"><button id="place-0" disabled aria-pressed="true">Skycity</button><button id="place-1" disabled aria-pressed="false">Mansion gardens</button><button id="place-2" disabled aria-pressed="false">Mansion entrance</button><button id="place-3" disabled aria-pressed="false">Nyx’s bedroom</button></nav>
+    <p class="instructions"><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> walk · Hold <kbd>Shift</kbd> to hurry · <kbd>↑</kbd> or <kbd>W</kbd> at an entrance to go in or return</p>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>

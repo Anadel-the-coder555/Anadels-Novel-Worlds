@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Novel Realm · Explore the Worlds</title>
+  <link rel="stylesheet" href="home.css">
+</head>
+<body>
+  <main>
+    <header><p class="eyebrow">Novel Realm</p><h1>Where will you wander?</h1><p>Castles and lavender lanes. Life on the pirate ships. Cities that reach for the sky. A sunset racetrack. Choose a world and step inside.</p></header>
+    <section class="browse" aria-label="Find a world">
+      <div class="filters" role="group" aria-label="Filter by realm">
+        <button data-filter="all" aria-pressed="true">All realms</button>
+        <button data-filter="fantasy" aria-pressed="false">Fantasy</button>
+        <button data-filter="pirates" aria-pressed="false">Pirates</button>
+        <button data-filter="future" aria-pressed="false">Future Worlds</button>
+        <button data-filter="racing" aria-pressed="false">Racing</button>
+      </div>
+      <label class="search" for="search">Search <input id="search" type="search" placeholder="Find a world…" autocomplete="off"></label>
+    </section>
+    <p class="count" id="count" role="status">6 worlds to explore</p>
+    <nav class="grid" aria-label="Explorer worlds">
+      <a class="card" data-realm="future" href="nyx-realm/index.html">
+        <img src="nyx-realm/skycity.jpg" alt="" loading="lazy" width="600" height="300">
+        <div class="card-content"><span class="tag">The golden skycity</span><h2>Nyx’s Realm</h2><p>Walk with Nyx in her white outfit and high heels through a futuristic city of golden arches, flowering terraces and waterfalls.</p><span class="go">Explore this world →</span></div>
+      </a>
+      <a class="card" data-realm="future" href="gravity-room/index.html">
+        <img src="gravity-room/academy-atrium.jpg" alt="" loading="lazy" width="600" height="300">
+        <div class="card-content"><span class="tag">A world beyond gravity</span><h2>Gravity Thief</h2><p>Explore bedrooms, the city and the Academy with Arduan, Lucio, Day, Lilith, Brayden and the cat. Walk up walls and drift through Zero-G.</p><span class="go">Explore this world →</span></div>
+      </a>
+      <a class="card" data-realm="future" href="forgotten-beginning/index.html">
+        <img src="forgotten-beginning/promenade.jpg" alt="" loading="lazy" width="600" height="300">
+        <div class="card-content"><span class="tag">The green city</span><h2>Forgotten Beginning</h2><p>Explore the futuristic promenade with Brielle and Zendayo, beneath glass towers and hanging gardens.</p><span class="go">Explore this world →</span></div>
+      </a>
+      <a class="card" data-realm="fantasy" href="realm-explorer/index.html">
+        <img src="realm-explorer/castle-valley.jpg" alt="" loading="lazy" width="600" height="300">
+        <div class="card-content"><span class="tag">The fantasy world</span><h2>Ember</h2><p>Wander through lavender fields and village streets, climb into the treehouse, explore the castle with Ember and her friends, and travel to the blue continent of Azurea.</p><span class="go">Explore this world →</span></div>
+      </a>
+      <a class="card" data-realm="pirates" href="pirate-explorer/index.html">
+        <img src="pirate-explorer/ship-deck.jpg" alt="" loading="lazy" width="600" height="300">
+        <div class="card-content"><span class="tag">The pirate world</span><h2>Soulmates</h2><p>Join the pirate crew and explore the decks, cabins and captain’s quarters aboard ship.</p><span class="go">Explore this world →</span></div>
+      </a>
+      <a class="card" data-realm="racing" href="vega-racing/index.html">
+        <img src="vega-racing/card.jpg" alt="" loading="lazy" width="600" height="300">
+        <div class="card-content"><span class="tag">The racing world</span><h2>VEGA Racing</h2><p>Pick a VEGA car and race the team round a golden-hour circuit. Dodge the cones and oil, hit the boost arrows, and save your nitro for the finish.</p><span class="go">Race in this world →</span></div>
+      </a>
+    </nav>
+    <p class="empty" id="empty" hidden>No worlds match. Try another search or choose All realms.</p>
+    <footer>Choose a world to explore. Games will be added later.</footer>
+  </main>
+  <script src="home.js"></script>
+</body>
+</html>

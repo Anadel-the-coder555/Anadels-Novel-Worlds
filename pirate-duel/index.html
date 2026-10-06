@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Duel on Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pirata+One&family=IM+Fell+English:ital@0;1&family=Alegreya+Sans:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../realm-nav.css">
+</head>
+<body>
+  <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
+  <div class="wrap">
+    <header>
+      <h1>Duel on Deck</h1>
+      <p class="sub">Swords are for show. The real weapon is a sharp tongue. Win with the perfect comeback and send your rival over the side.</p>
+    </header>
+
+    <div class="stage" id="stage">
+      <canvas id="game" aria-label="Two pirates duelling on deck while the crew watches"></canvas>
+
+      <div class="hud">
+        <div class="pill" id="vsPill">Choose your captain</div>
+        <div class="right">
+          <div class="pill" id="bookPill" title="Lines you know">Insults <b id="insCount">0</b>/12 &middot; Comebacks <b id="comCount">0</b>/12</div>
+          <button class="pill mute" id="mute" type="button" aria-pressed="false">Sound on</button>
+        </div>
+      </div>
+      <div class="learned" id="learned" aria-live="polite"></div>
+
+      <div class="overlay" id="captainCard">
+        <div class="card">
+          <p class="eyebrow">A battle of wits</p>
+          <h2>Duel on Deck</h2>
+          <p>Take turns trading insults. When it’s your turn to reply, pick the comeback that fits before the timer runs out. Get it right and you push your rival back. Get it wrong and you’re pushed instead. Three pushes and someone goes over the side.</p>
+          <p>Every line used on you is yours to keep, and if you fluff a reply, the crew will shout the right one.</p>
+          <div class="pick" id="captainPick"></div>
+        </div>
+      </div>
+
+      <div class="overlay" id="rosterCard" hidden>
+        <div class="card wide">
+          <p class="eyebrow">Who’s next?</p>
+          <h2>Pick a challenger</h2>
+          <p id="rosterNote">Beat three of the crew to earn a duel with the other captain.</p>
+          <div class="roster" id="roster"></div>
+        </div>
+      </div>
+
+      <div class="overlay" id="resultCard" hidden>
+        <div class="card">
+          <p class="eyebrow" id="resultEyebrow">Splash!</p>
+          <h2 id="resultTitle"></h2>
+          <p id="resultText"></p>
+          <button class="btn" id="resultBtn" type="button">Pick a challenger</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="choices" id="choices" aria-live="polite">
+      <p class="prompt" id="prompt">Choose your captain to begin.</p>
+      <div class="timer" id="timer" hidden><i></i></div>
+      <div class="lines" id="lines"></div>
+    </section>
+
+    <ul class="legend">
+      <li>Click a line or press its number</li>
+      <li>Answer an insult with its matching comeback to win the exchange</li>
+      <li>Tougher rivals give you more choices and less time</li>
+    </ul>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

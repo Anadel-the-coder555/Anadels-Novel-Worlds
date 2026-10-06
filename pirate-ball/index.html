@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>The Captain’s Ball</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pirata+One&family=IM+Fell+English:ital@0;1&family=Alegreya+Sans:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../realm-nav.css">
+</head>
+<body>
+  <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
+  <div class="wrap">
+    <header>
+      <h1>The Captain’s Ball</h1>
+      <p class="sub">Captain Ruby is throwing a very posh ball for the visiting royals. You have a to-do list. Every item on it ruins the ball.</p>
+    </header>
+
+    <div class="stage flat" id="stage">
+      <canvas id="game" aria-label="A pirate crewmate causing chaos at a royal ball in the ship's dining salon"></canvas>
+
+      <div class="hud">
+        <div class="pill">Chaos <b id="chaos">0</b>/<span id="total">6</span></div>
+        <div class="right">
+          <div class="pill">Ball ends in <b id="clock">2:30</b></div>
+          <button class="pill mute" id="mute" type="button" aria-pressed="false">Sound on</button>
+        </div>
+      </div>
+      <div class="toast" id="toast" role="status"></div>
+
+      <div class="touch">
+        <div class="grp">
+          <button class="tbtn" id="tLeft" type="button" aria-label="Walk left">&#9664;</button>
+          <button class="tbtn" id="tRight" type="button" aria-label="Walk right">&#9654;</button>
+        </div>
+        <div class="grp">
+          <button class="tbtn" id="tAct" type="button">Do it</button>
+        </div>
+      </div>
+
+      <div class="overlay" id="titleCard">
+        <div class="card wide">
+          <p class="eyebrow">Chaos at the ball</p>
+          <h2>The Captain’s Ball</h2>
+          <p>You have until the music stops to work through your to-do list. Walk with <b>&larr; &rarr;</b> and press <b>E</b> to do whatever you’re standing next to. Some jobs take two steps.</p>
+          <p>Captain Ruby is hosting. When she’s looking your way, an eye appears over her head. Get caught in the act and she’ll march you straight back to the door.</p>
+          <p class="eyebrow">Pick your troublemaker</p>
+          <div class="pick" id="pick"></div>
+        </div>
+      </div>
+
+      <div class="overlay" id="endCard" hidden>
+        <div class="card">
+          <p class="eyebrow" id="endEyebrow"></p>
+          <h2 id="endTitle"></h2>
+          <p id="endText"></p>
+          <button class="btn" id="againBtn" type="button">Crash another ball</button>
+        </div>
+      </div>
+    </div>
+
+    <ul class="legend">
+      <li><kbd>&larr;</kbd><kbd>&rarr;</kbd> walk</li>
+      <li><kbd>E</kbd> or <kbd>Space</kbd> do the thing</li>
+      <li>Wait for Captain Ruby to look away</li>
+    </ul>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
