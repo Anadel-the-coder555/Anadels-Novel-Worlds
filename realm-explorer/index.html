@@ -15,7 +15,7 @@
   <div class="wrap">
     <header>
       <h1>Welcome To Celedonia</h1>
-      <p class="sub">Explore the realm, visit the market square in Lavender Village, or join Lila-Bella at the mirror to try on Ember&rsquo;s enchanted gowns.</p>
+      <p class="sub">Explore the realm, picnic under the aspens, waltz in the royal ballroom, light lanterns at the village festival, or join Lila-Bella at the mirror to try on Ember&rsquo;s enchanted gowns.</p>
     </header>
 
     <div class="stage" id="stage">
@@ -34,6 +34,29 @@
       <div class="caption" id="caption" role="status"></div>
       <div class="speech" id="speech" aria-live="polite"></div>
       <div class="caption on" id="loadStatus" role="status">Opening the wardrobe&hellip;</div>
+
+      <!-- pastimes: the picnic, the waltz and the lantern festival -->
+      <div class="pastime-hud" id="pastimeHud" hidden>
+        <div class="pill"><b id="pastimeScore"></b><span id="pastimeInfo"></span></div>
+        <button class="mapbtn" id="pastimeLeave" type="button">Leave <kbd aria-hidden="true">Esc</kbd></button>
+      </div>
+      <div class="steps" id="steps" hidden>
+        <button class="tbtn" type="button" data-step="left" aria-label="Step left">&larr;</button>
+        <button class="tbtn twirl" type="button" data-step="up" aria-label="Twirl">&uarr;</button>
+        <button class="tbtn" type="button" data-step="right" aria-label="Step right">&rarr;</button>
+      </div>
+      <div class="overlay" id="pastimeCard" hidden>
+        <div class="card" role="dialog" aria-labelledby="pcTitle">
+          <p class="eyebrow" id="pcEyebrow"></p>
+          <h2 id="pcTitle"></h2>
+          <p id="pcText"></p>
+          <p class="keys" id="pcKeys"></p>
+          <div class="card-actions">
+            <button class="btn" id="pcGo" type="button"></button>
+            <button class="btn ghost" id="pcBack" type="button"></button>
+          </div>
+        </div>
+      </div>
 
       <div class="touch" id="touch">
         <button class="tbtn" id="tLeft" type="button" aria-label="Walk left">&#9664;</button>
@@ -80,6 +103,11 @@
       </fieldset>
 
       <fieldset class="group">
+        <legend>Pastimes</legend>
+        <div class="places" id="pastimes"></div>
+      </fieldset>
+
+      <fieldset class="group">
         <legend>Company</legend>
         <label class="toggle" for="together">
           <input type="checkbox" id="together" checked>
@@ -101,11 +129,13 @@
       <li><kbd>&uarr;</kbd> go in, out, up or down at a door</li>
       <li>At the mirror in the Rose Bedroom, <kbd>&uarr;</kbd> to dress up Ember</li>
       <li>In the Lavender Fields, <kbd>&uarr;</kbd> at the village path to visit the market square</li>
-      <li><kbd>G</kbd> or the Map button opens the atlas: click Celadonia or Azurea to travel there</li>
+      <li><kbd>G</kbd> or the Map button opens the atlas: click Celadonia, Azurea or Byzantine to travel there</li>
+      <li>In Byzantine, <kbd>&uarr;</kbd> at the steps by the lake to climb up to the villa terrace</li>
       <li>Under the old oak in Castle Valley, <kbd>&uarr;</kbd> to take the road to Azurea, the blue continent</li>
       <li>At the Castle Valley gate, <kbd>&uarr;</kbd> to enter. The ballroom is left of the castle hall</li>
       <li>At the hall&rsquo;s grand staircase, <kbd>&uarr;</kbd> to go upstairs. Left wing: light-green bedroom and nursery/playroom; right wing: dark-green bedroom</li>
       <li>Near Evelynn in the treehouse kitchen or Hendrix in the library, press <kbd>E</kbd> or click Talk. Talk again to hear more.</li>
+      <li>Pastimes: <kbd>&uarr;</kbd> in the Aspen Meadow clearing for a picnic, on the ballroom floor to waltz, or at the village fountain for the lantern festival</li>
       <li>hold <kbd>Shift</kbd> to hurry</li>
       <li><kbd>1</kbd>&ndash;<kbd>4</kbd> change who leads</li>
       <li><kbd>T</kbd> walk together or alone</li>

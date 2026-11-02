@@ -6,15 +6,15 @@ const nodes = [], draws = [];
 const handlers = {};
 let savedGown = '3';
 const drawing = new Proxy({ drawImage: (...args) => draws.push(args),
-  createRadialGradient: () => ({ addColorStop() {} }) }, { get: (o, k) => o[k] || (() => {}) });
+  createRadialGradient: () => ({ addColorStop() {} }), createLinearGradient: () => ({ addColorStop() {} }) }, { get: (o, k) => o[k] || (() => {}) });
 function element(id) {
-  const node = { id, dataset: {}, classList: { add() {}, remove() {}, toggle() {} },
+  const node = { id, dataset: {}, style: {}, querySelector: () => element(""), classList: { add() {}, remove() {}, toggle() {} },
     setAttribute(k, v) { this[k] = v; }, addEventListener(k, f) { this[k] = f; },
     appendChild() {}, focus() {}, getBoundingClientRect: () => ({ width: 960 }), getContext: () => drawing };
   nodes.push(node); return node;
 }
 const get = id => nodes.find(n => n.id === id) || element(id);
-const sandbox = { Math, Number, String, Promise, Error, setTimeout() {},
+const sandbox = { Math, Number, String, Promise, Error, setTimeout() {}, setInterval() {}, clearInterval() {},
   matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} },
   document: { getElementById: get, createElement: () => element(''), body: element('body'),
     querySelectorAll: q => q === '#places .place' ? nodes.filter(n => n.dataset.place !== undefined) : [],
@@ -22,10 +22,12 @@ const sandbox = { Math, Number, String, Promise, Error, setTimeout() {},
   localStorage: { getItem: () => savedGown, setItem: (_, value) => savedGown = value },
   Image: class { set src(v) { this.source = v; this.width = 2172; this.height = 724; this.onload(); } },
   addEventListener: (name, handler) => handlers[name] = handler, requestAnimationFrame() {},
+  Audio: class { play() { return Promise.resolve(); } pause() {} },
 };
 let source = fs.readFileSync(path.join(__dirname, 'game.js'), 'utf8');
 source = source.replace(/\}\)\(\);\s*$/, `globalThis.testGame = { enterPlace, walkOff, useDoor, update, render, drawWalker, pickGown,
-  state: () => ({ place, leaderX, worldW, door, gown, dressing }) }; })();`);
+  liftNapkin, waltzStep, tapFestival,
+  state: () => ({ place, leaderX, worldW, door, gown, dressing, pastime }) }; })();`);
 vm.runInNewContext(source, sandbox);
 setImmediate(() => {
   const g = sandbox.testGame;
@@ -144,5 +146,71 @@ setImmediate(() => {
     g.enterPlace(0, .5); assert.equal(get('talkBtn').hidden, true);
   }
   console.log('Passed both resident sprites, nearby talk buttons, keyboard/click dialogue and departure.');
+  // pastimes: each opens from its door, starts from the card, plays, and leaves back to its place
+  const key = k => handlers.keydown({ key: k, target: {}, preventDefault() {} });
+  for (const [where, at, name] of [[2, .3, 'picnic'], [9, .47, 'waltz'], [7, .44, 'festival']]) {
+    g.enterPlace(where, at); g.update(0);
+    assert.equal(g.state().door[1], name, `${name} door`);
+    g.useDoor(); settle();
+    assert.equal(g.state().pastime.key, name); assert.equal(g.state().pastime.phase, 'intro');
+    assert.equal(get('pastimeCard').hidden, false);
+    get('pcGo').click(); assert.equal(g.state().pastime.phase, 'play'); assert.equal(get('pastimeCard').hidden, true);
+    g.render(); g.update(.04);
+    key('Escape'); settle();
+    assert.equal(g.state().pastime, null); assert.equal(g.state().place, where);
+  }
+  // a whole picnic: lifting both of each pair clears the blanket
+  g.enterPlace(2, .3); g.update(0); g.useDoor(); settle(); get('pcGo').click();
+  const s = g.state().pastime;
+  const order = s.cards.map((c, i) => [c.food, i]).sort().map(([, i]) => i);
+  order.forEach(i => g.liftNapkin(s, i));
+  assert.equal(s.pairs, 6); assert.equal(s.tries, 6);
+  for (let i = 0; i < 40; i++) g.update(.05);
+  assert.equal(s.phase, 'done');
+  key('Escape'); settle();
+  // waltz: the right step on the beat counts as graceful, the wrong one as a missed step
+  g.enterPlace(9, .47); g.update(0); g.useDoor(); settle(); get('pcGo').click();
+  const w = g.state().pastime;
+  w.time = w.steps[0].t; g.waltzStep(w, w.steps[0].kind);
+  assert.equal(w.score, 3); assert.equal(w.graceful, 1);
+  w.time = w.steps[1].t; g.waltzStep(w, w.steps[1].kind === 'left' ? 'right' : 'left');
+  assert.equal(w.hits, 1); assert.equal(w.steps[1].done, 'miss');
+  key('Escape'); settle();
+  // festival: tapping a lantern lights it, and the clock runs out to the results
+  g.enterPlace(7, .44); g.update(0); g.useDoor(); settle(); get('pcGo').click();
+  const f = g.state().pastime, l = f.lanterns[0];
+  g.tapFestival(f, l.x, l.y); assert.equal(f.lit, 1); assert(l.lit > 0);
+  for (let i = 0; i < 1300; i++) g.update(.05);
+  assert.equal(f.phase, 'done');
+  key('Escape'); settle(); assert.equal(g.state().pastime, null);
+  // Byzantine: the lakeside villa is open, its steps lead up to the villa terrace and back, and the boat goes home
+  g.enterPlace(22, .85); g.update(0);
+  assert.equal(get('placeName').textContent, 'Byzantine · Lakeside Villa'); assert.equal(get('placeNum').textContent, 'in Byzantine');
+  g.render(); assert(draws.some(d => d[0].source === 'byzantine-villa.jpg'));
+  doorAt(22, .945, 23); assert.equal(get('placeName').textContent, 'Byzantine · Villa Terrace');
+  doorAt(23, .9, 24); assert.equal(get('placeName').textContent, 'Byzantine · Villa Foyer'); assert.equal(get('placeNum').textContent, 'inside the villa');
+  g.render(); assert(draws.some(d => d[0].source === 'byzantine-foyer.jpg'));
+  doorAt(24, .58, 25); assert.equal(get('placeName').textContent, 'Byzantine · Hallway of Doors');
+  g.render(); assert(draws.some(d => d[0].source === 'byzantine-hall-doors.jpg'));
+  doorAt(25, .49, 27); assert.equal(get('placeName').textContent, 'Byzantine · Villa Library');
+  g.render(); assert(draws.some(d => d[0].source === 'byzantine-library.jpg'));
+  doorAt(27, .05, 25);
+  g.enterPlace(25, .5); g.walkOff('right'); settle(); assert.equal(get('placeName').textContent, 'Byzantine · Hallway of Windows');
+  g.render(); assert(draws.some(d => d[0].source === 'byzantine-hall-windows.jpg'));
+  g.walkOff('right'); settle(); assert.equal(get('placeName').textContent, 'Byzantine · Ballroom');
+  g.render(); assert(draws.some(d => d[0].source === 'byzantine-ballroom.jpg'));
+  doorAt(28, .5, 30); assert.equal(get('placeName').textContent, 'Byzantine · Balcony');
+  g.render(); assert(draws.some(d => d[0].source === 'byzantine-balcony.jpg'));
+  doorAt(30, .5, 28);
+  g.walkOff('left'); settle(); assert.equal(g.state().place, 26);
+  g.walkOff('left'); settle(); assert.equal(g.state().place, 25);
+  doorAt(25, .87, 29); assert.equal(get('placeName').textContent, 'Byzantine · Dining Room');
+  g.render(); assert(draws.some(d => d[0].source === 'byzantine-dining.jpg'));
+  doorAt(29, .04, 25);
+  g.walkOff('left'); settle(); assert.equal(g.state().place, 24);
+  doorAt(24, .45, 23); assert.equal(get('placeName').textContent, 'Byzantine · Villa Terrace');
+  doorAt(23, .955, 22); doorAt(22, .775, 0);
+  console.log('Passed Byzantine: lakeside villa, steps up to the villa terrace, into the foyer, both hallways, the library, ballroom, balcony and dining room, and back, and the boat home.');
+  console.log('Passed picnic, waltz and lantern festival: doors, cards, a full picnic, waltz timing, lantern lighting and leaving.');
   console.log('Passed second village scene, walking right to Inn Street, walking left to the square, both street doors and retained gown.');
 });
