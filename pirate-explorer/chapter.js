@@ -1,13 +1,13 @@
-// Chapters One and Two, adapted from the author's manuscript. One scene per entry; game.js reads:
+// The Soulmates intro (the manuscript's Chapters One and Two), which leads straight into free exploration. One scene per entry; game.js reads:
 //   title, text (narration), dialogue ('Speaker: “line”' per line; 'Ruby (thinking)' for her thoughts),
 //   goal + walk/direction/auto (walk Ruby to a fraction of the room), button (continue label),
-//   chapter (set on a chapter's first scene), room + at (cut to a place), duel (the sword duel),
+//   room + at (cut to a place), duel (the sword duel),
 //   party (who walks with Ruby), cast { key: [x fraction, y?, facing?] | null to hide },
 //   poses { key: [duel sheet, frame] held, or [sheet, from, to] played once, or ['idle'] breathing },
 //   tilt (radians the deck leans), shake (a jolt as the scene opens), slide { key: x fraction } (slid to over
 //   1.4 s), walkTo { key: [x fraction, hide on arrival?, wait for the last line?] }.
 window.SOULMATES_CHAPTER = [
-  { chapter: 'One', title: 'Chapter One · Into the mist', text: 'Lady Ruby grips the helm. After seven hundred ninety-two independent voyages, this one has brought unexpected fog and violent storms. Arabella watches from the crow’s nest while Scarlett and Tempest mop the decks below.', dialogue: 'Scarlett: “Captain Ruby can sniff out the route even with her eyes closed.”\nTempest: “You suppose she’s a seer?”', button: 'Listen to Marietta' },
+  { title: 'Into the mist', text: 'Lady Ruby grips the helm. After seven hundred ninety-two independent voyages, this one has brought unexpected fog and violent storms. Arabella watches from the crow’s nest while Scarlett and Tempest mop the decks below.', dialogue: 'Scarlett: “Captain Ruby can sniff out the route even with her eyes closed.”\nTempest: “You suppose she’s a seer?”', button: 'Listen to Marietta' },
   { title: 'A vision at sea', text: 'Marietta joins Ruby at the helm. Ruby closes her eyes: dark water, a groaning vessel, and a starving crew. She senses a ship, and the melancholy of people who have lost something important.', dialogue: 'Marietta: “Has your intuition told you how to guide us out of this mist?”\nRuby: “My mind leads me elsewhere, to a ship somewhere.”\nMarietta: “Why don’t we look for them?”', button: 'Look through the mist' },
   { title: 'Arabella’s call', text: '“A ship! There’s a ship!” Arabella hollers. Scarlett drops her mop. Ruby raises her spyglass. The white-sailed vessel seems to approach, but a closer look reveals it is motionless: a watery gravestone for a stranded crew.', dialogue: 'Ruby: “Forsaken.”\nMarietta: “Should we inspect just to be sure?”', goal: 'Walk right along Ruby’s upper deck to study the distant ship.', walk: .65, button: 'Steer alongside the vessel' },
   { title: 'The boarding plank', room: 'deck', at: .32, text: 'Ruby steers alongside the silent vessel. Her crew prepares the anchors and boarding plank. Marietta fears a broken board or a hidden straggler, but Ruby decides to inspect alone.', dialogue: 'Ruby: “I will inspect the vessel alone. I will give you the signal if there are valuables aboard.”\nScarlett: “Take care, Ruby!”', button: 'Cross the plank alone' },
@@ -21,8 +21,8 @@ window.SOULMATES_CHAPTER = [
   { title: 'His beloved crew', text: 'He pleads for his boys: young, hungry, frightened, and paying for his navigational mistake. They have already lost companions to the sea. His tears and trembling seem too real to be a trick. Ruby thinks of her father and relents, though she still cannot trust him.', dialogue: 'The stranger: “Don’t let me helplessly watch my beloved companions die for the remaining moments of my life.”\nRuby: “You can save yourselves and board my vessel. But take your dirty hands off me!”', button: 'Tell him to wait for permission' },
   { title: 'A boom outside', text: 'He apologizes; Ruby apologizes for losing her temper. She will speak to her crew and tells him to wait. Then a loud boom sounds. Ruby looks outside and sees chaos erupting on her own ship. She strikes him, realizing she has been distracted.', dialogue: 'Ruby: “You liar! You’re trying to distract me!”\nThe stranger: “Who do you think I am. I’m a pirate.”', button: 'Draw your sword' },
   { title: 'The ambush', text: 'Ruby draws her sword and points it at the stranger. Her crew is in danger across the boarding plank. He stands in her way, smirking. The rescue has become an ambush.', dialogue: 'Ruby: “IF YOU’LL EXCUSE ME, I have your little ambush to stop.”\nThe stranger: “I’m sorry miss, but you and your crew will have to surrender.”', button: 'Go out onto the deck' },
-  // ---- Chapter Two ----
-  { chapter: 'Two', title: 'Chapter Two · War on the deck', room: 'rival', at: .3, party: ['ruby'],
+  // ---- the duel and the surrender ----
+  { title: 'War on the deck', room: 'rival', at: .3, party: ['ruby'],
     cast: { ruby: [.3, 486, -1], cutlass: [.11, 486, 1] }, poses: { ruby: ['idle'] },
     text: 'Ruby bursts from the captain’s chambers. Across the water, war has erupted on her own deck: her crew clashes with the intruders, young men who swing their weapons with more bravado than skill. Her girls fight with everything around them: rigging lines yanked, barrels kicked into shins, the ship’s own sway used as a weapon. Then the young man bursts from his quarters, grinning.',
     dialogue: 'The stranger: “Now this isn’t a fair fight. One blow, and I’ll send you straight to the depths.”\nRuby: “I’d like to see you try.”\nRuby (thinking): What a fool.', button: 'Cross swords' },
@@ -81,5 +81,5 @@ window.SOULMATES_CHAPTER = [
   { title: 'Below decks', walkTo: { cutlass: [.62, true, true] },
     text: 'Cutlass shuts his mouth and says nothing more. He knows he is messing with the wrong pirate. He stands and nods to Ruby. Perfect.',
     dialogue: 'Ruby: “It seems your captain has volunteered like a good boy.”\nA young man in the crowd: “Don’t listen to her, Cap’n! We can starve a while longer!”\nCutlass: “SILENCE! If all of you want to LIVE, you will do just as she says. I don’t want to hear another word out of any of you!!”',
-    ending: 'He stomps below decks, leaving his crew in dumbfounded awe. End of Chapter Two.' }
+    ending: 'He stomps below decks, leaving his crew in dumbfounded awe. From here on, Cutlass and his boys sail with Ruby, and the whole ship is yours to explore.' }
 ];

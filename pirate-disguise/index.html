@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ladies in Disguise</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pirata+One&family=IM+Fell+English:ital@0;1&family=Alegreya+Sans:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .overlay.dressing{place-items:center end;background:linear-gradient(90deg,rgba(15,26,34,0) 30%,rgba(15,26,34,.55))}
+    .dressing .card{max-width:min(60cqw,600px);gap:.45cqw;padding:1.6cqw 2.4cqw}
+    .opts{display:flex;gap:.6cqw;flex-wrap:wrap;justify-content:center}
+    .opt{padding:.4em .9em;border-radius:999px;border:1px solid rgba(58,40,22,.3);background:#fbf3e2;color:var(--sailcloth-ink);font:500 max(12px,1.45cqw) var(--ui);cursor:pointer;display:inline-flex;align-items:center;gap:.4em}
+    .opt[aria-pressed="true"]{background:var(--brass);border-color:var(--brass-deep);color:#24170a;font-weight:700}
+    .opt:focus-visible{outline:3px solid var(--brass);outline-offset:2px}
+    .opt i{width:.9em;height:.9em;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+    .dressing .pick{gap:.6cqw;margin-top:0}.dressing .pick{flex-wrap:nowrap}.dressing .pick .who{width:max(54px,9.4cqw);min-width:0;padding:.4cqw .2cqw;font-size:max(11px,1.3cqw)}.dressing .who .face{width:max(36px,5cqw);height:max(36px,5cqw)}.dressing .card h2{font-size:max(20px,3.2cqw)}.dressing .card p{font-size:max(12px,1.5cqw)}
+    .pick .who[aria-pressed="true"]{border-color:var(--brass);background:#fff3d6;box-shadow:inset 0 0 0 2px var(--brass)}
+    .alias{font-family:var(--display);font-size:max(18px,2.6cqw);color:#8a3b52;margin:0}
+    .meter{width:max(90px,14cqw);height:.7em;border-radius:999px;background:rgba(58,40,22,.18);overflow:hidden;align-self:center}
+    .meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7fc28a,#f2c14e,#d9534f);transition:width .2s}
+    @container (max-width:620px){.overlay.dressing{place-items:start center;background:rgba(15,26,34,.35)}.dressing .card{max-width:100%}.dressing .pick{flex-wrap:wrap}}
+    .touch .tbtn.small{min-width:max(44px,6.6cqw);height:max(44px,6.6cqw);font-size:max(12px,1.6cqw)}
+  </style>
+  <link rel="stylesheet" href="../realm-nav.css">
+</head>
+<body>
+  <nav class="realm-home-nav" aria-label="Home"><a href="../pirate-explorer/index.html">← Back to the ship</a></nav>
+  <div class="wrap">
+    <header>
+      <h1>Ladies in Disguise</h1>
+      <p class="sub">Goldtooth is plotting something at the royal ball, and he would know Cutlass’s boys anywhere. So tonight, they go as ladies. Ridiculous ladies. Eavesdrop on the guests to learn his plan, and when someone speaks to you, act like a lady, fast.</p>
+    </header>
+
+    <div class="stage flat" id="stage">
+      <canvas id="game" aria-label="A pirate boy in a ball gown spying at a royal ball"></canvas>
+
+      <div class="hud">
+        <div class="pill">Suspicion <span class="meter" aria-hidden="true"><i id="susBar"></i></span><b id="sus">0%</b></div>
+        <div class="right">
+          <div class="pill">Secrets <b id="secrets">0</b>/<span id="secretTotal">4</span></div>
+          <button class="pill mute" id="mute" type="button" aria-pressed="false">Sound on</button>
+        </div>
+      </div>
+      <div class="toast" id="toast" role="status"></div>
+
+      <div class="touch">
+        <div class="grp">
+          <button class="tbtn" id="tLeft" type="button" aria-label="Walk left">&#9664;</button>
+          <button class="tbtn" id="tRight" type="button" aria-label="Walk right">&#9654;</button>
+          <button class="tbtn" id="tListen" type="button">Listen</button>
+        </div>
+        <div class="grp">
+          <button class="tbtn small" id="tCurtsy" type="button">Curtsy</button>
+          <button class="tbtn small" id="tFan" type="button">Fan</button>
+          <button class="tbtn small" id="tWig" type="button">Wig</button>
+        </div>
+      </div>
+
+      <div class="overlay dressing" id="titleCard">
+        <div class="card">
+          <p class="eyebrow">The dressing room</p>
+          <h2>Who’s going to the ball?</h2>
+          <div class="pick" id="pick"></div>
+          <p class="alias" id="alias"></p>
+          <p class="eyebrow">Wig</p>
+          <div class="opts" id="wigs"></div>
+          <p class="eyebrow">Gown</p>
+          <div class="opts" id="gowns"></div>
+          <p class="eyebrow">Finishing touch</p>
+          <div class="opts" id="extras"></div>
+          <button class="btn" id="startBtn" type="button">Make an entrance</button>
+        </div>
+      </div>
+
+      <div class="overlay" id="endCard" hidden>
+        <div class="card">
+          <p class="eyebrow" id="endEyebrow"></p>
+          <h2 id="endTitle"></h2>
+          <p id="endText"></p>
+          <button class="btn" id="againBtn" type="button">Back to the dressing room</button>
+        </div>
+      </div>
+    </div>
+
+    <ul class="legend">
+      <li><kbd>&larr;</kbd><kbd>&rarr;</kbd> glide gracefully (holding <kbd>Shift</kbd> stomps, and people notice)</li>
+      <li>hold <kbd>E</kbd> or <kbd>Space</kbd> near chatting guests to listen</li>
+      <li><kbd>C</kbd> curtsy &middot; <kbd>F</kbd> flutter your fan &middot; <kbd>W</kbd> fix your wig</li>
+    </ul>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Charm a Lady</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pirata+One&family=IM+Fell+English:ital@0;1&family=Alegreya+Sans:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .pick .who{width:max(80px,10cqw)}
+    .pick .who[aria-pressed="true"]{border-color:var(--brass);background:#fff3d6;box-shadow:inset 0 0 0 2px var(--brass)}
+    .who.charmed{background:#fbe4ec}
+    .who.charmed .tier::after{content:" · charmed ♥";color:#b03a5b;font-weight:700}
+    .who .likes{font-size:.82em;color:#7a6142;font-style:italic;line-height:1.25}
+    .roster{grid-template-columns:repeat(5,minmax(0,1fr))}
+    @container (max-width:620px){.roster{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  </style>
+  <link rel="stylesheet" href="../realm-nav.css">
+</head>
+<body>
+  <nav class="realm-home-nav" aria-label="Home"><a href="../pirate-explorer/index.html">← Back to the ship</a></nav>
+  <div class="wrap">
+    <header>
+      <h1>Charm a Lady</h1>
+      <p class="sub">Cutlass’s boys have decided to woo Ruby’s crew. Ruby’s crew has a mop, a bucket, and very little patience.</p>
+    </header>
+
+    <div class="stage" id="stage">
+      <canvas id="game" aria-label="A pirate boy trying to charm one of Captain Ruby's crew on deck"></canvas>
+
+      <div class="hud">
+        <div class="pill" id="vsPill">Choose your charmer</div>
+        <div class="right">
+          <div class="pill" id="roundPill" hidden>Round <b id="round">1</b>/5</div>
+          <button class="pill mute" id="mute" type="button" aria-pressed="false">Sound on</button>
+        </div>
+      </div>
+
+      <div class="overlay" id="boyCard">
+        <div class="card wide">
+          <p class="eyebrow">Romance on the high seas</p>
+          <h2>Who’s feeling brave?</h2>
+          <p>Five rounds to win her heart. Pick what to say, what to give her, and what to ask. Every lady likes different things, so read her mood. Say the wrong thing and you might get a bucket of water.</p>
+          <div class="pick" id="boyPick"></div>
+        </div>
+      </div>
+
+      <div class="overlay" id="ladyCard" hidden>
+        <div class="card wide">
+          <p class="eyebrow">Who will you try to charm?</p>
+          <h2 id="ladyTitle">Pick a lady</h2>
+          <div class="roster" id="ladyPick"></div>
+          <button class="btn" id="backBtn" type="button">Choose a different charmer</button>
+        </div>
+      </div>
+
+      <div class="overlay" id="endCard" hidden>
+        <div class="card">
+          <p class="eyebrow" id="endEyebrow"></p>
+          <h2 id="endTitle"></h2>
+          <p id="endText"></p>
+          <button class="btn" id="againBtn" type="button">Try your luck again</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="choices" id="choices" aria-live="polite">
+      <p class="prompt" id="prompt">Choose your charmer to begin.</p>
+      <div class="timer" id="timer" hidden><i></i></div>
+      <div class="lines" id="lines"></div>
+    </section>
+
+    <ul class="legend">
+      <li>Click a choice or press its number</li>
+      <li>Watch her reactions: they tell you what she likes</li>
+      <li>Fill her heart past the line by the end of round five</li>
+    </ul>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

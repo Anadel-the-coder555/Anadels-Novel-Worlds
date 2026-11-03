@@ -209,7 +209,7 @@ function updateControls() {
   $('crewPill').classList.toggle('full', joined.length === CREW.length);
 }
 function setLead(key) {
-  if (!mode || $('modeDialog').open || mode === 'story' || key === lead) return;
+  if (!mode || mode === 'story' || key === lead) return;
   // the other captain steps to the front where the leader was standing
   const a = st[lead], b = st[key];
   [a.x, b.x] = [b.x, a.x]; [a.y, b.y] = [b.y, a.y];
@@ -217,12 +217,13 @@ function setLead(key) {
   updateControls();
 }
 function action() {
-  if (!mode || $('modeDialog').open) return;
+  if (!mode) return;
   if (swordDuel) { if (!duelFinished) swordDuel.act('parry'); else if (duelWon) enterStoryStep(storyStep + 1); return; }
   if (mode === 'story') {
     if (dialogueIndex < storyLines().length - 1) { dialogueIndex++; showStory(); return; }
     const scene = CHAPTER[storyStep];
     if (scene.button && (storyReady || scene.walk === undefined)) enterStoryStep(storyStep + 1);
+    else if (storyStep === CHAPTER.length - 1) finishIntro();
     return;
   }
   if (near) return invite();
@@ -268,7 +269,7 @@ function caption(text, hold = 0) {
 
 const KEYMAP = { ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right', ArrowUp: 'up', w: 'up', W: 'up', ArrowDown: 'down', s: 'down', S: 'down' };
 addEventListener('keydown', e => {
-  if (!mode || $('modeDialog').open) return;
+  if (!mode) return;
   if (swordDuel && duelFinished) {   // after a win, Space carries the story on
     if (e.key === ' ' && !e.repeat && !e.target.closest?.('button,input')) { e.preventDefault(); action(); }
     return;
@@ -297,7 +298,7 @@ $('tInvite').addEventListener('click', action);
 // ---- update ----
 function update(dt) {
   t += dt;
-  if (!mode || $('modeDialog').open) return;
+  if (!mode) return;
   if (swordDuel) { swordDuel.update(dt); return; }
   captionHold = Math.max(0, captionHold - dt);
   if (mode === 'story') updateScene(dt);
@@ -361,7 +362,7 @@ function update(dt) {
   // in the story, place notes only while walking somewhere; otherwise they'd sit over the scene being played
   if (mode === 'story' && (CHAPTER[storyStep].walk === undefined || storyReady)) spot = '';
   caption(near || doorNear || fadeDir ? '' : spot);
-  $('tInvite').textContent = mode === 'story' ? (CHAPTER[storyStep].button ? (storyReady || CHAPTER[storyStep].walk === undefined ? 'Continue' : 'Explore') : 'The end') : near ? (PIRATES[near].villain ? 'Talk' : 'Invite') : doorNear ? 'Go in' : 'Invite';
+  $('tInvite').textContent = mode === 'story' ? (CHAPTER[storyStep].button ? (storyReady || CHAPTER[storyStep].walk === undefined ? 'Continue' : 'Explore') : 'Set sail') : near ? (PIRATES[near].villain ? 'Talk' : 'Invite') : doorNear ? 'Go in' : 'Invite';
 
   // gulls wheeling over the water
   if (!reduceMotion && RM.outside) {
@@ -511,14 +512,17 @@ function render() {
   if (fade > 0) { ctx.fillStyle = `rgba(20,12,6,${fade})`; ctx.fillRect(0, 0, VW, VH); }
 }
 
-// ---- adventure modes ----
-const modeDialog = $('modeDialog');
-modeDialog.addEventListener('cancel', e => e.preventDefault());
-modeDialog.showModal();
-$('changeMode').addEventListener('click', () => {
-  Object.keys(keys).forEach(k => keys[k] = false);
-  modeDialog.showModal();
-});
+// ---- the intro, then free exploration ----
+// The story is the game's opening. Once it has been seen (or skipped) the ship opens straight into exploring.
+const INTRO_KEY = 'soulmates-intro-done';
+const introDone = () => { try { return localStorage.getItem(INTRO_KEY) === '1'; } catch (e) { return false; } };
+function finishIntro() {
+  try { localStorage.setItem(INTRO_KEY, '1'); } catch (e) {}
+  resetAdventure('free');
+  caption('Cutlass and his boys are part of the crew now. Explore the ship, invite everyone aboard, or try a mini-game.', 6);
+}
+$('skipIntro').addEventListener('click', finishIntro);
+$('replayIntro').addEventListener('click', () => resetAdventure('story'));
 function resetAdventure(nextMode, startAt = 0) {
   swordDuel = null; duelFinished = false; $('duelHud').hidden = true; $('touch').hidden = false;
   sceneT = storyTilt = shakeT = 0;
@@ -547,17 +551,12 @@ function resetAdventure(nextMode, startAt = 0) {
   document.querySelector('.legend').hidden = mode === 'story';
   $('storySpeech').hidden = mode !== 'story';
   $('storyPanel').hidden = mode !== 'story'; $('freePanel').hidden = mode !== 'free';
-  $('modeLabel').textContent = mode === 'story' ? `Story mode · Chapter ${chapterAt(startAt)}` : 'Free exploration';
+  $('modeLabel').textContent = mode === 'story' ? 'The adventure begins' : 'Exploring the ship';
+  $('skipIntro').hidden = mode !== 'story'; $('replayIntro').hidden = mode === 'story';
   $('tourText').textContent = 'Explore at your own pace, or let Ruby show you around.';
   $('tourNext').textContent = 'Start the ship tour';
-  modeDialog.close();
   if (mode === 'story') { if (startAt) enterStoryStep(startAt); else showStory(); }
 }
-const CHAPTER_TWO = CHAPTER.findIndex(sc => sc.chapter === 'Two');
-const chapterAt = step => CHAPTER.slice(0, step + 1).reverse().find(sc => sc.chapter).chapter;
-$('chooseStory').addEventListener('click', () => resetAdventure('story'));
-$('chooseChapterTwo').addEventListener('click', () => resetAdventure('story', CHAPTER_TWO));
-$('chooseFree').addEventListener('click', () => resetAdventure('free'));
 function storyButton(label, fn) {
   const b = document.createElement('button'); b.type = 'button'; b.textContent = label;
   b.addEventListener('click', fn); $('storyActions').appendChild(b);
@@ -583,7 +582,6 @@ function enterStoryStep(next) {
   });
   if (scene.cast?.ruby) { const L = st.ruby; trail = []; for (let d = party().length * gap() + 6; d >= 0; d -= SAMPLE) trail.push({ x: L.x - L.facing * d, y: L.y }); }
   slideFrom = Object.fromEntries(Object.keys(scene.slide || {}).map(k => [k, st[k].x]));
-  $('modeLabel').textContent = `Story mode · Chapter ${chapterAt(storyStep)}`;
   if (storyStep === 3) {
     STORY_CREW.forEach((key, i) => Object.assign(st[key], { room: 'deck', x: st.ruby.x + 100 + i * 70, y: 470 + i * 8, moving: false }));
   }
@@ -644,7 +642,7 @@ function startStoryDuel() {
       $('storyText').textContent = won ? scene.duelWin : 'The stranger gets past Ruby’s guard. Regroup and try the duel again.';
       $('storyGoal').textContent = won ? '' : 'Watch his windup. Defend late, then strike while he recovers.';
       if (won) storyButton(scene.button, () => enterStoryStep(storyStep + 1));
-      else { storyButton('Try again', startStoryDuel); storyButton('Free exploration', () => resetAdventure('free')); }
+      else { storyButton('Try again', startStoryDuel); storyButton('Skip the intro', finishIntro); }
     }
   });
 }
@@ -685,8 +683,8 @@ function showStory() {
   $('storySpeech').hidden = !line || mode !== 'story';
   $('speechSpeaker').textContent = line?.speaker || '';
   $('speechText').textContent = line?.text || '';
-  $('speechNext').textContent = dialogueIndex < lines.length - 1 ? 'Next line →' : (scene.button ? 'Continue →' : 'End of chapter');
-  $('speechNext').disabled = dialogueIndex >= lines.length - 1 && (!scene.button || (!storyReady && scene.walk !== undefined));
+  $('speechNext').textContent = dialogueIndex < lines.length - 1 ? 'Next line →' : (scene.button ? 'Continue →' : 'Explore the ship →');
+  $('speechNext').disabled = dialogueIndex >= lines.length - 1 && scene.button && !storyReady && scene.walk !== undefined;
   $('storyDialogue').textContent = '';
   positionStorySpeech();
   $('storyGoal').textContent = scene.goal || '';
@@ -697,11 +695,7 @@ function showStory() {
     storyButton(scene.button, action);
   }
   if (scene.ending && dialogueIndex >= lines.length - 1) $('storyGoal').textContent = scene.ending;
-  if (storyStep === CHAPTER.length - 1) {
-    storyButton('Read Chapter Two again', () => resetAdventure('story', CHAPTER_TWO));
-    storyButton('Start from Chapter One', () => resetAdventure('story'));
-    storyButton('Free exploration', () => resetAdventure('free'));
-  }
+  if (storyStep === CHAPTER.length - 1 && dialogueIndex >= lines.length - 1) storyButton('Set sail: explore the ship', finishIntro);
 }
 const TOUR = ['deck', 'upper', 'below', 'hall', 'hallLeft', 'bedroom', 'dining', 'study'];
 $('tourNext').addEventListener('click', () => {
@@ -732,11 +726,10 @@ function loadImg(src) { return new Promise((res, rej) => { const i = new Image()
   trail = [];
   for (let x = 260 - SPACING - 6; x <= 260; x += SAMPLE) trail.push({ x, y: 500 });
   buildControls();
-  $('chooseStory').disabled = $('chooseChapterTwo').disabled = $('chooseFree').disabled = false;
-  $('loadingStatus').textContent = 'The ship is ready. Choose your adventure.';
+  resetAdventure(introDone() ? 'free' : 'story');
   requestAnimationFrame(now => { last = now; requestAnimationFrame(frame); });
 })().catch(error => {
-  $('loadingStatus').textContent = 'The ship could not load. Please reload to try again.';
+  $('modeLabel').textContent = 'The ship could not load. Please reload to try again.';
   console.error(error);
 });
 })();
