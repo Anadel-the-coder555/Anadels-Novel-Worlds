@@ -9,11 +9,17 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Cutlass's boys (they all have walk sheets), and the guests at the ball.
 // face = [x, y, size] of the head as fractions of the portrait (y from the top, size as a share of the height).
 const P = {
-  cutlass:     { name: 'Cutlass', lady: 'Lady Cutlassina', img: 'cutlass.png', size: 1.02, face: [.46, .085, .13], walk: { img: 'cutlass-walk.png', frames: 8, fw: 238, fh: 420, ax: 120, cycle: 130 } },
-  bones:       { name: 'Bones', lady: 'Lady Bonnie', img: 'bones.png', size: .84, face: [.5, .09, .14], walk: { img: 'bones-walk.png', frames: 8, fw: 250, fh: 420, ax: 112, cycle: 148 } },
-  jade:        { name: 'Jade', lady: 'Lady Jadeline', img: 'jade.png', size: 1, face: [.5, .075, .13], walk: { img: 'jade-walk.png', frames: 8, fw: 246, fh: 420, ax: 129, cycle: 156 } },
-  monsoon:     { name: 'Monsoon', lady: 'Lady Monique', img: 'monsoon.png', size: 1, face: [.5, .085, .13], walk: { img: 'monsoon-walk.png', frames: 7, fw: 277, fh: 420, ax: 138, cycle: 163 } },
-  stormcaller: { name: 'Stormcaller', lady: 'Lady Stormella', img: 'stormcaller.png', size: 1, face: [.5, .075, .13], walk: { img: 'stormcaller-walk.png', frames: 8, fw: 246, fh: 420, ax: 108, cycle: 157 } },
+  cutlass:     { name: 'Cutlass', lady: 'Lady Cutlassina', img: 'cutlass.png', size: 1.02, face: [.46, .085, .13], walk: { img: 'cutlass-walk.png', frames: 8, fw: 238, fh: 420, ax: 120, cycle: 130 },
+                 // the boy already in each gown (side view, ax on his neck); these replace the painted-on gown
+                 gown: { img: k => `cutlass-gown-${k}.png`, frames: 8, fw: 270, fh: 420, ax: 149, cycle: 150, wigDrop: 1.5 } },
+  bones:       { name: 'Bones', lady: 'Lady Bonnie', img: 'bones.png', size: .84, face: [.5, .09, .14], walk: { img: 'bones-walk.png', frames: 8, fw: 250, fh: 420, ax: 112, cycle: 148 },
+                 gown: { img: k => `bones-gown-${k}.png`, frames: 8, fw: 255, fh: 420, ax: 141, cycle: 150, wigDrop: 1.5 } },
+  jade:        { name: 'Jade', lady: 'Lady Jadeline', img: 'jade.png', size: 1, face: [.5, .075, .13], walk: { img: 'jade-walk.png', frames: 8, fw: 246, fh: 420, ax: 129, cycle: 156 },
+                 gown: { img: k => `jade-gown-${k}.png`, frames: 8, fw: 270, fh: 420, ax: 149, cycle: 150, wigDrop: 1.5 } },  // his head on Cutlass's gowns
+  monsoon:     { name: 'Monsoon', lady: 'Lady Monique', img: 'monsoon.png', size: 1, face: [.5, .085, .13], walk: { img: 'monsoon-walk.png', frames: 7, fw: 277, fh: 420, ax: 138, cycle: 163 },
+                 gown: { img: k => `monsoon-gown-${k}.png`, frames: 8, fw: 281, fh: 420, ax: 131, cycle: 160, wigDrop: 1.5 } },
+  stormcaller: { name: 'Stormcaller', lady: 'Lady Stormella', img: 'stormcaller.png', size: 1, face: [.5, .075, .13], walk: { img: 'stormcaller-walk.png', frames: 8, fw: 246, fh: 420, ax: 108, cycle: 157 },
+                 gown: { img: k => `stormcaller-gown-${k}.png`, frames: 8, fw: 281, fh: 420, ax: 131, cycle: 160, wigDrop: 1.5 } },  // his head on Monsoon's gowns
   // guests (the royals only have walk sheets; frame 0 is used when they stand)
   blue:    { name: 'The Icy-Blue Prince', size: 1, walk: { img: 'blue-prince.png', frames: 8, fw: 253, fh: 420, ax: 123 } },
   ivory:   { name: 'The Ivory & Gold Prince', size: 1.01, walk: { img: 'ivory-prince.png', frames: 8, fw: 231, fh: 420, ax: 113 } },
@@ -23,10 +29,10 @@ const P = {
 };
 const BOYS = ['cutlass', 'bones', 'jade', 'monsoon', 'stormcaller'];
 const WIGS = [
-  { key: 'tower', name: 'Powdered tower', col: '#f1ebe0' },
-  { key: 'ringlets', name: 'Golden ringlets', col: '#e6bd52' },
+  { key: 'tower', name: 'Powdered tower', col: '#f1ebe0', img: 'wig-powdered.png' },
+  { key: 'ringlets', name: 'Golden ringlets', col: '#e6bd52', img: 'wig-golden.png' },
   { key: 'bun', name: 'Raven bun', col: '#2f2422' },
-  { key: 'curls', name: 'Ginger curls', col: '#c9622b' },
+  { key: 'curls', name: 'Ginger curls', col: '#c9622b', img: 'wig-ginger.png' },
 ];
 const GOWNS = [
   { key: 'rose', name: 'Rose', col: '#e98aa6' },
@@ -34,6 +40,30 @@ const GOWNS = [
   { key: 'mint', name: 'Mint', col: '#86cfb0' },
   { key: 'canary', name: 'Canary', col: '#f2d05a' },
 ];
+// painted wigs, fitted offline to each boy's gown sheets: [scale, x-stretch, then the wig's top-left (x, y) in each of the 8 frames]
+const WIG_FITS = {
+  tower: {
+    cutlass: [0.1953, 1.3, 102, -27, 101, -25, 101, -25, 101, -26, 100, -25, 100, -26, 101, -24, 100, -24],
+    bones: [0.2658, 1.1, 87, -32, 78, -28, 85, -33, 86, -35, 80, -26, 79, -26, 88, -34, 79, -27],
+    jade: [0.2078, 1.3, 100, -30, 98, -28, 97, -26, 98, -28, 96, -25, 94, -27, 97, -26, 95, -24],
+    monsoon: [0.1785, 1.3, 95, -24, 94, -23, 96, -24, 94, -22, 93, -22, 94, -23, 96, -24, 94, -21],
+    stormcaller: [0.1785, 1.3, 94, -23, 92, -23, 93, -21, 93, -23, 90, -20, 92, -23, 94, -22, 91, -20],
+  },
+  ringlets: {
+    cutlass: [0.1607, 1, 119, -8, 118, -6, 118, -6, 118, -7, 117, -6, 117, -7, 118, -5, 117, -5],
+    bones: [0.2037, 1, 101, -2, 92, 2, 99, -3, 100, -5, 94, 4, 93, 4, 102, -4, 93, 3],
+    jade: [0.1911, 1, 112, -12, 110, -10, 109, -8, 110, -10, 108, -7, 106, -9, 109, -8, 107, -6],
+    monsoon: [0.1584, 1, 106, -9, 105, -8, 107, -9, 105, -7, 104, -7, 105, -8, 107, -9, 105, -6],
+    stormcaller: [0.1635, 1, 105, -11, 103, -11, 104, -9, 104, -11, 101, -8, 103, -11, 105, -10, 102, -8],
+  },
+  curls: {
+    cutlass: [0.1557, 1, 122, -7, 121, -5, 121, -5, 121, -6, 120, -5, 120, -6, 121, -4, 120, -4],
+    bones: [0.1968, 1, 102, -2, 93, 2, 100, -3, 101, -5, 95, 4, 94, 4, 103, -4, 94, 3],
+    jade: [0.1745, 1, 117, -11, 115, -9, 114, -7, 115, -9, 113, -6, 111, -8, 114, -7, 112, -5],
+    monsoon: [0.1534, 1, 108, -7, 107, -6, 109, -7, 107, -5, 106, -5, 107, -6, 109, -7, 107, -4],
+    stormcaller: [0.1635, 1, 105, -10, 103, -10, 104, -8, 104, -10, 101, -7, 103, -10, 105, -9, 102, -7],
+  },
+};
 const EXTRAS = [
   { key: 'pearls', name: 'Pearls' },
   { key: 'boa', name: 'Feather boa' },
@@ -349,40 +379,50 @@ function drawBow(x, y, s, col) {
   ctx.beginPath(); ctx.arc(x, y, s * .28, 0, 7); ctx.fill(); ctx.stroke();
 }
 function drawLady(o, sx, footY, h, opts = {}) {
-  const p = P[o.k], moving = !!opts.moving, side = moving && p.walk;
+  const p = P[o.k], moving = !!opts.moving, gownImg = p.gown && p.gown.imgs[look.gown.key];
+  const side = gownImg || (moving && p.walk), wk = gownImg ? p.gown : p.walk;
   const squash = o.curtsy > 0 ? 1 - Math.sin((1 - o.curtsy / .7) * Math.PI) * .12 : 1;
   ctx.fillStyle = 'rgba(40,20,5,.25)'; ctx.beginPath(); ctx.ellipse(sx, footY, h * .27, 7, 0, 0, 7); ctx.fill();
   ctx.save(); ctx.translate(sx, footY); ctx.scale(1, squash);
   if (o.facing < 0) ctx.scale(-1, 1);
-  // the boy himself
+  // the boy himself (already gowned, if he has a sheet for this gown; standing still is the first frame)
+  const fr = side && moving ? Math.floor(o.phase / (wk.cycle / wk.frames)) % wk.frames : 0;
   if (side) {
-    const wk = p.walk, wh = h * wk.fh / (wk.fh - 4), ww = wk.fw * wh / wk.fh, fr = Math.floor(o.phase / (wk.cycle / wk.frames)) % wk.frames;
-    ctx.drawImage(p.walkImg, fr * wk.fw, 0, wk.fw, wk.fh, -wk.ax * wh / wk.fh, -wh + 4 * wh / wk.fh, ww, wh);
+    const wh = h * wk.fh / (wk.fh - 4), ww = wk.fw * wh / wk.fh;
+    ctx.drawImage(gownImg || p.walkImg, fr * wk.fw, 0, wk.fw, wk.fh, -wk.ax * wh / wk.fh, -wh + 4 * wh / wk.fh, ww, wh);
   } else { const img = p.img_, w = img.width * h / img.height; ctx.drawImage(img, -w / 2, -h, w, h); }
   const col = look.gown.col, r = p.face[2] * h * .52;
   let hx = (p.face[0] - .5) * (p.img_.width * h / p.img_.height), hy = -h * (1 - p.face[1]);
-  if (side) { const wk = p.walk, k = h / (wk.fh - 4); hx = (wk.head[0] - wk.ax) * k; hy = -h + wk.head[1] * k + r * 1.05; }
-  // gown: a big bell skirt with lace at the hem
-  const sway = moving && !reduceMotion ? Math.sin(o.phase * .06) * h * .025 : 0, wide = 1 + (o.curtsy > 0 ? .12 : 0);
-  const waist = -h * .5, top = h * .085, hem = -h * .015, flare = h * .27 * wide;
-  const g = ctx.createLinearGradient(-flare, 0, flare, 0); g.addColorStop(0, shade(col, .72)); g.addColorStop(.45, shade(col, 1.08)); g.addColorStop(1, shade(col, .78));
-  ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-top, waist);
-  ctx.bezierCurveTo(-top * 1.5, waist + h * .2, -flare * .95 + sway, hem - h * .14, -flare + sway, hem);
-  ctx.lineTo(flare + sway, hem); ctx.bezierCurveTo(flare * .95 + sway, hem - h * .14, top * 1.5, waist + h * .2, top, waist); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2;
-  [.38, .68].forEach(k => { const y = lerp(waist, hem, k), wx = lerp(top * 1.3, flare, k * k); ctx.beginPath(); ctx.moveTo(-wx + sway * k, y); ctx.quadraticCurveTo(sway * k, y + h * .03, wx + sway * k, y); ctx.stroke(); });
-  ctx.fillStyle = '#fffaf2'; for (let x = -flare; x <= flare; x += h * .04) { ctx.beginPath(); ctx.arc(x + sway, hem, h * .022, 0, Math.PI, true); ctx.fill(); }
-  // bodice and lace collar
-  const bTop = -h * .79, bw = h * .085;
-  ctx.fillStyle = shade(col, .95); ctx.beginPath(); ctx.moveTo(-bw, bTop); ctx.lineTo(bw, bTop); ctx.lineTo(top * .95, waist + 2); ctx.lineTo(0, waist + h * .04); ctx.lineTo(-top * .95, waist + 2); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = shade(col, .7); ctx.lineWidth = 1.2; for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(i * bw * .3, bTop + 4); ctx.lineTo(i * bw * .18, waist); ctx.stroke(); }
-  ctx.fillStyle = '#fffaf2'; for (let x = -bw; x <= bw + 1; x += bw / 3) { ctx.beginPath(); ctx.arc(x, bTop, h * .016, 0, Math.PI); ctx.fill(); }
-  drawBow(0, waist + 2, h * .035, shade(col, .8));
+  if (side) { const k = h / (wk.fh - 4); hx = (wk.head[0] - wk.ax) * k; hy = -h + wk.head[1] * k + r * (wk.wigDrop || 1.05); }
+  const bTop = -h * .79;
+  if (!gownImg) {
+    // gown: a big bell skirt with lace at the hem
+    const sway = moving && !reduceMotion ? Math.sin(o.phase * .06) * h * .025 : 0, wide = 1 + (o.curtsy > 0 ? .12 : 0);
+    const waist = -h * .5, top = h * .085, hem = -h * .015, flare = h * .27 * wide;
+    const g = ctx.createLinearGradient(-flare, 0, flare, 0); g.addColorStop(0, shade(col, .72)); g.addColorStop(.45, shade(col, 1.08)); g.addColorStop(1, shade(col, .78));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-top, waist);
+    ctx.bezierCurveTo(-top * 1.5, waist + h * .2, -flare * .95 + sway, hem - h * .14, -flare + sway, hem);
+    ctx.lineTo(flare + sway, hem); ctx.bezierCurveTo(flare * .95 + sway, hem - h * .14, top * 1.5, waist + h * .2, top, waist); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2;
+    [.38, .68].forEach(k => { const y = lerp(waist, hem, k), wx = lerp(top * 1.3, flare, k * k); ctx.beginPath(); ctx.moveTo(-wx + sway * k, y); ctx.quadraticCurveTo(sway * k, y + h * .03, wx + sway * k, y); ctx.stroke(); });
+    ctx.fillStyle = '#fffaf2'; for (let x = -flare; x <= flare; x += h * .04) { ctx.beginPath(); ctx.arc(x + sway, hem, h * .022, 0, Math.PI, true); ctx.fill(); }
+    // bodice and lace collar
+    const bw = h * .085;
+    ctx.fillStyle = shade(col, .95); ctx.beginPath(); ctx.moveTo(-bw, bTop); ctx.lineTo(bw, bTop); ctx.lineTo(top * .95, waist + 2); ctx.lineTo(0, waist + h * .04); ctx.lineTo(-top * .95, waist + 2); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = shade(col, .7); ctx.lineWidth = 1.2; for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(i * bw * .3, bTop + 4); ctx.lineTo(i * bw * .18, waist); ctx.stroke(); }
+    ctx.fillStyle = '#fffaf2'; for (let x = -bw; x <= bw + 1; x += bw / 3) { ctx.beginPath(); ctx.arc(x, bTop, h * .016, 0, Math.PI); ctx.fill(); }
+    drawBow(0, waist + 2, h * .035, shade(col, .8));
+  }
   if (look.extra.key === 'boa') { ctx.fillStyle = '#ff9ccf'; for (let i = 0; i <= 14; i++) { const k = i / 14, x = lerp(-h * .12, h * .12, k), y = bTop - h * .01 + Math.sin(k * Math.PI) * h * .05; ctx.beginPath(); ctx.arc(x + Math.sin(i * 7) * 2, y + Math.cos(i * 5) * 2, h * .018, 0, 7); ctx.fill(); } }
   // wig (it slips when it's slipping, and goes missing when it falls)
   if (o.wigOff <= 0) {
     ctx.save(); ctx.translate(hx, hy); ctx.rotate(o.wigTilt); ctx.translate(o.wigTilt * r * 1.6, -o.wigTilt * r * .4);
-    drawWig(look.wig.key, look.wig.col, 0, 0, r, true, side ? r * .45 : 0);
+    const fit = gownImg && look.wig.img_ && WIG_FITS[look.wig.key]?.[o.k];
+    if (fit) {
+      // the painted wig, where it was fitted on this frame of his gown sheet
+      const k = h / (wk.fh - 4), img = look.wig.img_, [s, sx] = fit, x = fit[2 + fr * 2], y = fit[3 + fr * 2];
+      ctx.drawImage(img, (x - wk.ax) * k - hx, -h + y * k - hy, img.width * s * sx * k, img.height * s * k);
+    } else drawWig(look.wig.key, look.wig.col, 0, 0, r, true, side ? r * .45 : 0);
     if (look.extra.key === 'bow') drawBow(r * .5, -r * 2.1, r * .7, '#e0446b');
     ctx.restore();
   }
@@ -448,7 +488,12 @@ function render() {
   Object.values(guests).forEach(g => heads.push([g, { x: g.x - camX, y: drawGuest(g) }]));
   const me_ = drawLady(pl, pl.x - camX, FLOOR_Y, ADULT * P[me].size, { moving: pl.moving }); heads.push([pl, me_]);
   // a fallen wig on the floor
-  if (pl.wigOff > 0 && mode === 'play') { ctx.save(); ctx.translate(me_.x + 60, FLOOR_Y - 8); ctx.scale(1, .6); drawWig(look.wig.key, look.wig.col, 0, 0, 16, false); ctx.restore(); }
+  if (pl.wigOff > 0 && mode === 'play') {
+    ctx.save(); ctx.translate(me_.x + 60, FLOOR_Y - 8);
+    if (look.wig.img_) { const img = look.wig.img_, ih = 46, w = img.width * ih / img.height; ctx.rotate(-1.2); ctx.drawImage(img, -w / 2, -ih / 2, w, ih); }
+    else { ctx.scale(1, .6); drawWig(look.wig.key, look.wig.col, 0, 0, 16, false); }
+    ctx.restore();
+  }
   sparks.forEach(s => { ctx.globalAlpha = 1 - s.life / s.max; ctx.fillStyle = s.col; ctx.beginPath(); ctx.arc(s.x - camX, s.y, 3, 0, 7); ctx.fill(); });
   ctx.globalAlpha = 1;
 
@@ -493,9 +538,12 @@ function loadImg(src) { return new Promise((res, rej) => { const i = new Image()
 (async () => {
   resize();
   try { await Promise.race([document.fonts.load('18px "IM Fell English"'), document.fonts.load('18px "Pirata One"'), new Promise(r => setTimeout(r, 1500))]); } catch (e) {}
-  [bg] = await Promise.all([loadImg('ship-dining.jpg'), ...Object.values(P).map(async p => { if (p.img) p.img_ = await loadImg(p.img); if (p.walk) p.walkImg = await loadImg(p.walk.img); })]);
+  [bg] = await Promise.all([loadImg('ship-dining.jpg'), ...Object.values(P).map(async p => {
+    if (p.img) p.img_ = await loadImg(p.img); if (p.walk) p.walkImg = await loadImg(p.walk.img);
+    if (p.gown) { p.gown.imgs = {}; await Promise.all(GOWNS.map(async g => { p.gown.imgs[g.key] = await loadImg(p.gown.img(g.key)); })); p.gown.walkImg = p.gown.imgs[GOWNS[0].key]; }
+  }), ...WIGS.filter(w => w.img).map(async w => { w.img_ = await loadImg(w.img); })]);
   W = bg.width * BG_H / bg.height;
-  BOYS.forEach(k => findHead(P[k].walk));
+  BOYS.forEach(k => { findHead(P[k].walk); if (P[k].gown) findHead(P[k].gown); });
   buildMenus();
   requestAnimationFrame(now => { last = now; requestAnimationFrame(frame); });
 })();
