@@ -121,3 +121,24 @@ button:disabled{opacity:.5;cursor:wait}
 .land.here::before{content:"";position:absolute;left:50%;bottom:calc(100% + 4px);width:14px;height:14px;transform:translateX(-50%) rotate(45deg);background:#d8a446;border:2px solid #fff6df;border-radius:50% 50% 0 50%}
 @media (prefers-reduced-motion:no-preference){.land.here::before{animation:bob 1.6s ease-in-out infinite}}
 @keyframes bob{50%{transform:translateX(-50%) translateY(-4px) rotate(45deg)}}
+
+/* ---- pastimes (picnic, waltz, lantern festival): an intro/results card over the scene, a score pill and Leave ---- */
+body.pastime .controls,body.pastime .legend,body.pastime .touch,body.pastime .hud{display:none!important}
+.pastime-hud{position:absolute;inset:0 0 auto 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:1.6cqw 1.8cqw;pointer-events:none}
+.pastime-hud .mapbtn{pointer-events:auto}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(180deg,rgba(14,12,8,.1),rgba(14,12,8,.5));padding:3cqw}
+.card{background:var(--parchment);color:var(--parchment-ink);max-width:min(64cqw,620px);padding:2.6cqw 3.6cqw 2.8cqw;border-radius:4px;box-shadow:0 0 0 1px rgba(58,42,26,.25),0 0 0 .6cqw rgba(244,231,201,.3),0 30px 60px -20px rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;gap:1.1cqw;text-align:center}
+.card .eyebrow{font-family:var(--ui);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:max(10px,1.15cqw);color:var(--gold-deep);margin:0}
+.card h2{font-family:var(--display);font-weight:400;font-size:max(20px,3.9cqw);line-height:1.05;margin:0;text-wrap:balance}
+.card p{font-family:var(--story);font-size:max(13px,1.85cqw);line-height:1.4;margin:0;max-width:46ch;text-wrap:pretty}
+.card .keys{font-family:var(--ui);font-size:max(11px,1.45cqw);color:#6b5638}
+.card-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:.4cqw}
+.btn{font-family:var(--display);font-size:max(15px,2.1cqw);background:var(--gold);color:#2b1d0e;border:0;border-radius:3px;padding:.45em 1.4em;min-height:44px;cursor:pointer;box-shadow:inset 0 0 0 2px rgba(255,240,200,.45),0 3px 0 var(--gold-deep)}
+.btn:hover{filter:brightness(1.06)}
+.btn.ghost{background:transparent;color:var(--parchment-ink);box-shadow:inset 0 0 0 1px rgba(58,42,26,.4)}
+.btn:focus-visible{outline:3px solid var(--gold-deep);outline-offset:3px}
+.steps{position:absolute;right:2cqw;bottom:2cqw;display:flex;gap:1.2cqw}
+.steps .tbtn{font-size:max(18px,2.6cqw);font-weight:700;cursor:pointer;background:rgba(47,79,143,.55)}
+.steps .tbtn.twirl{background:rgba(176,71,109,.55)}
+.steps .tbtn:active{background:rgba(216,164,70,.7)}
+@container (max-width:560px){.overlay{padding:8px}.card .keys,.card .eyebrow{display:none}.card{gap:6px;padding:10px 14px;max-width:94cqw}.card h2{font-size:18px}.card p{font-size:12px;line-height:1.3}.card-actions{flex-wrap:nowrap;gap:6px;margin-top:0}.btn{font-size:13px;padding:.3em .8em;min-height:36px}}

@@ -181,4 +181,18 @@ setImmediate(() => {
   doorAt(g.VILLA, .95, 0);
   nodes.find(n => Number(n.dataset.place) === g.VILLA).click(); settle(); assert.equal(g.state().place, g.VILLA);
   console.log('Passed the painted Byzantine villa, its atlas link, place button and road home.');
+  // the photographed villa interior, entered through the doors in the arcade
+  doorAt(g.VILLA, .52, 23); assert.equal(get('placeName').textContent, 'Byzantine · Villa Foyer'); assert.equal(get('placeNum').textContent, 'inside the villa');
+  g.render(); assert(draws.some(d => d[0].source === 'byzantine-foyer.jpg'));
+  doorAt(23, .58, 24); doorAt(24, .49, 26); doorAt(26, .05, 24); doorAt(24, .87, 28); doorAt(28, .04, 24);
+  g.enterPlace(24, .5); g.walkOff('right'); settle(); assert.equal(g.state().place, 25);
+  g.walkOff('right'); settle(); assert.equal(get('placeName').textContent, 'Byzantine · Ballroom');
+  doorAt(27, .5, 29); doorAt(29, .5, 27);
+  g.walkOff('left'); settle(); assert.equal(g.state().place, 25);
+  g.walkOff('left'); settle(); assert.equal(g.state().place, 24);
+  g.walkOff('left'); settle(); assert.equal(g.state().place, 23);
+  doorAt(23, .45, g.VILLA);
+  ['byzantine-foyer.jpg', 'byzantine-hall-doors.jpg', 'byzantine-hall-windows.jpg', 'byzantine-library.jpg', 'byzantine-ballroom.jpg', 'byzantine-dining.jpg', 'byzantine-balcony.jpg']
+    .forEach((img, k) => { g.enterPlace(23 + k, .5); g.render(); assert(draws.some(d => d[0].source === img), img); });
+  console.log('Passed the villa interior: foyer, both hallways, library, dining room, ballroom and balcony, and back out.');
 });

@@ -9,7 +9,7 @@ const H = 252;                               // drawn height of everyone (a grow
 const WALK = 190, JUMP = 600, G = 900, ZERO_PUSH = 360, OBJ_G = 700;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// Walk sheets: Arduan and Lucio loop one clean step (4 frames); Day, Lilith and Brayden cover a full cycle.
+// Walk sheets: Arduan and Lucio loop one clean step (4 frames); Day, Lilith, Brayden and Brennan cover a full cycle.
 // `cycle` = px walked per loop of the sheet, matched to the stride at height H.
 const BOYS = {
   arduan: { name: 'Arduan', img: 'arduan-walk.png', frames: 4, fw: 226, fh: 420, ax: 97, cycle: 128 },
@@ -17,9 +17,10 @@ const BOYS = {
   lilith: { name: 'Lilith', img: 'lilith-walk.png', frames: 8, fw: 259, fh: 420, ax: 120, cycle: 274 },   // full 8-frame cycle
   brayden: { name: 'Brayden', img: 'brayden-walk.png', frames: 8, fw: 279, fh: 420, ax: 135, cycle: 291 },   // Lilith's twin
   day:    { name: 'Day',    img: 'day-walk.png',    frames: 4, fw: 230, fh: 420, ax: 104, cycle: 236 },   // Arduan and Lucio's brother; 4 frames span both steps
+  brennan: { name: 'Brennan', img: 'brennan-walk.png', frames: 8, fw: 237, fh: 420, ax: 115, cycle: 253 },   // Arduan's friend
   cat:    { name: 'Cat', img: 'cat-walk.png', frames: 8, fw: 250, fh: 160, ax: 128, cycle: 130, h: 100 },
 };
-const CAST = ['arduan', 'lucio', 'day', 'lilith', 'brayden', 'cat'];
+const CAST = ['arduan', 'lucio', 'day', 'lilith', 'brayden', 'brennan', 'cat'];
 // Surfaces, in the order you meet them walking "forward" round the room.
 const SURF = {
   floor: { down: [0, 1], ang: 0, t: [1, 0] },
@@ -83,6 +84,10 @@ const keyState = { arrows: { up: 0, down: 0, left: 0, right: 0 }, wasd: { up: 0,
 let ctrl = { arrows: 'arduan', wasd: 'lucio' };
 const cup = new GravityCup();
 let cupPlayer = 'arduan', resultShown = false;
+// the Gravity Thief adventure: who's talking, the purple streak on the street, and the runaway cat
+const adv = new Adventure();
+const VOICE = { Arduan: '#7fd3ff', Lucio: '#9cf29c', Day: '#ffd36b', Lilith: '#ff8fd0', Brayden: '#b48cff', Brennan: '#ffa36b' };
+let talk = null, orb = null, fleeing = false, catchCool = 0;
 
 // ---- sound ----
 let ac = null, muted = false;
@@ -143,7 +148,7 @@ function updateBoy(b, k, pressed, dt) {
     b.moving = !!dir;
     if (dir) {
       b.carry = dir; b.facing = dir;
-      const step = WALK * dt;
+      const step = WALK * (b.speed || 1) * dt;
       b.p[0] += s.t[0] * dir * step; b.p[1] += s.t[1] * dir * step; b.phase += step;
       if (b.p[0] > RX || b.p[0] < LX || b.p[1] > FY || b.p[1] < CY) corner(b, dir);
     }
@@ -208,6 +213,11 @@ const MAP = { ArrowUp: ['arrows', 'up'], ArrowDown: ['arrows', 'down'], ArrowLef
 const fresh = { arrows: false, wasd: false };
 addEventListener('keydown', e => {
   if (e.key === 'Escape' && cup.active) { e.preventDefault(); pauseMatch(); return; }
+  if (talk) {
+    if (['e', 'E', 'Enter', ' '].includes(e.key) && !e.repeat && !e.target.closest?.('button')) { e.preventDefault(); audio(); nextLine(); }
+    else if (MAP[e.key] || e.key === 'Tab') e.preventDefault();
+    return;
+  }
   const m = MAP[e.key];
   if (m) { e.preventDefault(); audio(); if (!keyState[m[0]][m[1]]) fresh[m[0]] = true; keyState[m[0]][m[1]] = 1; return; }
   if (e.key === 'f' || e.key === 'F') { if (!e.repeat) flip(); }
@@ -227,14 +237,25 @@ $('zeroBtn').addEventListener('click', () => { audio(); toggleZero(); });
 $('swapBtn').addEventListener('click', () => { audio(); swap(); });
 $('catBtn').addEventListener('click', () => { audio(); selectCharacter('cat'); });
 $('doorBtn').addEventListener('click', () => { audio(); goThrough(); });
+$('talk').addEventListener('click', () => { audio(); nextLine(); });
+$('restartBtn').addEventListener('click', () => {
+  if (!room || cup.active || fadeDir) return;
+  audio(); adv.reset(); heard.clear(); orb = null; fleeing = false;
+  if (talk) { talk = null; $('talk').hidden = true; }
+  pendingTo = 'arduan'; fadeDir = 1; banner('The adventure begins again…');
+});
 function swap() {
   if (!room || cup.active) return;
   const i = (CAST.indexOf(ctrl.arrows) + 1) % CAST.length;
   selectCharacter(CAST[i]);
 }
 function selectCharacter(character) {
-  if (!room || cup.active) return;
-  const i = CAST.indexOf(character);
+  if (!room || cup.active || talk) return;
+  let i = CAST.indexOf(character);
+  if (fleeing && (CAST[i] === 'cat' || CAST[(i + 1) % CAST.length] === 'cat')) {
+    if (character === 'cat') { banner('The cat is NOT letting you drive right now.'); return; }
+    i = 0;
+  }
   ctrl = { arrows: CAST[i], wasd: CAST[(i + 1) % CAST.length] };
   clearKeys();
   boys[ctrl.arrows].idle = 0; boys[ctrl.wasd].idle = 0;
@@ -247,7 +268,9 @@ function setRoom(k) {
 }
 function goThrough() {
   if (cup.active) return;
-  if (!doorNear || fadeDir) return;
+  if (!doorNear || fadeDir || talk) return;
+  const locked = adv.lock(roomK, doorNear.to);
+  if (locked) { banner(locked); tone([220, 196], .2, 'square', .03, .1); return; }
   pendingTo = doorNear.to; fadeDir = 1; tone([330, 440, 660], .3, 'sine', .04, .07);
 }
 function arrive() {
@@ -260,9 +283,10 @@ function arrive() {
   viewRot = 0; camX = clamp(dx - 120, 0, worldW - VW);
   spawnObjects(); spawnStars();
   banner(ROOMS[roomK].name);
+  if (adv.step.type === 'go' && adv.step.to === roomK) stepDone(); else storyHere();
 }
 function flip() {
-  if (!room) return;
+  if (!room || talk) return;
   if (cup.active && !cup.running) return;
   if (cup.running && cup.event === 'rings') { banner('Orbit Rush stays in Zero-G — steer with the arrows!'); return; }
   if (boys[cupPlayer]?.mode === 'air') cup.skill('flip');
@@ -282,7 +306,7 @@ function flip() {
   say(pick(Object.values(boys)), QUIPS.flip);
 }
 function toggleZero() {
-  if (!room) return;
+  if (!room || talk) return;
   if (cup.active && (!cup.running || cup.event === 'rings')) return;
   if (boys[cupPlayer]?.mode === 'air') cup.skill('zero-g');
   zeroG = !zeroG;
@@ -349,6 +373,11 @@ function drawObject(o) {
 // ---- stars to collect: on the ceiling, on the walls and in mid-air ----
 function spawnStars() {
   const W = RX - LX;
+  // during the adventure, rooms hold the story's gravity shards instead of stars
+  if (!adv.done) {
+    stars = (adv.shardsIn(roomK) || []).map(q => ({ x: LX + 110 + (W - 220) * q.fx, y: q.y, ph: q.i, got: false, shard: q.i }));
+    syncQuest(); return;
+  }
   stars = [
     [LX + W * .2, CY + 120], [LX + W * .5, CY + 120], [LX + W * .78, CY + 120],      // ceiling
     [LX + 125, VH * .45], [RX - 125, VH * .4],                                      // walls
@@ -363,18 +392,151 @@ function updateStars(dt) {
     if (s.got) return;
     Object.values(boys).forEach(b => {
       const c = bodyCenter(b);
-      if (!s.got && Math.hypot(c[0] - s.x, c[1] - s.y) < 95) {
-        s.got = true; got++; $('stars').textContent = got;
-        tone([880, 1175, 1568], .3, 'triangle', .05, .05); say(b, QUIPS.star, .5);
-        for (let i = 0; i < 16; i++) { const a = Math.random() * 7, v = 60 + Math.random() * 140; sparkles.push({ x: s.x, y: s.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0 }); }
-        if (got === stars.length) { banner('All the stars! New ones incoming…'); tone([523, 659, 784, 1047, 1319], .6, 'triangle', .05, .1); setTimeout(() => { if (!cup.active) spawnStars(); }, 2500); }
+      if (s.got || Math.hypot(c[0] - s.x, c[1] - s.y) >= 95) return;
+      if (s.shard !== undefined) {
+        if (b.k !== ctrl.arrows && b.k !== ctrl.wasd) return;   // only the people you're playing can take a shard
+        s.got = true; burst(s.x, s.y, '#c9a7ff');
+        tone([523, 784, 1047, 1568], .45, 'triangle', .05, .07); say(b, ['Got it!', 'It’s humming!', 'Shard secured.'], .7);
+        banner(`Gravity shard ${adv.found + 1} of ${adv.total}!`);
+        if (adv.collect(s.shard)) stepDone(); else syncQuest();
+        return;
       }
+      s.got = true; got++; $('stars').textContent = got;
+      tone([880, 1175, 1568], .3, 'triangle', .05, .05); say(b, QUIPS.star, .5);
+      burst(s.x, s.y, '#ffe28a');
+      if (got === stars.length) { banner('All the stars! New ones incoming…'); tone([523, 659, 784, 1047, 1319], .6, 'triangle', .05, .1); setTimeout(() => { if (!cup.active) spawnStars(); }, 2500); }
     });
   });
   sparkles.forEach(p => { p.life += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= .97; p.vy *= .97; });
   sparkles = sparkles.filter(p => p.life < .8);
 }
+function burst(x, y, col) { for (let i = 0; i < 18; i++) { const a = Math.random() * 7, v = 60 + Math.random() * 160; sparkles.push({ x, y, col, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0 }); } }
 function starPath(x, y, r, rot) { ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = rot + i * Math.PI / 5 - Math.PI / 2, q = i % 2 ? r * .45 : r; ctx.lineTo(x + Math.cos(a) * q, y + Math.sin(a) * q); } ctx.closePath(); }
+
+// ---- the Gravity Thief adventure ----
+const heard = new Set();
+function storyHere() {
+  // play the current step's scene once you're where it happens, then set up the room for it
+  const s = adv.step; if (cup.active) return;
+  const here = s.type === 'go' || s.type === 'end' || s.room === roomK;
+  if (here && !heard.has(adv.i)) { heard.add(adv.i); startTalk(s.say, s.type === 'end' ? finishAdventure : null); }
+  orb = s.type === 'chase' && roomK === 'street' ? { x: LX + (RX - LX) * s.path[0], y: 300, wp: 0, gone: 0 } : null;
+  fleeing = s.type === 'catch' && roomK === 'atrium';
+  boys.cat.speed = fleeing ? .85 : 1;
+  if (fleeing && (ctrl.arrows === 'cat' || ctrl.wasd === 'cat')) selectCharacter('arduan');
+  syncQuest();
+}
+function stepDone() {
+  adv.next(); orb = null; fleeing = false; boys.cat.speed = 1;
+  spawnStars(); storyHere();
+}
+function finishAdventure() {
+  spawnStars(); syncQuest();
+  banner('The End… for now. Free roam unlocked!');
+  tone([523, 659, 784, 1047, 1319, 1568], .7, 'triangle', .05, .1);
+}
+function syncQuest() {
+  const story = !adv.done && !cup.active;
+  $('goal').hidden = !story;
+  if (story) {
+    const s = adv.step;
+    $('goalText').textContent = s.type === 'catch' ? `${s.goal} (${adv.got.length}/${s.count})` : s.goal;
+    $('starLabel').textContent = 'Shards'; $('stars').textContent = adv.found; $('starTotal').textContent = adv.total;
+  } else if (!cup.active) {
+    $('starLabel').textContent = 'Stars'; $('stars').textContent = got; $('starTotal').textContent = stars.length;
+  }
+  $('restartBtn').hidden = adv.i === 0;
+}
+function startTalk(lines, after) {
+  if (!lines || !lines.length) { if (after) after(); return; }
+  talk = { lines, i: 0, shown: 0, after }; clearKeys(); showLine();
+  $('talk').hidden = false; tone([392, 523], .15, 'sine', .03, .06);
+}
+function showLine() {
+  const [who] = talk.lines[talk.i];
+  $('talkWho').textContent = who; $('talkWho').style.color = VOICE[who] || '#fff';
+  $('talkText').textContent = ''; talk.shown = 0;
+}
+function nextLine() {
+  if (!talk) return;
+  const text = talk.lines[talk.i][1];
+  if (talk.shown < text.length) { talk.shown = text.length; $('talkText').textContent = text; return; }   // first press finishes the line
+  talk.i++;
+  if (talk.i < talk.lines.length) { showLine(); tone([523], .06, 'sine', .02); return; }
+  const after = talk.after; talk = null; $('talk').hidden = true;
+  if (after) after();
+}
+function updateTalk(dt) {
+  const text = talk.lines[talk.i][1];
+  if (talk.shown >= text.length) return;
+  talk.shown = reduceMotion ? text.length : Math.min(text.length, talk.shown + dt * 55);
+  $('talkText').textContent = text.slice(0, Math.floor(talk.shown));
+}
+// the purple streak on the street keeps just ahead of you, then vanishes into the Academy road
+function updateOrb(dt) {
+  if (!orb) return;
+  const path = adv.step.path, tx = LX + (RX - LX) * path[orb.wp], me = bodyCenter(boys[ctrl.arrows]);
+  orb.x += clamp(tx - orb.x, -700 * dt, 700 * dt); orb.y = 290 + Math.sin(t * 3) * 40;
+  if (Math.random() < .5) sparkles.push({ x: orb.x, y: orb.y, col: '#c9a7ff', vx: (Math.random() - .5) * 80, vy: (Math.random() - .5) * 80, life: .3 });
+  if (Math.abs(orb.x - tx) > 4 || Math.hypot(me[0] - orb.x, me[1] - orb.y) > 300) return;
+  if (orb.wp < path.length - 1) { orb.wp++; whoosh(true); if (orb.wp === 1) say(boys[ctrl.arrows], ['It’s fast!', 'Come back here!', 'Don’t lose it!']); }
+  else { burst(orb.x, orb.y, '#c9a7ff'); burst(orb.x, orb.y, '#81fff0'); tone([784, 523, 330], .4, 'sawtooth', .03, .08); orb = null; stepDone(); }
+}
+function drawOrb() {
+  if (!orb) return;
+  const x = orb.x - camX, y = orb.y, g = ctx.createRadialGradient(x, y, 0, x, y, 70);
+  g.addColorStop(0, 'rgba(240,220,255,.95)'); g.addColorStop(.3, 'rgba(170,110,255,.6)'); g.addColorStop(1, 'rgba(120,60,220,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 70, 0, 7); ctx.fill();
+}
+// the cat runs from whoever the arrows drive: along its surface, leaping off when you get close
+function fleeAI(b, dt) {
+  const c = bodyCenter(b), p = bodyCenter(boys[ctrl.arrows]), away = [c[0] - p[0], c[1] - p[1]], d = Math.hypot(...away);
+  const k = [0, 0]; let pressed = false;
+  if (b.mode === 'surf') {
+    b.picked = false;
+    const s = SURF[b.surf];
+    if (d < 520) b.aiDir = Math.sign(dot(away, s.t)) || b.aiDir || 1;
+    if (d < 230 && Math.random() < dt * 1.2) { k[0] = -s.down[0]; k[1] = -s.down[1]; pressed = true; }
+    else { k[0] = s.t[0] * b.aiDir; k[1] = s.t[1] * b.aiDir; }
+  } else if (!zeroG && !b.picked) {
+    b.picked = true; pressed = true;
+    const d2 = Math.abs(away[0]) > Math.abs(away[1]) ? [Math.sign(away[0]), 0] : [0, Math.sign(away[1]) || -1];
+    k[0] = d2[0]; k[1] = d2[1];
+  }
+  return [k, pressed];
+}
+function updateCatch(dt) {
+  if (!fleeing) return;
+  catchCool = Math.max(0, catchCool - dt);
+  const cat = boys.cat, cc = bodyCenter(cat);
+  if (Math.random() < .4) sparkles.push({ x: cc[0], y: cc[1], col: '#c9a7ff', vx: (Math.random() - .5) * 60, vy: (Math.random() - .5) * 60, life: .2 });
+  if (catchCool) return;
+  const catcher = [boys[ctrl.arrows], boys[ctrl.wasd]].find(b => { const c = bodyCenter(b); return Math.hypot(c[0] - cc[0], c[1] - cc[1]) < 95; });
+  if (!catcher) return;
+  catchCool = 2; burst(cc[0], cc[1], '#c9a7ff');
+  banner(`Gravity shard ${adv.found + 1} of ${adv.total}!`);
+  if (adv.collect(0)) { tone([523, 784, 1047, 1568], .5, 'triangle', .05, .07); stepDone(); return; }
+  say(catcher, ['Gotcha! …Wait, no.', 'It slipped right out!', 'It wriggled free!']);
+  // the cat kicks off and the room spins as it escapes
+  cat.mode = 'air'; cat.v = [(Math.random() - .5) * 700, -500]; cat.g = 'floor';
+  flip(); syncQuest();
+}
+function drawCatGlow() {
+  if (!fleeing) return;
+  const [x, y] = bodyCenter(boys.cat), g = ctx.createRadialGradient(x - camX, y, 0, x - camX, y, 110);
+  g.addColorStop(0, `rgba(190,130,255,${.45 + .15 * Math.sin(t * 6)})`); g.addColorStop(1, 'rgba(150,90,255,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x - camX, y, 110, 0, 7); ctx.fill();
+}
+function drawShard(x, y, rot) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, 46);
+  g.addColorStop(0, 'rgba(210,180,255,.85)'); g.addColorStop(1, 'rgba(160,110,255,0)');
+  ctx.fillStyle = g; ctx.fillRect(x - 46, y - 46, 92, 92);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(rot) * .3);
+  ctx.beginPath(); ctx.moveTo(0, -22); ctx.lineTo(11, -4); ctx.lineTo(6, 20); ctx.lineTo(-7, 18); ctx.lineTo(-12, -2); ctx.closePath();
+  ctx.fillStyle = '#b48cff'; ctx.fill(); ctx.strokeStyle = '#efe2ff'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -22); ctx.lineTo(-2, 19); ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.stroke();
+  ctx.restore();
+}
 
 // ---- main update ----
 function update(dt) {
@@ -387,6 +549,7 @@ function update(dt) {
     if (fadeDir === 1 && fade === 1) { arrive(); fadeDir = -1; }
     else if (fadeDir === -1 && fade === 0) fadeDir = 0;
   }
+  if (talk) { updateTalk(dt); clearKeys(); t += dt; return; }   // the world holds still while people talk
   {
     const a = boys[ctrl.arrows]; doorNear = null;
     if (!cup.active && !zeroG && a.mode === 'surf' && a.surf === 'floor')
@@ -402,8 +565,9 @@ function update(dt) {
     fresh[src] = false;
   });
   // whoever has no keys wanders about on their own
-  CAST.filter(k => k !== ctrl.arrows && k !== ctrl.wasd).forEach(k => { const b = boys[k]; b.idle = 99; const [ak, ap] = autopilot(b, dt); updateBoy(b, ak, ap, dt); });
+  CAST.filter(k => k !== ctrl.arrows && k !== ctrl.wasd).forEach(k => { const b = boys[k]; b.idle = 99; const [ak, ap] = fleeing && k === 'cat' ? fleeAI(b, dt) : autopilot(b, dt); updateBoy(b, ak, ap, dt); });
   updateObjects(dt); updateStars(dt);
+  if (!cup.active) { updateOrb(dt); updateCatch(dt); }
   if (cup.running) updateMatchTarget();
   const a = boys[ctrl.arrows], b = boys[ctrl.wasd];
   const focus = !cup.active && Math.abs(a.p[0] - b.p[0]) < 700 && b.idle < 6 ? (a.p[0] + b.p[0]) / 2 : a.p[0];
@@ -491,13 +655,15 @@ function render() {
 
   (cup.active ? [] : stars).forEach(s => {
     if (s.got) return; const x = s.x - camX, y = s.y + Math.sin(t * 2 + s.ph) * 6; if (x < -40 || x > VW + 40) return;
+    if (s.shard !== undefined) { drawShard(x, y, t * 2 + s.ph); return; }
     const g = ctx.createRadialGradient(x, y, 0, x, y, 38); g.addColorStop(0, 'rgba(255,230,140,.7)'); g.addColorStop(1, 'rgba(255,230,140,0)');
     ctx.fillStyle = g; ctx.fillRect(x - 38, y - 38, 76, 76);
     starPath(x, y, 16, t * 1.5 + s.ph); ctx.fillStyle = '#ffd25e'; ctx.fill(); ctx.strokeStyle = '#e8a52c'; ctx.lineWidth = 2; ctx.stroke();
   });
   objects.forEach(drawObject);
+  if (!cup.active) { drawOrb(); drawCatGlow(); }
   Object.values(boys).forEach(drawBoy);
-  sparkles.forEach(p => { ctx.globalAlpha = 1 - p.life / .8; ctx.fillStyle = '#ffe28a'; ctx.fillRect(p.x - camX - 2, p.y - 2, 4, 4); });
+  sparkles.forEach(p => { ctx.globalAlpha = 1 - p.life / .8; ctx.fillStyle = p.col; ctx.fillRect(p.x - camX - 2, p.y - 2, 4, 4); });
   ctx.globalAlpha = 1;
   ctx.restore();
   drawLabels();
@@ -506,11 +672,23 @@ function render() {
     ctx.font = '600 52px Fredoka, sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
     ctx.fillText(cup.paused ? 'Paused' : String(Math.ceil(cup.countdown)), VW / 2, VH / 2);
   }
-  if (doorNear && !fadeDir) doorSign(doorNear.x * worldW, doorLabel(doorNear));
+  if (doorNear && !fadeDir && !talk) doorSign(doorNear.x * worldW, doorLabel(doorNear), adv.lock(roomK, doorNear.to));
+  if (!cup.active && !talk) offscreenHint();
   if (fade > 0) { ctx.fillStyle = `rgba(240,244,236,${fade})`; ctx.fillRect(0, 0, VW, VH); }
 }
-function doorSign(wx, to) {
-  const p = toScreen(wx, FY - H - 40), label = '▲ ' + to, hint = isTouch() ? 'tap Go through the door' : 'press E';
+// arrows at the screen edge point to the shard, streak or cat you're after
+function offscreenHint() {
+  const aims = fleeing ? [bodyCenter(boys.cat)] : orb ? [[orb.x, orb.y]] : stars.filter(s => s.shard !== undefined && !s.got).map(s => [s.x, s.y]);
+  ctx.font = '700 15px "Fredoka", sans-serif'; ctx.textBaseline = 'middle';
+  aims.forEach(([wx, wy]) => {
+    const [x, y] = toScreen(wx, wy); if (x > 0 && x < VW) return;
+    const left = x <= 0, label = fleeing ? 'CAT' : orb ? 'THIEF' : 'SHARD';
+    ctx.textAlign = left ? 'left' : 'right'; ctx.fillStyle = 'rgba(40,20,80,.7)'; rr(left ? 10 : VW - 110, clamp(y, 90, VH - 60) - 16, 100, 32, 16); ctx.fill();
+    ctx.fillStyle = '#e4d4ff'; ctx.fillText(left ? `◀ ${label}` : `${label} ▶`, left ? 24 : VW - 24, clamp(y, 90, VH - 60));
+  });
+}
+function doorSign(wx, to, locked) {
+  const p = toScreen(wx, FY - H - 40), label = (locked ? '🔒 ' : '▲ ') + to, hint = locked || (isTouch() ? 'tap Go through the door' : 'press E');
   ctx.font = '600 18px "Fredoka", sans-serif';
   const w = ctx.measureText(label).width + 30, bx = clamp(p[0] - w / 2, 10, VW - w - 10), by = clamp(p[1] - 40, 50, VH - 70);
   ctx.fillStyle = 'rgba(30,50,40,.2)'; rr(bx + 2, by + 3, w, 48, 14); ctx.fill();
@@ -545,7 +723,9 @@ function setupMatch() {
 }
 function startMatch(event, tournament) {
   if (!room || fadeDir) return;
-  cupPlayer = ctrl.arrows; cup.start(event, tournament); setupMatch();
+  if (talk) { talk = null; $('talk').hidden = true; }
+  orb = null; fleeing = false;
+  cupPlayer = ctrl.arrows; cup.start(event, tournament); setupMatch(); syncQuest();
 }
 function newMatchTarget() {
   const i = cup.targetIndex, b = boys[cupPlayer], span = RX - LX;
@@ -601,7 +781,8 @@ function exitMatch() {
   $('doorBtn').disabled = $('swapBtn').disabled = $('catBtn').disabled = false; $('matchPause').disabled = false;
   zeroG = false; RG = [0, 1]; $('zeroBtn').setAttribute('aria-pressed', false); $('gravArrow').textContent = '↓';
   CAST.forEach((k, i) => { boys[k] = makeBoy(k, clamp(320 + i * 160, LX + 40, RX - 40)); });
-  viewRot = 0; spawnObjects(); spawnStars(); banner('Free roam · Academy Atrium');
+  viewRot = 0; spawnObjects(); spawnStars(); banner('Back in the Academy Atrium');
+  storyHere();
 }
 function drawMatchTarget() {
   const target = cup.target; if (!target) return;
@@ -644,10 +825,10 @@ function loadImg(src) { return new Promise((res, rej) => { const i = new Image()
     banner(`${error.message} — refresh to try again.`); return;
   }
   setRoom('arduan');
-  boys.arduan = makeBoy('arduan', 320); boys.lucio = makeBoy('lucio', 560); boys.lucio.facing = -1; boys.lilith = makeBoy('lilith', 900); boys.brayden = makeBoy('brayden', 1160); boys.brayden.facing = -1; boys.day = makeBoy('day', 440);
+  boys.arduan = makeBoy('arduan', 320); boys.lucio = makeBoy('lucio', 560); boys.lucio.facing = -1; boys.lilith = makeBoy('lilith', 900); boys.brayden = makeBoy('brayden', 1160); boys.brayden.facing = -1; boys.day = makeBoy('day', 440); boys.brennan = makeBoy('brennan', 1020);
   boys.cat = makeBoy('cat', 740);
   boys.arduan.idle = 0; boys.lucio.idle = 0;
-  spawnObjects(); spawnStars();
+  spawnObjects(); spawnStars(); storyHere();
   $('cupStart').disabled = false;
   $('catBtn').disabled = false;
   document.querySelectorAll('[data-event]').forEach(b => b.disabled = false);

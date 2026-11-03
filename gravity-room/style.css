@@ -68,3 +68,11 @@ button:disabled{opacity:.5;cursor:wait}
 .match-stats>span{font-variant-numeric:tabular-nums}.competition #matchGoal{margin:12px 0 0;font-weight:800;color:#57409b}
 #matchResults{margin:14px 0;line-height:1.6}#matchResults table{width:100%;border-collapse:collapse;margin-top:8px}#matchResults th,#matchResults td{text-align:left;padding:6px 10px;border-bottom:1px solid #ddd5ef}
 @media(max-width:640px){.events{grid-template-columns:1fr}.event{min-height:0}.cup,.competition{padding:12px}}
+/* the Gravity Thief adventure: quest line and story box */
+.goal{position:absolute;left:50%;top:1.6cqw;transform:translateX(-50%);display:flex;align-items:baseline;gap:.6em;max-width:52%;background:rgba(36,22,74,.86);color:#efe6ff;font:600 max(11px,1.4cqw)/1.35 var(--ui);padding:.4em 1em;border-radius:14px;box-shadow:0 4px 18px rgba(30,10,70,.35),0 0 0 1px rgba(201,167,255,.45);pointer-events:none}
+.goal b{font:700 1em var(--display);color:#c9a7ff;text-transform:uppercase;letter-spacing:.06em}
+.talk{position:absolute;left:50%;bottom:2cqw;transform:translateX(-50%);width:min(88%,760px);background:rgba(22,16,44,.93);color:#f4f0ff;border-radius:16px;padding:1em 1.3em .8em;box-shadow:0 14px 40px rgba(10,5,30,.5),0 0 0 2px rgba(201,167,255,.5);font-size:max(14px,1.8cqw);cursor:pointer}
+.talk b{font:700 1.1em var(--display)}
+.talk p{margin:.25em 0 .2em;line-height:1.45;min-height:2.9em}
+.talk-next{display:block;text-align:right;font:800 .7em var(--ui);color:#c9a7ff;letter-spacing:.06em;text-transform:uppercase}
+@media (max-width:640px){.goal{max-width:70%;top:auto;bottom:1.6cqw}}

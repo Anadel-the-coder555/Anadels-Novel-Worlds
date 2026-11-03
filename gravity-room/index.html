@@ -15,17 +15,8 @@
   <div class="wrap">
     <header>
       <h1>Gravity Thief</h1>
-      <p class="sub">Arduan, Lucio, Day, Lilith, Brayden and the cat share a room that’s stopped obeying gravity. Walk up the walls, across the ceiling, and float.</p>
+      <p class="sub">Someone is stealing Celedonia’s gravity. Wake up in a room that’s upside down, then walk the walls, float through Zero-G and flip whole rooms to track down the Gravity Thief.</p>
     </header>
-    <section class="cup" id="cupMenu" aria-labelledby="cupTitle">
-      <div class="cup-heading"><div><h2 id="cupTitle">Gravity Cup</h2><p>Three events. One champion. Make the walls your runway.</p></div><button class="act" id="cupStart" disabled>Enter tournament</button></div>
-      <div class="events">
-        <button class="event" data-event="rings" disabled><b>01 · Orbit Rush</b><span>Steer through neon rings in Zero-G. Chain pickups before your combo expires.</span></button>
-        <button class="event" data-event="parkour" disabled><b>02 · Surface Switch</b><span>Race between marked landing zones on the floor, ceiling and walls.</span></button>
-        <button class="event" data-event="style" disabled><b>03 · Air Freestyle</b><span>Jump, redirect gravity, then stick a new surface. Mix skills to build your multiplier.</span></button>
-      </div>
-      <p class="cup-note">Click an event to practice. Tournament entry uses the character selected below. Rival marks are preset score targets.</p>
-    </section>
     <section class="competition" id="competition" hidden aria-label="Tournament status">
       <div class="match-stats"><b id="matchTitle"></b><span>Time <b id="matchTime">60</b></span><span>Score <b id="matchScore">0</b></span><span id="matchCombo">Combo ×1</span><button class="act" id="matchPause">Pause</button><button class="act" id="matchExit">Leave event</button></div>
       <p id="matchGoal" role="status"></p>
@@ -34,16 +25,20 @@
     </section>
 
     <div class="stage" id="stage">
-      <canvas id="game" aria-label="Arduan, Lucio, Day, Lilith, Brayden and the cat walking on the walls and ceiling of a floating bedroom"></canvas>
+      <canvas id="game" aria-label="Arduan, Lucio, Day, Lilith, Brayden, Brennan and the cat walking on the walls and ceiling of a floating bedroom"></canvas>
 
       <div class="hud">
-        <div class="pill" id="starPill">Stars <b id="stars">0</b>/<span id="starTotal">10</span></div>
+        <div class="pill" id="starPill"><span id="starLabel">Stars</span> <b id="stars">0</b>/<span id="starTotal">10</span></div>
         <div class="right">
           <div class="pill" id="gravPill">Gravity <b id="gravArrow">↓</b></div>
           <button class="pill mute" id="mute" type="button" aria-pressed="false">Sound on</button>
         </div>
       </div>
+      <div class="goal" id="goal" hidden><b>Quest</b><span id="goalText"></span></div>
       <div class="banner" id="banner" aria-live="polite"></div>
+      <div class="talk" id="talk" hidden role="dialog" aria-live="polite" aria-label="Story">
+        <b id="talkWho"></b><p id="talkText"></p><span class="talk-next">Space / E ▶</span>
+      </div>
 
       <div class="touch" id="touch">
         <div class="pad">
@@ -61,21 +56,35 @@
       <button class="act" id="doorBtn" type="button"><span>Go through the door</span><kbd>E</kbd></button>
       <button class="act" id="swapBtn" type="button"><span id="swapLabel">Arrows: Arduan</span><kbd>Tab</kbd></button>
       <button class="act" id="catBtn" type="button" disabled>Play as Cat</button>
+      <button class="act" id="restartBtn" type="button" hidden>Restart adventure</button>
     </div>
 
     <ul class="legend">
+      <li><b>Story</b> press <kbd>Space</kbd> or <kbd>E</kbd> (or tap the box) to keep the conversation going</li>
+      <li>Follow the <b>Quest</b> at the top of the room. Edge arrows point to shards that are off-screen</li>
       <li><b>Arduan</b> <kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd></li>
       <li><b>Lucio</b> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></li>
       <li><kbd>Tab</kbd> changes who you control. Everyone else wanders</li>
-      <li>Choose <b>Play as Cat</b> to wall-walk, float and enter the Gravity Cup as the cat</li>
+      <li>Choose <b>Play as Cat</b> to wall-walk and float as the cat</li>
       <li>Walk along any surface. Walk into a corner to climb onto the wall</li>
       <li>Press away from the surface to jump. In mid-air, press a direction to fall that way</li>
       <li>Stand by a door and press <kbd>E</kbd> to go through: bedrooms, the living room, the street and the Academy</li>
       <li>Leave someone alone and they wander off by themselves</li>
     </ul>
+    <section class="cup" id="cupMenu" aria-labelledby="cupTitle">
+      <div class="cup-heading"><div><h2 id="cupTitle">Side quest · Academy Gravity Cup</h2><p>Need a break from the chase? Three events in the Academy atrium. Your story progress is saved.</p></div><button class="act" id="cupStart" disabled>Enter tournament</button></div>
+      <div class="events">
+        <button class="event" data-event="rings" disabled><b>01 · Orbit Rush</b><span>Steer through neon rings in Zero-G. Chain pickups before your combo expires.</span></button>
+        <button class="event" data-event="parkour" disabled><b>02 · Surface Switch</b><span>Race between marked landing zones on the floor, ceiling and walls.</span></button>
+        <button class="event" data-event="style" disabled><b>03 · Air Freestyle</b><span>Jump, redirect gravity, then stick a new surface. Mix skills to build your multiplier.</span></button>
+      </div>
+      <p class="cup-note">Click an event to practice. Tournament entry uses the character selected below. Rival marks are preset score targets.</p>
+    </section>
+
   </div>
 
   <script src="tournament.js"></script>
+  <script src="adventure.js"></script>
   <script src="game.js"></script>
 </body>
 </html>

@@ -150,9 +150,45 @@ const PLACES = [
       [.33, 'play', 'villa-animals', 'Care for the animals', 'Peacocks, goats, ducklings, a lamb and a bunny live on the villa farm.'],
       [.6, 'play', 'villa-dance', 'Dance in the courtyard', 'Musicians play beneath the lanterns in the marble courtyard.'],
       [.78, 'play', 'villa-piano', 'Watch Cashamir play piano', 'Cashamir, the icy-blue prince, is at the piano in the music room.'],
+      [.52, 23, .46, 'Step inside the villa', 'Through the arcade, tall glass doors open into the villa’s golden foyer.'],
       [.95, 0, .1, 'Take the road home', 'The road home leads back to Castle Valley and Ember’s land.']] },
+  // ---- inside Cashamir's villa: the photographed rooms, entered through the doors in the arcade ----
+  { name: 'Byzantine · Villa Foyer', inside: 'byzantine', area: 'inside the villa', img: 'byzantine-foyer.jpg', yoff: -30, ground: 520, walk: [0, .64], scale: 1.15, ambient: 'motes',   // stops at the foot of the staircase
+    spots: [[.08, 'A landscape painting and a vase of white lilies on a gilded console table.'], [.32, 'An olive tree in a stone urn, beside the arches.'],
+      [.45, 'A marble compass rose is set into the floor beneath the crystal chandelier.'], [.58, 'Lamplit arches lead deeper into the villa.'],
+      [.62, 'A sweeping marble staircase curves up to the gallery, and tall windows fill the hall with mountain sunlight.']],
+    doors: [[.45, 22, .52, 'Out to the villa courtyard', 'The glass doors open back out onto the arcade.'],
+      [.58, 24, .05, 'Through the arches to the hallway', 'Beyond the lamplit arches, a long sunny hallway runs through the villa.']] },
+  // the villa's hallways run left to right: first the hallway of doors, then the hallway of windows
+  { name: 'Byzantine · Hallway of Doors', inside: 'byzantine', area: 'inside the villa', img: 'byzantine-hall-doors.jpg', yoff: -30, ground: 520, scale: 1.15, ambient: 'motes',
+    leftExit: [23, .58], right: 25,
+    spots: [[.12, 'A carved double door. It’s locked.'], [.3, 'Through the tall window, the lake glitters between the cypresses.'],
+      [.69, 'An olive tree in a stone urn stands between the windows.']],
+    doors: [[.49, 26, .1, 'Open the library doors', 'The middle doors open onto the villa library, with its white grand piano.'],
+      [.87, 28, .08, 'Into the dining room', 'The right-hand doors open onto the long dining room, set for a feast.']] },
+  { name: 'Byzantine · Hallway of Windows', inside: 'byzantine', area: 'inside the villa', img: 'byzantine-hall-windows.jpg', yoff: -30, ground: 520, scale: 1.15, ambient: 'motes',
+    left: 24, right: 27,
+    spots: [[.14, 'Sunlight pours through the arched windows onto a cushioned bench.'], [.5, 'A painting of the mountains hangs above white lilies on a gilded table.'],
+      [.68, 'The windows look out over the lake and the snowy peaks.'], [.9, 'At the end of the hallway, music drifts from the ballroom.']] },
+  { name: 'Byzantine · Villa Library', inside: 'byzantine', area: 'inside the villa', img: 'byzantine-library.jpg', yoff: -30, ground: 520, scale: 1.15, ambient: 'motes',
+    spots: [[.12, 'A rolling ladder leans against shelves of leather-bound books.'], [.27, 'An armchair and a little table wait beside a vase of lilies.'],
+      [.4, 'A window seat looks out to the snowy mountains.'], [.68, 'A white grand piano stands open, its music ready on the stand.'], [.9, 'More shelves climb to the ceiling, packed with books.']],
+    doors: [[.05, 24, .49, 'Back to the hallway', 'The library doors lead back to the hallway of doors.']] },
+  // the ballroom's twin staircases frame the floor, so the party walks between them; the centre doors open onto the balcony
+  { name: 'Byzantine · Ballroom', inside: 'byzantine', area: 'inside the villa', img: 'byzantine-ballroom.jpg', yoff: -30, ground: 520, walk: [.2, .8], scale: 1.15, ambient: 'motes',
+    left: 25,
+    spots: [[.24, 'A sweeping staircase curves up to the gallery.'], [.33, 'A gilded mirror and a little table stand between the arches.'],
+      [.5, 'A crystal chandelier hangs above an inlaid marble rose.'], [.76, 'The twin staircase climbs the other side of the ballroom.']],
+    doors: [[.5, 29, .5, 'Out to the balcony', 'The tall glass doors open onto a balcony high above the lake.']] },
+  { name: 'Byzantine · Dining Room', inside: 'byzantine', area: 'inside the villa', img: 'byzantine-dining.jpg', yoff: -30, ground: 520, scale: 1.15, ambient: 'motes',
+    spots: [[.12, 'A carved sideboard holds a bowl of lemons and white lilies.'], [.35, 'Tall windows look out on the lake and the mountains.'],
+      [.5, 'The long table is set with candelabra and a great bowl of lilies.'], [.86, 'An olive tree stands beside the crackling fireplace.'], [.95, 'Candles flicker beneath a gilded mirror over the mantel.']],
+    doors: [[.04, 24, .87, 'Back to the hallway', 'The dining room doors lead back to the hallway of doors.']] },
+  { name: 'Byzantine · Balcony', inside: 'byzantine', area: 'inside the villa', img: 'byzantine-balcony.jpg', yoff: -30, ground: 520, scale: 1.15, ambient: 'butterflies',
+    spots: [[.15, 'White blossom hangs from the branches over the balustrade.'], [.5, 'Snowy mountains rise above the shining lake.'], [.83, 'Stone urns spill over with white flowers.']],
+    doors: [[.5, 27, .5, 'Back into the ballroom', 'The glass doors lead back into the ballroom.']] },
 ];
-const VILLA = PLACES.length - 1;
+const VILLA = PLACES.findIndex(p => p.name === 'Byzantine · The Villa');   // 22; the villa's interior rooms follow it
 const OUTDOORS = PLACES.filter(p => p.inside === undefined).length;   // the first three countryside places loop; village is a branch
 // Dress-up (at the Rose Bedroom mirror): Lila-Bella helps Ember try on her gowns. All gown cutouts share one scale
 // (GOWN_H px from hair to hem), so they swap in place; `line` is what Lila-Bella says when Ember puts it on.

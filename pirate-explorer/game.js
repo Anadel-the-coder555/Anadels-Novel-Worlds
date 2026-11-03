@@ -63,7 +63,8 @@ const JOIN_LINES = ['Aye aye, Captain!', 'Right behind you, Captain!', 'Ready to
 // room's furniture (indoor paintings are drawn much closer than the deck).
 const ROOMS = {
   deck: { name: 'The Ship’s Deck', img: 'ship-deck.jpg', yBack: 402, yFront: 530, outside: true,
-    doors: [{ x: .06, to: 'dining', at: .5, label: 'Into the captain’s quarters' }, { x: .17, to: 'upper', at: .32, label: 'Up to the upper deck' }, { x: .62, to: 'below', at: .5, label: 'Down the hatch, below decks' }],
+    doors: [{ x: .06, to: 'dining', at: .5, label: 'Into the captain’s quarters' }, { x: .17, to: 'upper', at: .32, label: 'Up to the upper deck' }, { x: .62, to: 'below', at: .5, label: 'Down the hatch, below decks' },
+            { x: .745, to: 'island', at: .06, label: 'Row ashore to the island (just the two captains)' }],
     spots: [
   [.06, 'The captain’s cabin, tucked under the quarterdeck.'],
   [.33, 'The mainmast, wrapped in coils of rope.'],
@@ -73,6 +74,12 @@ const ROOMS = {
     ] },
   // The upper deck is a wider, higher view: people are smaller, walk on the deck between two traced edges
   // (source-image px), and the front railing (`rail`, a line in source px) is drawn over them.
+  // a quiet island just for Ruby and Cutlass: the crew stays aboard while the two captains walk the beach
+  island: { name: 'The Island', img: 'island-beach.jpg', outside: true, couple: true, ownDepth: true, scale: .62, yBack: 362, yFront: 392, yoff: -20,
+    doors: [{ x: .03, to: 'deck', at: .5, label: 'Row back to the ship' }],
+    spots: [[.12, 'Smooth granite boulders lie scattered along the sand.'], [.3, 'Palm trees lean out over the beach, rustling in the breeze.'],
+      [.53, 'A green hill crowned with rocks rises above the island.'], [.7, 'The water is so clear you can see the sand ripples beneath it.'],
+      [.9, 'Waves fold gently onto the shore. Nobody else for miles.']] },
   upper: { name: 'The Upper Deck', img: 'ship-upper.jpg', outside: true, scale: 1.15, yBack: 270, yFront: 360,
     floorBack: [[520, 352], [1000, 388], [1700, 395]], floorFront: [[520, 374], [700, 394], [1000, 428], [1436, 452], [1446, 520], [1680, 520]],   // just behind the railing top, so feet stay on visible boards
     rail: [[0, 292], [300, 350], [700, 398], [1000, 433], [1438, 458], [1446, 545], [1688, 545], [1696, 362], [1900, 300], [2172, 225]],
@@ -128,7 +135,7 @@ function resize() {
 new ResizeObserver(resize).observe(canvas);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
-const scaleAt = y => { const R = ROOMS[room].floorBack ? ROOMS[room] : ROOMS.deck; return lerp(.72, 1, (y - R.yBack) / (R.yFront - R.yBack)); };
+const scaleAt = y => { const R = ROOMS[room].floorBack || ROOMS[room].ownDepth ? ROOMS[room] : ROOMS.deck; return lerp(.72, 1, (y - R.yBack) / (R.yFront - R.yBack)); };
 // traced floor edges and railings are in source-image px; convert to world px once the image is loaded
 const toWorld = (R, pts) => pts.map(([x, y]) => [x * BG_H / R.img_.height, y * BG_H / R.img_.height + BG_YOFF]);
 function lineY(pts, x) {
@@ -167,6 +174,7 @@ const roomScale = () => mode === 'story' && room === 'upper' ? .85 : ROOMS[room]
 const gap = () => SPACING * roomScale();      // followers keep a bigger gap when people are drawn bigger
 function party() {
   if (mode === 'story') return CHAPTER[storyStep].party || (storyStep < 3 ? ['ruby', 'marietta'] : ['ruby']);
+  if (ROOMS[room]?.couple || ROOMS[pending?.to]?.couple) return [lead, ...CAPTAINS.filter(k => k !== lead)];   // just the two of them
   return [lead, ...CAPTAINS.filter(k => k !== lead && st[k]?.room !== 'hidden'), ...joined]; }
 
 // ---- trail the followers walk along ----
@@ -357,6 +365,8 @@ function update(dt) {
   }
   doorNear = null;
   (mode === 'story' ? [] : RM.doors || []).forEach(d => { if (Math.abs(L.x - d.x * worldW) < 110) doorNear = d; });
+  // standing between a crewmate and a door: whichever is closer gets the Space key
+  if (near && doorNear) { if (Math.abs(L.x - doorNear.x * worldW) < Math.abs(L.x - st[near].x)) near = null; else doorNear = null; }
   let spot = '', bestD = 130;
   RM.spots.forEach(([fx, text]) => { const d = Math.abs(L.x - fx * worldW); if (d < bestD) { bestD = d; spot = text; } });
   // in the story, place notes only while walking somewhere; otherwise they'd sit over the scene being played
@@ -467,7 +477,13 @@ function render() {
     ctx.translate(VW / 2, VH); ctx.rotate(Math.sin(t * .55) * .007); ctx.scale(1.03, 1.03);
     ctx.translate(-VW / 2, -VH + Math.sin(t * .55 + 1) * 2.5);
   }
-  const R0 = ROOMS[room]; ctx.drawImage(R0.img_, -camX, R0.yoff ?? BG_YOFF, worldW, BG_H * (R0.zoom || 1));
+  const R0 = ROOMS[room];
+  if (R0.sky) { const g = ctx.createLinearGradient(0, 0, 0, R0.yoff + 2); g.addColorStop(0, R0.sky[0]); g.addColorStop(1, R0.sky[1]); ctx.fillStyle = g; ctx.fillRect(0, 0, VW, R0.yoff + 2); }
+  ctx.drawImage(R0.img_, -camX, R0.yoff ?? BG_YOFF, worldW, BG_H * (R0.zoom || 1));
+  if (R0.sky) {   // blend the open sky into the top of the painting so there's no seam
+    const g = ctx.createLinearGradient(0, R0.yoff, 0, R0.yoff + 60); g.addColorStop(0, R0.sky[1]); g.addColorStop(1, 'rgba(61,141,207,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, R0.yoff, VW, 60);
+  }
   if (mode === 'story' && room === 'upper' && storyStep === 2) {
     // far off on the water between the shrouds; the keel is cut at the waterline so the hull sits in the sea
     const w = 130, h = w * distantShip.height / distantShip.width, keep = .9, bob = reduceMotion ? 0 : Math.sin(t * .8) * 1.5;
