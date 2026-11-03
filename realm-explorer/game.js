@@ -13,18 +13,23 @@ const PLACES = [
   { name: 'Castle Valley', img: 'castle-valley.jpg', yoff: -24, ground: 506, ambient: 'birds',
     spots: [[.07, 'An old oak shades the road out of the valley.'], [.42, 'Waterfalls tumble beneath the old stone bridges.'], [.86, 'The castle gate stands open today.']],
     doors: [[.07, 19, .9, 'Take the road to Azurea', 'The road under the old oak leads out of the valley, all the way to Azurea, the blue continent.'],
+      [.64, 'play', 'garden', 'Tend the royal gardens', 'The royal rose gardens bloom along the castle path. Old Bramble the gardener could use a hand.'],
       [.86, 8, .8, 'Enter the castle', 'The open castle gate leads into the sage-green dove hall.']] },
   { name: 'Lavender Fields', img: 'lavender-fields.jpg', yoff: -56, ground: 492, ambient: 'butterflies',
     spots: [[.09, 'A dry-stone wall and an old fence mark the edge of the fields.'], [.37, 'Far off, a little castle sits on the lake shore.'], [.75, 'The village rooftops rise beyond the lavender. A path leads to the market square.']],
-    doors: [[.82, 7, .06, 'Visit Lavender Village', 'Follow the lavender-lined path into the village market square.']] },
+    doors: [[.82, 7, .06, 'Visit Lavender Village', 'Follow the lavender-lined path into the village market square.'],
+      [.22, 'play', 'horses', 'Visit Annalise’s horses', 'Annalise’s horses graze in the paddock beside the old fence.'],
+      [.55, 'play', 'festival', 'Join the Lavender Festival', 'Bunting and music: the Lavender Festival is under way in the fields.']] },
   { name: 'Aspen Meadow', img: 'aspen-meadow.jpg', yoff: -36, ground: 500, ambient: 'leaves',
     spots: [[.1, 'White aspens whisper in the breeze.'], [.52, 'A mountain lake glitters between the pines.']],
-    doors: [[.73, 3, .51, 'Climb into the treehouse', 'A treehouse with a spiral stair winds up the great tree.']] },
+    doors: [[.73, 3, .51, 'Climb into the treehouse', 'A treehouse with a spiral stair winds up the great tree.'],
+      [.58, 'play', 'treehouse', 'Play at the treehouse', 'Berry bushes, shy woodland animals and games among the aspens around the treehouse.']] },
   // Treehouse rooms (`inside` = the outdoor place they belong to). Their edges are walls unless `left`/`right` names a room.
 // Downstairs is the kitchen; upstairs the three bedrooms run in a row: Rose | Loft | Mountain.
   { name: 'Kitchen', inside: 2, img: 'treehouse-kitchen.jpg', yoff: -50, ground: 534, scale: 2.05, ambient: 'motes',
     spots: [[.2, 'Bread and flowers wait on the long kitchen table.'], [.88, 'Cushions heaped on a sofa by the window.']],
-    doors: [[.51, 2, .73, 'Go back outside', 'The front door opens onto the spiral stair.'], [.7, 5, .9, 'Climb the stairs', 'The stairs wind up around the trunk.']] },
+    doors: [[.51, 2, .73, 'Go back outside', 'The front door opens onto the spiral stair.'], [.7, 5, .9, 'Climb the stairs', 'The stairs wind up around the trunk.'],
+      [.18, 'play', 'kitchen', 'Bake, cook & plan a picnic', 'Evelynn has set out flour, butter and the picnic basket on the long kitchen table.']] },
   { name: 'Mountain Bedroom', inside: 2, img: 'treehouse-study.jpg', yoff: -50, ground: 534, scale: 2.05, ambient: 'motes', left: 5,
     spots: [[.18, 'A big bed piled with quilts, lit by an old lantern.'], [.52, 'A window seat looks out to the mountains.'], [.83, 'A writing desk, with a chair pulled up to it.'], [.03, 'Back through to the loft bedroom.']] },
   { name: 'Loft Bedroom', inside: 2, img: 'treehouse-loft.jpg', yoff: -50, ground: 534, scale: 2.05, ambient: 'motes', left: 6, right: 4,
@@ -40,20 +45,26 @@ const PLACES = [
       [.44, 'Water splashes into the market fountain, surrounded by lavender and flowers.'],
       [.63, 'Ruffled gowns fill the dressmaker’s windows. Ember stops to admire them.'],
       [.78, 'Gold and gemstones sparkle in the jeweller’s window.'],
-      [.93, 'The tailor has ribbons, spools of thread and fine fabrics for sale.']],
+      [.93, 'The haberdasher has ribbons, buttons, spools of thread and hats for sale.']],
     doors: [[.03, 1, .82, 'Return to Lavender Fields', 'The path back to the lavender fields starts at the edge of the square.'],
+      [.1, 'play', 'carpenter', 'Visit the carpenter’s shop', 'Master Tobias the carpenter waves you into his workshop.'],
+      [.44, 'play', 'stage', 'Star in a village play', 'A little stage stands beside the fountain. The players are looking for a leading lady.'],
+      [.63, 'play', 'dress', 'Make a dress at the dress shop', 'Madame Rosalind’s dress shop is full of silks and ruffles.'],
+      [.88, 'play', 'haberdashery', 'Visit the haberdashery', 'Ribbons, buttons and hats fill Mr Penrose’s haberdashery.'],
       [.96, 17, .06, 'Continue along the village street', 'The village continues to the right, past the inn, bookshop and café.']] },
   { name: 'Castle Hall', inside: 0, area: 'inside the castle', img: 'castle-hall.jpg', yoff: -30, ground: 520, scale: 1.15, ambient: 'motes', left: 9,
     spots: [[.03, 'The ballroom lies to the left, through the grand archway.'], [.25, 'Sage-green tapestries and white dove banners hang above cushioned benches.'],
       [.5, 'A sweeping staircase rises beneath the great arched window.'], [.73, 'Polished armour stands guard beside the castle doors.']],
     doors: [[.1, 9, .9, 'Go left into the ballroom', 'The left archway opens into the royal ballroom.'],
       [.5, 10, .5, 'Go up the grand staircase', 'Climb the grand staircase to the landing and the two upstairs corridors.'],
+      [.3, 'play', 'royal-kitchen', 'Help in the royal kitchens', 'A servants’ door beside the benches leads down to the royal kitchens.'],
       [.8, 0, .86, 'Return to Castle Valley', 'The castle doors lead back out into the valley.']] },
   { name: 'Royal Ballroom', inside: 0, area: 'inside the castle', img: 'castle-ballroom.jpg', yoff: -30, ground: 520, scale: 1.15, ambient: 'motes', right: 8,
     spots: [[.08, 'A grand piano waits beside the fireplace.'], [.3, 'Crystal chandeliers scatter golden light across the marble.'],
       [.5, 'The wide dance floor shines beneath the blue-and-gold banners.'], [.75, 'Tall windows look over the lake and distant mountains.'],
       [.96, 'The castle hall is through the archway on the right.']],
-    doors: [[.9, 8, .1, 'Go right to the castle hall', 'Return through the right archway to the castle hall.']] },
+    doors: [[.9, 8, .1, 'Go right to the castle hall', 'Return through the right archway to the castle hall.'],
+      [.5, 'play', 'royal-event', 'Host a royal event', 'The ballroom is yours to fill with music, candles and guests.']] },
   // The landing is only the marble between the two staircases, set back from the steps at the front of the
   // painting: the painting is drawn 1.45x (`zoom`, top cropped by `yoff`) so that floor meets the party's feet,
   // and `walk` keeps them between the staircase posts; walking past either post takes that staircase.
@@ -105,7 +116,10 @@ const PLACES = [
       [.64, 'The inn welcomes travellers with flower-covered balconies and seats in the sunshine.'],
       [.83, 'The flower shop is fragrant with lavender and fresh blossoms.'],
       [.96, 'The café serves tea and pastries beside the cobbled street.']],
-    doors: [[.03, 7, .94, 'Return to the market square', 'The first village square is back along the street to the left.']] },
+    doors: [[.03, 7, .94, 'Return to the market square', 'The first village square is back along the street to the left.'],
+      [.11, 'play', 'shoes', 'Visit the shoe shop', 'Wren the shoemaker has slippers, dancing shoes and boots.'],
+      [.26, 'play', 'toys', 'Visit the toy shop', 'Mrs Pip’s toy shop is full of teddies, kites and music boxes.'],
+      [.42, 'play', 'books', 'Browse the bookshop', 'Mabel the bookseller can find you the perfect book.']] },
   { name: 'Castle Library', inside: 0, area: 'upstairs · right wing', img: 'castle-library.jpg', yoff: -30, ground: 520, scale: 1.15, ambient: 'motes',
     spots: [[.2, 'Tall shelves hold books and scrolls beside the reading tables.'], [.48, 'Cushioned sofas overlook the mountains through the great windows.'], [.92, 'A stone staircase climbs to the upper bookshelves.']],
     doors: [[.79, 12, .12, 'Return to the right corridor', 'The library door leads back to the sage-green dove corridor.']] },
@@ -128,7 +142,17 @@ const PLACES = [
     spots: [[.3, 'Waterfalls spill from the castle rocks into the sapphire lake.'], [.5, 'A marble causeway, set with a blue compass star, leads up to the castle gate.'],
       [.72, 'Domed pavilions and arched bridges link the little islands.']],
     doors: [[.16, 19, .52, 'Back to the village square', 'The terrace steps lead back to Azurea’s village square.']] },
+  // ---- Byzantine: Cashamir's villa on the lake (painted in code by paintVilla, below) ----
+  { name: 'Byzantine · The Villa', inside: 'byzantine', area: 'in Byzantine', paint: () => paintVilla(), img: 'villa', yoff: -30, ground: 506, scale: .9, ambient: 'birds',
+    spots: [[.04, 'Cypress trees line the shore of the villa lake.'], [.3, 'Peacocks strut through the villa farm.'], [.5, 'Golden mosaics glitter beneath the villa’s great dome.'],
+      [.66, 'Lanterns are strung across the courtyard for dancing.'], [.82, 'Piano music drifts from the music room window.']],
+    doors: [[.12, 'play', 'boating', 'Go boating on the lake', 'A little sailboat is tied up at the villa dock.'],
+      [.33, 'play', 'villa-animals', 'Care for the animals', 'Peacocks, goats, ducklings, a lamb and a bunny live on the villa farm.'],
+      [.6, 'play', 'villa-dance', 'Dance in the courtyard', 'Musicians play beneath the lanterns in the marble courtyard.'],
+      [.78, 'play', 'villa-piano', 'Watch Cashamir play piano', 'Cashamir, the icy-blue prince, is at the piano in the music room.'],
+      [.95, 0, .1, 'Take the road home', 'The road home leads back to Castle Valley and Ember’s land.']] },
 ];
+const VILLA = PLACES.length - 1;
 const OUTDOORS = PLACES.filter(p => p.inside === undefined).length;   // the first three countryside places loop; village is a branch
 // Dress-up (at the Rose Bedroom mirror): Lila-Bella helps Ember try on her gowns. All gown cutouts share one scale
 // (GOWN_H px from hair to hem), so they swap in place; `line` is what Lila-Bella says when Ember puts it on.
@@ -171,7 +195,7 @@ const RESIDENTS = [
 ];
 let nearbyResident = null;
 function talkToResident() {
-  if (!nearbyResident || dressing || fadeDir) return;
+  if (!nearbyResident || dressing || fadeDir || playing()) return;
   const resident = nearbyResident;
   say(`${resident.name}: ${resident.lines[resident.line]}`);
   resident.line = (resident.line + 1) % resident.lines.length;
@@ -256,9 +280,110 @@ function walkOff(side) {
 let door = null;                // the door the leader is standing at, if any
 function useDoor() {
   if (!door || fadeDir) return;
-  if (door[1] === 'dress') openDressUp(); else travel(door[1], door[2]);
+  if (door[1] === 'dress') openDressUp();
+  else if (door[1] === 'play') openPlay(door[2]);
+  else travel(door[1], door[2]);
 }
 function travel(i, from) { fadeTo(() => enterPlace(i, from)); }
+// ---- games (activities.js): baking with Evelynn, village shops, the royal gardens, Byzantine's villa… ----
+const playing = () => !!window.EmberActivities?.isOpen();
+function openPlay(key) {
+  if (!window.EmberActivities || playing()) return;
+  keys.left = keys.right = keys.hurry = false;
+  window.EmberActivities.open(key, {
+    duck: on => fadeMusic(on || !musicOn ? 0 : THEME_VOLUME),   // the theme hushes while the piano or dance music plays
+    onClose: () => $('doorBtn').hidden || $('doorBtn').focus({ preventScroll: true }),
+  });
+}
+
+// ---- Byzantine villa: painted in code (2172x724, the same size as the painted places) ----
+// Left to right: the lake and dock, the villa farm, the domed villa with its lantern courtyard, the music room, the road home.
+function paintVilla() {
+  const W = 2172, H = 724, c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const grad = (y0, y1, stops) => { const gr = g.createLinearGradient(0, y0, 0, y1); stops.forEach(([o, col]) => gr.addColorStop(o, col)); return gr; };
+  const poly = (pts, fill) => { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fillStyle = fill; g.fill(); };
+  const arch = (x, y, w, h, fill) => { g.beginPath(); g.moveTo(x, y + h); g.lineTo(x, y + w / 2); g.arc(x + w / 2, y + w / 2, w / 2, Math.PI, 0); g.lineTo(x + w, y + h); g.closePath(); g.fillStyle = fill; g.fill(); };
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  // sky, sun and far mountains
+  g.fillStyle = grad(0, 520, [[0, '#8cbfe0'], [.6, '#f2dcc0'], [1, '#f7c99a']]); g.fillRect(0, 0, W, H);
+  const sun = g.createRadialGradient(420, 150, 10, 420, 150, 260); sun.addColorStop(0, 'rgba(255,248,220,.95)'); sun.addColorStop(1, 'rgba(255,240,200,0)');
+  g.fillStyle = sun; g.fillRect(0, 0, W, 500);
+  poly([[0, 420], [160, 300], [330, 360], [520, 270], [760, 380], [980, 310], [1240, 390], [1500, 300], [1760, 370], [2000, 290], [2172, 350], [2172, 470], [0, 470]], '#b9aacb');
+  poly([[0, 450], [240, 380], [470, 430], [700, 390], [960, 450], [1300, 420], [1700, 440], [2172, 410], [2172, 500], [0, 500]], '#8fae86');
+  // the lake, left
+  g.fillStyle = grad(440, 610, [[0, '#7fb3cf'], [1, '#3f7ea6']]); g.fillRect(0, 445, 760, 165);
+  g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2;
+  for (let i = 0; i < 40; i++) { const x = rnd() * 720, y = 460 + rnd() * 140, w = 20 + rnd() * 40; g.beginPath(); g.moveTo(x, y); g.lineTo(x + w, y); g.stroke(); }
+  // sailboat and dock
+  g.fillStyle = '#7a4b2c'; g.beginPath(); g.moveTo(170, 560); g.lineTo(320, 560); g.lineTo(295, 585); g.lineTo(195, 585); g.closePath(); g.fill();
+  g.fillStyle = '#5a3a24'; g.fillRect(243, 420, 6, 142);
+  poly([[250, 425], [250, 552], [330, 552]], '#fffaf0'); poly([[242, 440], [242, 552], [190, 552]], '#e8eef5');
+  g.fillStyle = '#9a6a42'; g.fillRect(300, 596, 300, 18);
+  g.fillStyle = '#6e4a2e'; for (let x = 310; x < 600; x += 48) g.fillRect(x, 596, 8, 50);
+  // cypresses
+  const cypress = (x, y, h) => { g.fillStyle = '#2f4f33'; g.beginPath(); g.ellipse(x, y - h / 2, h * .13, h / 2, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.08)'; g.beginPath(); g.ellipse(x - h * .04, y - h / 2, h * .05, h * .45, 0, 0, 7); g.fill(); };
+  [[40, 610, 300], [110, 600, 240], [690, 590, 260], [990, 600, 300], [1890, 600, 280], [1960, 610, 220]].forEach(a => cypress(...a));
+  // the villa farm: a little stone barn, fence and hay
+  g.fillStyle = '#e6d3b0'; g.fillRect(760, 440, 230, 160);
+  poly([[740, 445], [875, 370], [1010, 445]], '#c46a45');
+  g.fillStyle = '#7a4b2c'; arch(845, 500, 60, 100, '#7a4b2c');
+  g.fillStyle = '#e8c36a'; g.fillRect(780, 560, 50, 40); g.fillRect(930, 565, 46, 35);
+  g.strokeStyle = '#8a6440'; g.lineWidth = 7;
+  g.beginPath(); g.moveTo(700, 590); g.lineTo(1040, 590); g.moveTo(700, 615); g.lineTo(1040, 615); g.stroke();
+  g.fillStyle = '#7a5434'; for (let x = 700; x <= 1040; x += 57) g.fillRect(x - 5, 575, 10, 55);
+  // the villa: cream walls, terracotta roofs, golden dome
+  const wall = '#f1e4c9', shade = 'rgba(120,90,50,.12)';
+  g.fillStyle = wall; g.fillRect(1080, 330, 760, 280);
+  poly([[1060, 336], [1460, 268], [1860, 336]], '#c46a45');
+  // the dome over the centre
+  g.fillStyle = wall; g.fillRect(1380, 210, 160, 90);
+  for (let i = 0; i < 4; i++) arch(1395 + i * 36, 228, 22, 50, '#3f6a95');
+  const dome = g.createRadialGradient(1440, 120, 10, 1460, 180, 120); dome.addColorStop(0, '#fff2b8'); dome.addColorStop(.5, '#e2b24e'); dome.addColorStop(1, '#a8772c');
+  g.fillStyle = dome; g.beginPath(); g.ellipse(1460, 212, 92, 96, 0, Math.PI, 0); g.fill();
+  g.strokeStyle = 'rgba(120,80,20,.45)'; g.lineWidth = 2;
+  for (let i = -3; i <= 3; i++) { g.beginPath(); g.moveTo(1460, 118); g.quadraticCurveTo(1460 + i * 34, 140, 1460 + i * 29, 212); g.stroke(); }
+  g.fillStyle = '#e2b24e'; g.fillRect(1456, 92, 8, 28); g.beginPath(); g.arc(1460, 90, 7, 0, 7); g.fill();
+  // mosaic band under the eaves
+  for (let x = 1080; x < 1840; x += 16) { g.fillStyle = (x / 16) % 2 ? '#2f5f9a' : '#e2b24e'; g.fillRect(x, 340, 16, 12); }
+  // upper windows
+  for (let x = 1120; x < 1820; x += 80) { if (x > 1360 && x < 1540) continue; arch(x, 368, 34, 60, '#3a5f86'); g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(x + 4, 390, 6, 34); }
+  // the courtyard arcade (lanterns strung across) and the music room's great window
+  g.fillStyle = shade; g.fillRect(1080, 450, 760, 160);
+  for (let i = 0; i < 6; i++) { arch(1100 + i * 66, 470, 50, 140, '#d9c39e'); g.fillStyle = '#f7ecd4'; g.fillRect(1094 + i * 66, 462, 8, 148); }
+  g.fillStyle = '#f7ecd4'; g.fillRect(1490, 462, 8, 148);
+  arch(1560, 440, 220, 170, '#2a3d58');
+  g.fillStyle = '#9fd0ee'; g.globalAlpha = .55; g.fillRect(1560, 470, 30, 140); g.fillRect(1750, 470, 30, 140); g.globalAlpha = 1;
+  // the piano: a grand piano silhouette in the window
+  g.fillStyle = '#141018'; g.beginPath(); g.moveTo(1600, 540); g.lineTo(1720, 540); g.quadraticCurveTo(1750, 545, 1745, 565); g.lineTo(1600, 566); g.closePath(); g.fill();
+  g.fillRect(1612, 566, 8, 40); g.fillRect(1730, 566, 8, 40); g.fillRect(1640, 508, 6, 34);
+  g.fillStyle = '#fffaf0'; g.fillRect(1604, 560, 70, 5);
+  g.strokeStyle = '#2f5f9a'; g.lineWidth = 10; g.beginPath(); g.moveTo(1560, 470); g.quadraticCurveTo(1590, 520, 1575, 610); g.moveTo(1780, 470); g.quadraticCurveTo(1750, 520, 1765, 610); g.stroke();
+  // lantern strings over the courtyard
+  g.strokeStyle = '#6e5a3e'; g.lineWidth = 2;
+  for (const [x0, x1] of [[1080, 1300], [1290, 1520]]) {
+    g.beginPath(); g.moveTo(x0, 470); g.quadraticCurveTo((x0 + x1) / 2, 530, x1, 470); g.stroke();
+    for (let k = 1; k < 7; k++) { const t = k / 7, x = x0 + (x1 - x0) * t, y = 470 + 120 * t * (1 - t);
+      const lg = g.createRadialGradient(x, y + 10, 1, x, y + 10, 22); lg.addColorStop(0, 'rgba(255,230,150,.9)'); lg.addColorStop(1, 'rgba(255,220,130,0)');
+      g.fillStyle = lg; g.fillRect(x - 22, y - 12, 44, 44); g.fillStyle = '#f2b84e'; g.beginPath(); g.ellipse(x, y + 10, 6, 9, 0, 0, 7); g.fill(); }
+  }
+  // the road home, right
+  poly([[1960, 610], [2172, 560], [2172, 610]], '#d6bd8e');
+  g.fillStyle = '#7a5434'; g.fillRect(2060, 520, 8, 90); g.fillStyle = '#9a6a42'; g.fillRect(2030, 525, 90, 22);
+  // the marble terrace along the front, with potted lemon trees
+  g.fillStyle = grad(600, H, [[0, '#efe4d0'], [1, '#d8c7a6']]); g.fillRect(0, 606, W, H - 606);
+  g.strokeStyle = 'rgba(140,110,70,.25)'; g.lineWidth = 2;
+  for (let y = 630; y < H; y += 32) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  for (let x = 0; x < W; x += 64) { g.beginPath(); g.moveTo(x, 606); g.lineTo(x - 40, H); g.stroke(); }
+  g.fillStyle = '#e2b24e'; g.fillRect(0, 604, W, 5);
+  for (const x of [640, 1060, 1860]) {
+    g.fillStyle = '#b8643e'; poly([[x - 26, 600], [x + 26, 600], [x + 18, 640], [x - 18, 640]], '#b8643e');
+    g.fillStyle = '#5f8a3e'; g.beginPath(); g.arc(x, 560, 40, 0, 7); g.fill();
+    g.fillStyle = '#f2d64e'; for (let k = 0; k < 9; k++) { g.beginPath(); g.arc(x - 28 + rnd() * 56, 535 + rnd() * 50, 5, 0, 7); g.fill(); }
+  }
+  return c;
+}
 
 // ---- the atlas: Xanthe's Celadonia. Click a land to travel there (lands with no places yet can't be visited).
 // x, y: centre of the land's painted name, w, h: the clickable box, all as fractions of the map image.
@@ -266,10 +391,10 @@ const LANDS = [
   { key: 'celadonia', name: 'Celadonia', x: .79, y: .274, w: .19, h: .07, to: [0, .5], note: 'Ember’s home' },
   { key: 'azurea', name: 'Azurea', x: .069, y: .72, w: .15, h: .07, to: [19, .5], note: 'The blue land' },
   { key: 'xanthe', name: 'Xanthe', x: .1, y: .176, w: .16, h: .07 },
-  { key: 'byzantine', name: 'Byzantine', x: .13, y: .915, w: .17, h: .07 },
+  { key: 'byzantine', name: 'Byzantine', x: .13, y: .915, w: .17, h: .07, to: [VILLA, .5], note: 'Cashamir’s villa on the lake' },
   { key: 'sangria', name: 'Sangria', x: .925, y: .795, w: .14, h: .07 },
 ];
-const landOf = i => PLACES[i].inside === 'azurea' ? 'azurea' : 'celadonia';
+const landOf = i => typeof PLACES[i].inside === 'string' ? PLACES[i].inside : 'celadonia';
 function buildAtlas() {
   LANDS.forEach(L => {
     const b = document.createElement('button');
@@ -288,7 +413,7 @@ function buildAtlas() {
   $('mapDialog').addEventListener('click', e => { if (e.target === $('mapDialog')) $('mapDialog').close(); });   // click outside the map
 }
 function openMap() {
-  if (dressing || fadeDir || $('mapDialog').open) return;
+  if (dressing || fadeDir || $('mapDialog').open || playing()) return;
   keys.left = keys.right = keys.hurry = false;
   const here = landOf(place);
   document.querySelectorAll('.land').forEach(b => {
@@ -371,7 +496,7 @@ function buildControls() {
     b.addEventListener('click', () => setLead(i));
     box.appendChild(b);
   });
-  [0, 1, 2, 7, 8, 9, 10, 19, 20, 21].forEach(i => {
+  [0, 1, 2, 7, 8, 9, 10, 19, 20, 21, VILLA].forEach(i => {
     const p = PLACES[i];
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'place'; b.textContent = p.name;
@@ -446,6 +571,7 @@ function setMusic(on) {
 }));
 
 addEventListener('keydown', e => {
+  if (playing()) return;   // the games dialog has its own keys
   if ($('mapDialog').open) { if ((e.key === 'g' || e.key === 'G') && !e.repeat) $('mapDialog').close(); return; }   // the map takes the keys while open
   if (e.target.closest && e.target.closest('input,button') && (e.key === ' ' || e.key === 'Enter')) return;
   if ((e.key === 'm' || e.key === 'M') && !e.repeat) { setMusic(!musicOn); return; }
@@ -680,7 +806,7 @@ function loadImg(src) { return new Promise((res, rej) => { const i = new Image()
   try { await Promise.race([document.fonts.load('19px "IM Fell English"'), new Promise(r => setTimeout(r, 1500))]); } catch (e) {}
   try { await Promise.all([
     ...RESIDENTS.map(async r => { try { r.img_ = await loadImg(r.img); } catch { r.img_ = null; } }),
-    ...PLACES.map(async p => { p.bgImg = await loadImg(p.img); }),
+    ...PLACES.map(async p => { p.bgImg = p.paint ? p.paint() : await loadImg(p.img); }),
     ...WALKERS.map(async w => { w.img_ = await loadImg(w.img); }),
     ...GOWN_WALKS.slice(1).map(async w => { w.img_ = await loadImg(w.img); }),
     ...[...GOWNS, LILA_FRONT].map(async g => { g.img_ = await loadImg(g.img); }),

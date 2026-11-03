@@ -6,26 +6,31 @@ const nodes = [], draws = [];
 const handlers = {};
 let savedGown = '3';
 const drawing = new Proxy({ drawImage: (...args) => draws.push(args),
-  createRadialGradient: () => ({ addColorStop() {} }) }, { get: (o, k) => o[k] || (() => {}) });
+  createRadialGradient: () => ({ addColorStop() {} }), createLinearGradient: () => ({ addColorStop() {} }) }, { get: (o, k) => o[k] || (() => {}) });
 function element(id) {
-  const node = { id, dataset: {}, classList: { add() {}, remove() {}, toggle() {} },
+  const node = { id, dataset: {}, style: {}, classList: { add() {}, remove() {}, toggle() {} },
+    querySelector: () => element(''), close() {}, showModal() {},
     setAttribute(k, v) { this[k] = v; }, addEventListener(k, f) { this[k] = f; },
     appendChild() {}, focus() {}, getBoundingClientRect: () => ({ width: 960 }), getContext: () => drawing };
   nodes.push(node); return node;
 }
 const get = id => nodes.find(n => n.id === id) || element(id);
-const sandbox = { Math, Number, String, Promise, Error, setTimeout() {},
+const opened = [];
+let gamesOpen = false;
+const activities = { open(key, options) { opened.push({ key, options }); gamesOpen = true; return true; }, isOpen: () => gamesOpen };
+const sandbox = { Math, Number, String, Promise, Error, setTimeout() {}, setInterval() {}, clearInterval() {},
+  Audio: class { play() { return Promise.resolve(); } pause() {} },
   matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} },
   document: { getElementById: get, createElement: () => element(''), body: element('body'),
     querySelectorAll: q => q === '#places .place' ? nodes.filter(n => n.dataset.place !== undefined) : [],
-    fonts: { load: async () => {} } }, window: { devicePixelRatio: 1 },
+    fonts: { load: async () => {} } }, window: { devicePixelRatio: 1, EmberActivities: activities },
   localStorage: { getItem: () => savedGown, setItem: (_, value) => savedGown = value },
   Image: class { set src(v) { this.source = v; this.width = 2172; this.height = 724; this.onload(); } },
   addEventListener: (name, handler) => handlers[name] = handler, requestAnimationFrame() {},
 };
 let source = fs.readFileSync(path.join(__dirname, 'game.js'), 'utf8');
 source = source.replace(/\}\)\(\);\s*$/, `globalThis.testGame = { enterPlace, walkOff, useDoor, update, render, drawWalker, pickGown,
-  state: () => ({ place, leaderX, worldW, door, gown, dressing }) }; })();`);
+  openMap, PLACES, LANDS, VILLA, state: () => ({ place, leaderX, worldW, door, gown, dressing }) }; })();`);
 vm.runInNewContext(source, sandbox);
 setImmediate(() => {
   const g = sandbox.testGame;
@@ -145,4 +150,35 @@ setImmediate(() => {
   }
   console.log('Passed both resident sprites, nearby talk buttons, keyboard/click dialogue and departure.');
   console.log('Passed second village scene, walking right to Inn Street, walking left to the square, both street doors and retained gown.');
+
+  // games: each play door opens its hub, keys are paused while it's open, and the party stays put
+  const playDoors = [[0, .64, 'garden'], [1, .22, 'horses'], [1, .55, 'festival'], [2, .58, 'treehouse'], [3, .18, 'kitchen'],
+    [7, .1, 'carpenter'], [7, .44, 'stage'], [7, .63, 'dress'], [7, .88, 'haberdashery'], [17, .11, 'shoes'], [17, .26, 'toys'], [17, .42, 'books'],
+    [8, .3, 'royal-kitchen'], [9, .5, 'royal-event'], [g.VILLA, .12, 'boating'], [g.VILLA, .33, 'villa-animals'], [g.VILLA, .6, 'villa-dance'], [g.VILLA, .78, 'villa-piano']];
+  for (const [place, position, key] of playDoors) {
+    gamesOpen = false;
+    g.enterPlace(place, position); g.update(0);
+    assert.equal(g.state().door?.[1], 'play', `play door at ${g.PLACES[place].name} ${position}`);
+    assert.equal(g.state().door[2], key);
+    g.useDoor(); settle();
+    assert.equal(opened.at(-1).key, key); assert.equal(g.state().place, place, 'opening a game does not travel');
+    const before = g.state().leaderX;
+    handlers.keydown({ key: 'ArrowRight', target: {}, preventDefault() {} }); g.update(.2);
+    assert.equal(g.state().leaderX, before, 'walking keys are paused while a game is open');
+    handlers.keyup({ key: 'ArrowRight' });
+  }
+  gamesOpen = false;
+  const hubs = new Set(playDoors.map(d => d[2]));
+  const activitySource = fs.readFileSync(path.join(__dirname, 'activities.js'), 'utf8');
+  for (const key of hubs) assert(new RegExp(`['\\s]${key}'?: \\{ title`).test(activitySource), `hub ${key} exists in activities.js`);
+  console.log(`Passed ${playDoors.length} game doors across Celedonia and Byzantine, opening ${hubs.size} hubs without moving the party.`);
+
+  const byz = g.LANDS.find(l => l.key === 'byzantine');
+  assert.deepEqual([...byz.to], [g.VILLA, .5], 'Byzantine can be visited from the atlas');
+  g.enterPlace(g.VILLA, .5); assert.equal(get('placeName').textContent, 'Byzantine · The Villa');
+  assert.equal(get('placeNum').textContent, 'in Byzantine');
+  assert.equal(g.state().worldW, 1800, 'painted villa is as wide as the other places');
+  doorAt(g.VILLA, .95, 0);
+  nodes.find(n => Number(n.dataset.place) === g.VILLA).click(); settle(); assert.equal(g.state().place, g.VILLA);
+  console.log('Passed the painted Byzantine villa, its atlas link, place button and road home.');
 });
