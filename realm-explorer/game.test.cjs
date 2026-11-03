@@ -154,7 +154,7 @@ setImmediate(() => {
   // games: each play door opens its hub, keys are paused while it's open, and the party stays put
   const playDoors = [[0, .64, 'garden'], [1, .22, 'horses'], [1, .55, 'festival'], [2, .58, 'treehouse'], [3, .18, 'kitchen'],
     [7, .1, 'carpenter'], [7, .44, 'stage'], [7, .63, 'dress'], [7, .88, 'haberdashery'], [17, .11, 'shoes'], [17, .26, 'toys'], [17, .42, 'books'],
-    [8, .3, 'royal-kitchen'], [9, .5, 'royal-event'], [g.VILLA, .12, 'boating'], [g.VILLA, .33, 'villa-animals'], [g.VILLA, .6, 'villa-dance'], [g.VILLA, .78, 'villa-piano']];
+    [8, .3, 'royal-kitchen'], [9, .5, 'royal-event'], [g.VILLA, .86, 'boating'], [30, .845, 'villa-animals'], [27, .36, 'villa-dance'], [26, .68, 'villa-piano']];
   for (const [place, position, key] of playDoors) {
     gamesOpen = false;
     g.enterPlace(place, position); g.update(0);
@@ -174,15 +174,17 @@ setImmediate(() => {
   console.log(`Passed ${playDoors.length} game doors across Celedonia and Byzantine, opening ${hubs.size} hubs without moving the party.`);
 
   const byz = g.LANDS.find(l => l.key === 'byzantine');
-  assert.deepEqual([...byz.to], [g.VILLA, .5], 'Byzantine can be visited from the atlas');
-  g.enterPlace(g.VILLA, .5); assert.equal(get('placeName').textContent, 'Byzantine · The Villa');
+  assert.deepEqual([...byz.to], [g.VILLA, .85], 'Byzantine can be visited from the atlas');
+  g.enterPlace(g.VILLA, .85); assert.equal(get('placeName').textContent, 'Byzantine · Lakeside Villa');
   assert.equal(get('placeNum').textContent, 'in Byzantine');
-  assert.equal(g.state().worldW, 1800, 'painted villa is as wide as the other places');
-  doorAt(g.VILLA, .95, 0);
+  g.render(); assert(draws.some(d => d[0].source === 'byzantine-villa.jpg'));
+  doorAt(g.VILLA, .775, 0);
   nodes.find(n => Number(n.dataset.place) === g.VILLA).click(); settle(); assert.equal(g.state().place, g.VILLA);
-  console.log('Passed the painted Byzantine villa, its atlas link, place button and road home.');
-  // the photographed villa interior, entered through the doors in the arcade
-  doorAt(g.VILLA, .52, 23); assert.equal(get('placeName').textContent, 'Byzantine · Villa Foyer'); assert.equal(get('placeNum').textContent, 'inside the villa');
+  doorAt(g.VILLA, .945, 30); assert.equal(get('placeName').textContent, 'Byzantine · Villa Terrace');
+  doorAt(30, .955, g.VILLA);
+  console.log('Passed the photographed lakeside villa and terrace, the atlas link, place button and the boat home.');
+  // the photographed villa interior, entered from the terrace
+  doorAt(30, .9, 23); assert.equal(get('placeName').textContent, 'Byzantine · Villa Foyer'); assert.equal(get('placeNum').textContent, 'inside the villa');
   g.render(); assert(draws.some(d => d[0].source === 'byzantine-foyer.jpg'));
   doorAt(23, .58, 24); doorAt(24, .49, 26); doorAt(26, .05, 24); doorAt(24, .87, 28); doorAt(28, .04, 24);
   g.enterPlace(24, .5); g.walkOff('right'); settle(); assert.equal(g.state().place, 25);
@@ -191,7 +193,7 @@ setImmediate(() => {
   g.walkOff('left'); settle(); assert.equal(g.state().place, 25);
   g.walkOff('left'); settle(); assert.equal(g.state().place, 24);
   g.walkOff('left'); settle(); assert.equal(g.state().place, 23);
-  doorAt(23, .45, g.VILLA);
+  doorAt(23, .45, 30);
   ['byzantine-foyer.jpg', 'byzantine-hall-doors.jpg', 'byzantine-hall-windows.jpg', 'byzantine-library.jpg', 'byzantine-ballroom.jpg', 'byzantine-dining.jpg', 'byzantine-balcony.jpg']
     .forEach((img, k) => { g.enterPlace(23 + k, .5); g.render(); assert(draws.some(d => d[0].source === img), img); });
   console.log('Passed the villa interior: foyer, both hallways, library, dining room, ballroom and balcony, and back out.');

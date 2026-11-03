@@ -142,22 +142,20 @@ const PLACES = [
     spots: [[.3, 'Waterfalls spill from the castle rocks into the sapphire lake.'], [.5, 'A marble causeway, set with a blue compass star, leads up to the castle gate.'],
       [.72, 'Domed pavilions and arched bridges link the little islands.']],
     doors: [[.16, 19, .52, 'Back to the village square', 'The terrace steps lead back to Azurea’s village square.']] },
-  // ---- Byzantine: Cashamir's villa on the lake (painted in code by paintVilla, below) ----
-  { name: 'Byzantine · The Villa', inside: 'byzantine', area: 'in Byzantine', paint: () => paintVilla(), img: 'villa', yoff: -30, ground: 506, scale: .9, ambient: 'birds',
-    spots: [[.04, 'Cypress trees line the shore of the villa lake.'], [.3, 'Peacocks strut through the villa farm.'], [.5, 'Golden mosaics glitter beneath the villa’s great dome.'],
-      [.66, 'Lanterns are strung across the courtyard for dancing.'], [.82, 'Piano music drifts from the music room window.']],
-    doors: [[.12, 'play', 'boating', 'Go boating on the lake', 'A little sailboat is tied up at the villa dock.'],
-      [.33, 'play', 'villa-animals', 'Care for the animals', 'Peacocks, goats, ducklings, a lamb and a bunny live on the villa farm.'],
-      [.6, 'play', 'villa-dance', 'Dance in the courtyard', 'Musicians play beneath the lanterns in the marble courtyard.'],
-      [.78, 'play', 'villa-piano', 'Watch Cashamir play piano', 'Cashamir, the icy-blue prince, is at the piano in the music room.'],
-      [.52, 23, .46, 'Step inside the villa', 'Through the arcade, tall glass doors open into the villa’s golden foyer.'],
-      [.95, 0, .1, 'Take the road home', 'The road home leads back to Castle Valley and Ember’s land.']] },
-  // ---- inside Cashamir's villa: the photographed rooms, entered through the doors in the arcade ----
+  // ---- Byzantine: Cashamir's villa on a mountain lake. One painting serves two places: the lakeside promenade, and
+  // (drawn closer with `zoom`) the villa terrace (place 30), reached by the steps at the right-hand end of the promenade.
+  { name: 'Byzantine · Lakeside Villa', inside: 'byzantine', area: 'in Byzantine', img: 'byzantine-villa.jpg', zoom: 1.35, yoff: -38, ground: 505, walk: [.76, .99], scale: .7, ambient: 'birds',
+    spots: [[.8, 'Waterfalls tumble down the green mountains into the still blue lake.'], [.9, 'Pink blossom spills over the old stone arcades.'],
+      [.97, 'High above the water, the golden villa looks out across the lake.']],
+    doors: [[.775, 0, .1, 'Take the boat home', 'A little boat waits at the landing to carry the party back to Castle Valley.'],
+      [.86, 'play', 'boating', 'Go boating on the lake', 'A little sailboat is tied up at the villa landing.'],
+      [.945, 30, .95, 'Climb the steps to the villa', 'Stone steps wind up from the lake to the villa’s flowered terrace.']] },
+  // ---- inside Cashamir's villa: the photographed rooms, entered from the villa terrace ----
   { name: 'Byzantine · Villa Foyer', inside: 'byzantine', area: 'inside the villa', img: 'byzantine-foyer.jpg', yoff: -30, ground: 520, walk: [0, .64], scale: 1.15, ambient: 'motes',   // stops at the foot of the staircase
     spots: [[.08, 'A landscape painting and a vase of white lilies on a gilded console table.'], [.32, 'An olive tree in a stone urn, beside the arches.'],
       [.45, 'A marble compass rose is set into the floor beneath the crystal chandelier.'], [.58, 'Lamplit arches lead deeper into the villa.'],
       [.62, 'A sweeping marble staircase curves up to the gallery, and tall windows fill the hall with mountain sunlight.']],
-    doors: [[.45, 22, .52, 'Out to the villa courtyard', 'The glass doors open back out onto the arcade.'],
+    doors: [[.45, 30, .9, 'Out to the terrace', 'The glass doors open onto the terrace and the lake beyond.'],
       [.58, 24, .05, 'Through the arches to the hallway', 'Beyond the lamplit arches, a long sunny hallway runs through the villa.']] },
   // the villa's hallways run left to right: first the hallway of doors, then the hallway of windows
   { name: 'Byzantine · Hallway of Doors', inside: 'byzantine', area: 'inside the villa', img: 'byzantine-hall-doors.jpg', yoff: -30, ground: 520, scale: 1.15, ambient: 'motes',
@@ -173,13 +171,15 @@ const PLACES = [
   { name: 'Byzantine · Villa Library', inside: 'byzantine', area: 'inside the villa', img: 'byzantine-library.jpg', yoff: -30, ground: 520, scale: 1.15, ambient: 'motes',
     spots: [[.12, 'A rolling ladder leans against shelves of leather-bound books.'], [.27, 'An armchair and a little table wait beside a vase of lilies.'],
       [.4, 'A window seat looks out to the snowy mountains.'], [.68, 'A white grand piano stands open, its music ready on the stand.'], [.9, 'More shelves climb to the ceiling, packed with books.']],
-    doors: [[.05, 24, .49, 'Back to the hallway', 'The library doors lead back to the hallway of doors.']] },
+    doors: [[.05, 24, .49, 'Back to the hallway', 'The library doors lead back to the hallway of doors.'],
+      [.68, 'play', 'villa-piano', 'Watch Cashamir play piano', 'Cashamir, the icy-blue prince, sits down at the white grand piano.']] },
   // the ballroom's twin staircases frame the floor, so the party walks between them; the centre doors open onto the balcony
   { name: 'Byzantine · Ballroom', inside: 'byzantine', area: 'inside the villa', img: 'byzantine-ballroom.jpg', yoff: -30, ground: 520, walk: [.2, .8], scale: 1.15, ambient: 'motes',
     left: 25,
     spots: [[.24, 'A sweeping staircase curves up to the gallery.'], [.33, 'A gilded mirror and a little table stand between the arches.'],
       [.5, 'A crystal chandelier hangs above an inlaid marble rose.'], [.76, 'The twin staircase climbs the other side of the ballroom.']],
-    doors: [[.5, 29, .5, 'Out to the balcony', 'The tall glass doors open onto a balcony high above the lake.']] },
+    doors: [[.5, 29, .5, 'Out to the balcony', 'The tall glass doors open onto a balcony high above the lake.'],
+      [.36, 'play', 'villa-dance', 'Dance in the ballroom', 'Musicians strike up beneath the crystal chandelier.']] },
   { name: 'Byzantine · Dining Room', inside: 'byzantine', area: 'inside the villa', img: 'byzantine-dining.jpg', yoff: -30, ground: 520, scale: 1.15, ambient: 'motes',
     spots: [[.12, 'A carved sideboard holds a bowl of lemons and white lilies.'], [.35, 'Tall windows look out on the lake and the mountains.'],
       [.5, 'The long table is set with candelabra and a great bowl of lilies.'], [.86, 'An olive tree stands beside the crackling fireplace.'], [.95, 'Candles flicker beneath a gilded mirror over the mantel.']],
@@ -187,8 +187,13 @@ const PLACES = [
   { name: 'Byzantine · Balcony', inside: 'byzantine', area: 'inside the villa', img: 'byzantine-balcony.jpg', yoff: -30, ground: 520, scale: 1.15, ambient: 'butterflies',
     spots: [[.15, 'White blossom hangs from the branches over the balustrade.'], [.5, 'Snowy mountains rise above the shining lake.'], [.83, 'Stone urns spill over with white flowers.']],
     doors: [[.5, 27, .5, 'Back into the ballroom', 'The glass doors lead back into the ballroom.']] },
+  { name: 'Byzantine · Villa Terrace', inside: 'byzantine', area: 'in Byzantine', img: 'byzantine-villa.jpg', zoom: 2.2, yoff: -156, ground: 515, walk: [.82, .995], scale: .9, ambient: 'butterflies',
+    spots: [[.83, 'Stone urns brim with flowers along the balustrade.'], [.93, 'Cool arcades shade the villa’s lower rooms.'], [.99, 'From the terrace, the whole lake glitters below.']],
+    doors: [[.955, 22, .945, 'Go down to the lake', 'The steps lead back down to the lakeside promenade.'],
+      [.9, 23, .46, 'Step inside the villa', 'Through the arcade, tall glass doors open into the villa’s golden foyer.'],
+      [.845, 'play', 'villa-animals', 'Visit the villa animals', 'Peacocks, goats, ducklings, a lamb and a bunny roam the villa gardens.']] },
 ];
-const VILLA = PLACES.findIndex(p => p.name === 'Byzantine · The Villa');   // 22; the villa's interior rooms follow it
+const VILLA = PLACES.findIndex(p => p.name === 'Byzantine · Lakeside Villa');   // 22; the interior follows it, the terrace is 30
 const OUTDOORS = PLACES.filter(p => p.inside === undefined).length;   // the first three countryside places loop; village is a branch
 // Dress-up (at the Rose Bedroom mirror): Lila-Bella helps Ember try on her gowns. All gown cutouts share one scale
 // (GOWN_H px from hair to hem), so they swap in place; `line` is what Lila-Bella says when Ember puts it on.
@@ -334,100 +339,13 @@ function openPlay(key) {
 
 // ---- Byzantine villa: painted in code (2172x724, the same size as the painted places) ----
 // Left to right: the lake and dock, the villa farm, the domed villa with its lantern courtyard, the music room, the road home.
-function paintVilla() {
-  const W = 2172, H = 724, c = document.createElement('canvas');
-  c.width = W; c.height = H;
-  const g = c.getContext('2d');
-  const grad = (y0, y1, stops) => { const gr = g.createLinearGradient(0, y0, 0, y1); stops.forEach(([o, col]) => gr.addColorStop(o, col)); return gr; };
-  const poly = (pts, fill) => { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fillStyle = fill; g.fill(); };
-  const arch = (x, y, w, h, fill) => { g.beginPath(); g.moveTo(x, y + h); g.lineTo(x, y + w / 2); g.arc(x + w / 2, y + w / 2, w / 2, Math.PI, 0); g.lineTo(x + w, y + h); g.closePath(); g.fillStyle = fill; g.fill(); };
-  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  // sky, sun and far mountains
-  g.fillStyle = grad(0, 520, [[0, '#8cbfe0'], [.6, '#f2dcc0'], [1, '#f7c99a']]); g.fillRect(0, 0, W, H);
-  const sun = g.createRadialGradient(420, 150, 10, 420, 150, 260); sun.addColorStop(0, 'rgba(255,248,220,.95)'); sun.addColorStop(1, 'rgba(255,240,200,0)');
-  g.fillStyle = sun; g.fillRect(0, 0, W, 500);
-  poly([[0, 420], [160, 300], [330, 360], [520, 270], [760, 380], [980, 310], [1240, 390], [1500, 300], [1760, 370], [2000, 290], [2172, 350], [2172, 470], [0, 470]], '#b9aacb');
-  poly([[0, 450], [240, 380], [470, 430], [700, 390], [960, 450], [1300, 420], [1700, 440], [2172, 410], [2172, 500], [0, 500]], '#8fae86');
-  // the lake, left
-  g.fillStyle = grad(440, 610, [[0, '#7fb3cf'], [1, '#3f7ea6']]); g.fillRect(0, 445, 760, 165);
-  g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2;
-  for (let i = 0; i < 40; i++) { const x = rnd() * 720, y = 460 + rnd() * 140, w = 20 + rnd() * 40; g.beginPath(); g.moveTo(x, y); g.lineTo(x + w, y); g.stroke(); }
-  // sailboat and dock
-  g.fillStyle = '#7a4b2c'; g.beginPath(); g.moveTo(170, 560); g.lineTo(320, 560); g.lineTo(295, 585); g.lineTo(195, 585); g.closePath(); g.fill();
-  g.fillStyle = '#5a3a24'; g.fillRect(243, 420, 6, 142);
-  poly([[250, 425], [250, 552], [330, 552]], '#fffaf0'); poly([[242, 440], [242, 552], [190, 552]], '#e8eef5');
-  g.fillStyle = '#9a6a42'; g.fillRect(300, 596, 300, 18);
-  g.fillStyle = '#6e4a2e'; for (let x = 310; x < 600; x += 48) g.fillRect(x, 596, 8, 50);
-  // cypresses
-  const cypress = (x, y, h) => { g.fillStyle = '#2f4f33'; g.beginPath(); g.ellipse(x, y - h / 2, h * .13, h / 2, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.08)'; g.beginPath(); g.ellipse(x - h * .04, y - h / 2, h * .05, h * .45, 0, 0, 7); g.fill(); };
-  [[40, 610, 300], [110, 600, 240], [690, 590, 260], [990, 600, 300], [1890, 600, 280], [1960, 610, 220]].forEach(a => cypress(...a));
-  // the villa farm: a little stone barn, fence and hay
-  g.fillStyle = '#e6d3b0'; g.fillRect(760, 440, 230, 160);
-  poly([[740, 445], [875, 370], [1010, 445]], '#c46a45');
-  g.fillStyle = '#7a4b2c'; arch(845, 500, 60, 100, '#7a4b2c');
-  g.fillStyle = '#e8c36a'; g.fillRect(780, 560, 50, 40); g.fillRect(930, 565, 46, 35);
-  g.strokeStyle = '#8a6440'; g.lineWidth = 7;
-  g.beginPath(); g.moveTo(700, 590); g.lineTo(1040, 590); g.moveTo(700, 615); g.lineTo(1040, 615); g.stroke();
-  g.fillStyle = '#7a5434'; for (let x = 700; x <= 1040; x += 57) g.fillRect(x - 5, 575, 10, 55);
-  // the villa: cream walls, terracotta roofs, golden dome
-  const wall = '#f1e4c9', shade = 'rgba(120,90,50,.12)';
-  g.fillStyle = wall; g.fillRect(1080, 330, 760, 280);
-  poly([[1060, 336], [1460, 268], [1860, 336]], '#c46a45');
-  // the dome over the centre
-  g.fillStyle = wall; g.fillRect(1380, 210, 160, 90);
-  for (let i = 0; i < 4; i++) arch(1395 + i * 36, 228, 22, 50, '#3f6a95');
-  const dome = g.createRadialGradient(1440, 120, 10, 1460, 180, 120); dome.addColorStop(0, '#fff2b8'); dome.addColorStop(.5, '#e2b24e'); dome.addColorStop(1, '#a8772c');
-  g.fillStyle = dome; g.beginPath(); g.ellipse(1460, 212, 92, 96, 0, Math.PI, 0); g.fill();
-  g.strokeStyle = 'rgba(120,80,20,.45)'; g.lineWidth = 2;
-  for (let i = -3; i <= 3; i++) { g.beginPath(); g.moveTo(1460, 118); g.quadraticCurveTo(1460 + i * 34, 140, 1460 + i * 29, 212); g.stroke(); }
-  g.fillStyle = '#e2b24e'; g.fillRect(1456, 92, 8, 28); g.beginPath(); g.arc(1460, 90, 7, 0, 7); g.fill();
-  // mosaic band under the eaves
-  for (let x = 1080; x < 1840; x += 16) { g.fillStyle = (x / 16) % 2 ? '#2f5f9a' : '#e2b24e'; g.fillRect(x, 340, 16, 12); }
-  // upper windows
-  for (let x = 1120; x < 1820; x += 80) { if (x > 1360 && x < 1540) continue; arch(x, 368, 34, 60, '#3a5f86'); g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(x + 4, 390, 6, 34); }
-  // the courtyard arcade (lanterns strung across) and the music room's great window
-  g.fillStyle = shade; g.fillRect(1080, 450, 760, 160);
-  for (let i = 0; i < 6; i++) { arch(1100 + i * 66, 470, 50, 140, '#d9c39e'); g.fillStyle = '#f7ecd4'; g.fillRect(1094 + i * 66, 462, 8, 148); }
-  g.fillStyle = '#f7ecd4'; g.fillRect(1490, 462, 8, 148);
-  arch(1560, 440, 220, 170, '#2a3d58');
-  g.fillStyle = '#9fd0ee'; g.globalAlpha = .55; g.fillRect(1560, 470, 30, 140); g.fillRect(1750, 470, 30, 140); g.globalAlpha = 1;
-  // the piano: a grand piano silhouette in the window
-  g.fillStyle = '#141018'; g.beginPath(); g.moveTo(1600, 540); g.lineTo(1720, 540); g.quadraticCurveTo(1750, 545, 1745, 565); g.lineTo(1600, 566); g.closePath(); g.fill();
-  g.fillRect(1612, 566, 8, 40); g.fillRect(1730, 566, 8, 40); g.fillRect(1640, 508, 6, 34);
-  g.fillStyle = '#fffaf0'; g.fillRect(1604, 560, 70, 5);
-  g.strokeStyle = '#2f5f9a'; g.lineWidth = 10; g.beginPath(); g.moveTo(1560, 470); g.quadraticCurveTo(1590, 520, 1575, 610); g.moveTo(1780, 470); g.quadraticCurveTo(1750, 520, 1765, 610); g.stroke();
-  // lantern strings over the courtyard
-  g.strokeStyle = '#6e5a3e'; g.lineWidth = 2;
-  for (const [x0, x1] of [[1080, 1300], [1290, 1520]]) {
-    g.beginPath(); g.moveTo(x0, 470); g.quadraticCurveTo((x0 + x1) / 2, 530, x1, 470); g.stroke();
-    for (let k = 1; k < 7; k++) { const t = k / 7, x = x0 + (x1 - x0) * t, y = 470 + 120 * t * (1 - t);
-      const lg = g.createRadialGradient(x, y + 10, 1, x, y + 10, 22); lg.addColorStop(0, 'rgba(255,230,150,.9)'); lg.addColorStop(1, 'rgba(255,220,130,0)');
-      g.fillStyle = lg; g.fillRect(x - 22, y - 12, 44, 44); g.fillStyle = '#f2b84e'; g.beginPath(); g.ellipse(x, y + 10, 6, 9, 0, 0, 7); g.fill(); }
-  }
-  // the road home, right
-  poly([[1960, 610], [2172, 560], [2172, 610]], '#d6bd8e');
-  g.fillStyle = '#7a5434'; g.fillRect(2060, 520, 8, 90); g.fillStyle = '#9a6a42'; g.fillRect(2030, 525, 90, 22);
-  // the marble terrace along the front, with potted lemon trees
-  g.fillStyle = grad(600, H, [[0, '#efe4d0'], [1, '#d8c7a6']]); g.fillRect(0, 606, W, H - 606);
-  g.strokeStyle = 'rgba(140,110,70,.25)'; g.lineWidth = 2;
-  for (let y = 630; y < H; y += 32) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
-  for (let x = 0; x < W; x += 64) { g.beginPath(); g.moveTo(x, 606); g.lineTo(x - 40, H); g.stroke(); }
-  g.fillStyle = '#e2b24e'; g.fillRect(0, 604, W, 5);
-  for (const x of [640, 1060, 1860]) {
-    g.fillStyle = '#b8643e'; poly([[x - 26, 600], [x + 26, 600], [x + 18, 640], [x - 18, 640]], '#b8643e');
-    g.fillStyle = '#5f8a3e'; g.beginPath(); g.arc(x, 560, 40, 0, 7); g.fill();
-    g.fillStyle = '#f2d64e'; for (let k = 0; k < 9; k++) { g.beginPath(); g.arc(x - 28 + rnd() * 56, 535 + rnd() * 50, 5, 0, 7); g.fill(); }
-  }
-  return c;
-}
-
 // ---- the atlas: Xanthe's Celadonia. Click a land to travel there (lands with no places yet can't be visited).
 // x, y: centre of the land's painted name, w, h: the clickable box, all as fractions of the map image.
 const LANDS = [
   { key: 'celadonia', name: 'Celadonia', x: .79, y: .274, w: .19, h: .07, to: [0, .5], note: 'Ember’s home' },
   { key: 'azurea', name: 'Azurea', x: .069, y: .72, w: .15, h: .07, to: [19, .5], note: 'The blue land' },
   { key: 'xanthe', name: 'Xanthe', x: .1, y: .176, w: .16, h: .07 },
-  { key: 'byzantine', name: 'Byzantine', x: .13, y: .915, w: .17, h: .07, to: [VILLA, .5], note: 'Cashamir’s villa on the lake' },
+  { key: 'byzantine', name: 'Byzantine', x: .13, y: .915, w: .17, h: .07, to: [VILLA, .85], note: 'Cashamir’s villa on the lake' },
   { key: 'sangria', name: 'Sangria', x: .925, y: .795, w: .14, h: .07 },
 ];
 const landOf = i => typeof PLACES[i].inside === 'string' ? PLACES[i].inside : 'celadonia';
