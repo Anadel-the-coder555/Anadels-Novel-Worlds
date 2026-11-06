@@ -49,8 +49,8 @@ const PLACES = [
     doors: [[.03, 1, .82, 'Return to Lavender Fields', 'The path back to the lavender fields starts at the edge of the square.'],
       [.1, 'play', 'carpenter', 'Visit the carpenter’s shop', 'Master Tobias the carpenter waves you into his workshop.'],
       [.44, 'play', 'stage', 'Star in a village play', 'A little stage stands beside the fountain. The players are looking for a leading lady.'],
-      [.63, 'play', 'dress', 'Make a dress at the dress shop', 'Madame Rosalind’s dress shop is full of silks and ruffles.'],
-      [.88, 'play', 'haberdashery', 'Visit the haberdashery', 'Ribbons, buttons and hats fill Mr Penrose’s haberdashery.'],
+      [.63, 'play', 'dress', 'Make a dress at the dress shop', 'Lorelei’s dress shop is full of silks and ruffles.'],
+      [.88, 'play', 'haberdashery', 'Visit the haberdashery', 'Ribbons, buttons and hats fill Eason’s haberdashery.'],
       [.96, 17, .06, 'Continue along the village street', 'The village continues to the right, past the inn, bookshop and café.']] },
   { name: 'Castle Hall', inside: 0, area: 'inside the castle', img: 'castle-hall.jpg', yoff: -30, ground: 520, scale: 1.15, ambient: 'motes', left: 9,
     spots: [[.03, 'The ballroom lies to the left, through the grand archway.'], [.25, 'Sage-green tapestries and white dove banners hang above cushioned benches.'],
@@ -117,8 +117,8 @@ const PLACES = [
       [.83, 'The flower shop is fragrant with lavender and fresh blossoms.'],
       [.96, 'The café serves tea and pastries beside the cobbled street.']],
     doors: [[.03, 7, .94, 'Return to the market square', 'The first village square is back along the street to the left.'],
-      [.11, 'play', 'shoes', 'Visit the shoe shop', 'Wren the shoemaker has slippers, dancing shoes and boots.'],
-      [.26, 'play', 'toys', 'Visit the toy shop', 'Mrs Pip’s toy shop is full of teddies, kites and music boxes.'],
+      [.11, 'play', 'shoes', 'Visit the shoe shop', 'Leighton the shoemaker has slippers, dancing shoes and boots.'],
+      [.26, 'play', 'toys', 'Visit the toy shop', 'Benton the toy maker’s shop is full of teddies, kites and music boxes.'],
       [.42, 'play', 'books', 'Browse the bookshop', 'Mabel the bookseller can find you the perfect book.']] },
   { name: 'Castle Library', inside: 0, area: 'upstairs · right wing', img: 'castle-library.jpg', yoff: -30, ground: 520, scale: 1.15, ambient: 'motes',
     spots: [[.2, 'Tall shelves hold books and scrolls beside the reading tables.'], [.48, 'Cushioned sofas overlook the mountains through the great windows.'], [.92, 'A stone staircase climbs to the upper bookshelves.']],
@@ -326,19 +326,23 @@ function useDoor() {
   else travel(door[1], door[2]);
 }
 function travel(i, from) { fadeTo(() => enterPlace(i, from)); }
-// ---- games (activities.js): baking with Evelynn, village shops, the royal gardens, Byzantine's villa… ----
-const playing = () => !!window.EmberActivities?.isOpen();
-function openPlay(key) {
-  if (!window.EmberActivities || playing()) return;
+// ---- games (scenes.js): baking with Evelynn, village shops, the royal gardens, Byzantine's villa… ----
+const playing = () => !!window.EmberScenes?.active();
+function openPlay(key, game) {
+  if (playing()) return;
   keys.left = keys.right = keys.hurry = false;
-  window.EmberActivities.open(key, {
-    duck: on => fadeMusic(on || !musicOn ? 0 : THEME_VOLUME),   // the theme hushes while the piano or dance music plays
+  if (!window.EmberScenes?.has(key)) return;
+  // the games play on the stage with the whole party: the leader plays, the others join in
+  door = null; $('doorBtn').hidden = $('talkBtn').hidden = true; caption(''); $('speech').classList.remove('on');
+  window.EmberScenes.start(key, {
+    cast: party().map(wi => ({ name: WALKERS[wi].name, who: wi, sheet: wi === 0 ? GOWN_WALKS[gown] : WALKERS[wi], face: { sheet: WALKERS[wi], box: WALKERS[wi].face } })),
+    backdrop: { img: PLACES[place].bgImg, at: leaderX / worldW },
+    duck: on => fadeMusic(on || !musicOn ? 0 : THEME_VOLUME),   // the theme hushes for the dancing and the piano
     onClose: () => $('doorBtn').hidden || $('doorBtn').focus({ preventScroll: true }),
+    game,
   });
 }
 
-// ---- Byzantine villa: painted in code (2172x724, the same size as the painted places) ----
-// Left to right: the lake and dock, the villa farm, the domed villa with its lantern courtyard, the music room, the road home.
 // ---- the atlas: Xanthe's Celadonia. Click a land to travel there (lands with no places yet can't be visited).
 // x, y: centre of the land's painted name, w, h: the clickable box, all as fractions of the map image.
 const LANDS = [
@@ -580,6 +584,7 @@ function update(dt) {
     sparkles = sparkles.filter(p => p.age < p.life);
     return;
   }
+  if (window.EmberScenes?.active()) { window.EmberScenes.update(dt); return; }
 
   const dir = fadeDir === 1 ? 0 : (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
   moving = dir !== 0;
@@ -720,6 +725,7 @@ function render() {
   ctx.setTransform(K, 0, 0, K, 0, 0);
   ctx.imageSmoothingQuality = 'high';
   if (dressing) { renderDressUp(); drawFade(); return; }
+  if (window.EmberScenes?.active()) { window.EmberScenes.render(ctx); drawFade(); return; }
   const P = PLACES[place];
   ctx.drawImage(P.bgImg, -camX, P.yoff, worldW, BG_H * (P.zoom || 1));
   if (P.ambient === 'birds') drawAmbient('birds');
@@ -776,5 +782,8 @@ function loadImg(src) { return new Promise((res, rej) => { const i = new Image()
   party().forEach((wi, slot) => { walkerState[wi].x = leaderX - slot * SPACING; });
   camX = 0;
   requestAnimationFrame(now => { last = now; requestAnimationFrame(frame); });
+  // for testing: index.html?game=bake opens that game straight away (or ?game=kitchen for the kitchen's games)
+  const testGame = new URLSearchParams(location.search).get('game'), testHub = testGame && window.EmberScenes?.hubOf(testGame);
+  if (testHub) openPlay(testHub, testGame);
 })();
 })();

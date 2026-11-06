@@ -17,13 +17,13 @@ function element(id) {
 const get = id => nodes.find(n => n.id === id) || element(id);
 const opened = [];
 let gamesOpen = false;
-const activities = { open(key, options) { opened.push({ key, options }); gamesOpen = true; return true; }, isOpen: () => gamesOpen };
-const sandbox = { Math, Number, String, Promise, Error, setTimeout() {}, setInterval() {}, clearInterval() {},
+const scenes = { has: () => true, start(key, options) { opened.push({ key, options }); gamesOpen = true; return true; }, active: () => gamesOpen, update() {}, render() {} };
+const sandbox = { Math, Number, String, Promise, Error, URLSearchParams, location: { search: '' }, setTimeout() {}, setInterval() {}, clearInterval() {},
   Audio: class { play() { return Promise.resolve(); } pause() {} },
   matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} },
   document: { getElementById: get, createElement: () => element(''), body: element('body'),
     querySelectorAll: q => q === '#places .place' ? nodes.filter(n => n.dataset.place !== undefined) : [],
-    fonts: { load: async () => {} } }, window: { devicePixelRatio: 1, EmberActivities: activities },
+    fonts: { load: async () => {} } }, window: { devicePixelRatio: 1, EmberScenes: scenes },
   localStorage: { getItem: () => savedGown, setItem: (_, value) => savedGown = value },
   Image: class { set src(v) { this.source = v; this.width = 2172; this.height = 724; this.onload(); } },
   addEventListener: (name, handler) => handlers[name] = handler, requestAnimationFrame() {},
@@ -169,8 +169,10 @@ setImmediate(() => {
   }
   gamesOpen = false;
   const hubs = new Set(playDoors.map(d => d[2]));
-  const activitySource = fs.readFileSync(path.join(__dirname, 'activities.js'), 'utf8');
-  for (const key of hubs) assert(new RegExp(`['\\s]${key}'?: \\{ title`).test(activitySource), `hub ${key} exists in activities.js`);
+  const sceneSource = fs.readFileSync(path.join(__dirname, 'scenes.js'), 'utf8');
+  for (const key of hubs) assert(new RegExp(`['\\s]${key}'?: \\{ title`).test(sceneSource), `hub ${key} exists in scenes.js`);
+  const cast = opened.at(-1).options.cast;
+  assert.equal(cast.length, 4, 'the whole party joins the game'); assert.equal(cast[0].name, 'Ember'); assert.equal(cast[0].sheet.img, 'walk-blush.png');
   console.log(`Passed ${playDoors.length} game doors across Celedonia and Byzantine, opening ${hubs.size} hubs without moving the party.`);
 
   const byz = g.LANDS.find(l => l.key === 'byzantine');
