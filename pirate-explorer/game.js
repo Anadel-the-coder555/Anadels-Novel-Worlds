@@ -34,7 +34,7 @@ const PIRATES = {
   absalom:     { name: 'Absalom', img: 'absalom.png', size: .94, face: [.5, .1, .14], station: [.3, 490], greet: 'Captain! The wind’s in our favour today.' },
   scarlett:    { name: 'Scarlett', img: 'scarlett.png', size: .96, face: [.48, .085, .14], station: [.44, 418], greet: 'Ahoy! Is it time to set sail?' },
   tempest:     { name: 'Tempest', img: 'tempest.png', portrait: [375, 0, 330, 1010], size: .94, face: [.35, .10, .14], station: [.5, 450], greet: 'Is the fog finally lifting, Captain?' },
-  crispin:     { name: 'Crispin', img: 'crispin.png', size: 1, face: [.5, .075, .13], station: [.57, 478], greet: 'Captain, the hold’s stowed and secure.' },
+  crispin:     { name: 'Crispin', img: 'crispin.png', size: 1, face: [.5, .075, .13], station: [.57, 478], greet: 'I demand to be put ashore at the next civilised port. …After supper.' },
   jade:        { name: 'Jade', img: 'jade.png', size: 1, face: [.5, .075, .13], station: [.69, 424], greet: 'Land ho, off the starboard side!',
                  walk: { img: 'jade-walk.png', frames: 8, fw: 246, fh: 420, ax: 129, cycle: 132 } },
   monsoon:     { name: 'Monsoon', img: 'monsoon.png', size: 1, face: [.5, .085, .13], station: [.8, 454], greet: 'The cannon’s polished and ready, Captain.',
@@ -207,14 +207,14 @@ function buildControls() {
     li.innerHTML = `<span class="face" style="${faceStyle(key, 32)}"></span><span>${PIRATES[key].name}</span>`;
     $('roster').appendChild(li);
   });
-  $('crewTotal').textContent = CREW.length;
   updateControls();
 }
 function updateControls() {
   document.querySelectorAll('.leader').forEach(b => b.setAttribute('aria-pressed', b.dataset.key === lead ? 'true' : 'false'));
-  CREW.forEach(k => $('roster-' + k).classList.toggle('aboard', joined.includes(k)));
+  CREW.forEach(k => { $('roster-' + k).classList.toggle('aboard', joined.includes(k)); $('roster-' + k).hidden = locked(k); });
   $('crewCount').textContent = joined.length;
-  $('crewPill').classList.toggle('full', joined.length === CREW.length);
+  $('crewTotal').textContent = crewHere().length;
+  $('crewPill').classList.toggle('full', joined.length === crewHere().length);
 }
 function setLead(key) {
   if (!mode || mode === 'story' || key === lead) return;
@@ -264,7 +264,7 @@ function invite() {
   s.say = JOIN_LINES[(joined.length - 1) % JOIN_LINES.length].replace('Captain!', `Captain ${PIRATES[lead].name.replace('Captain ', '')}!`);
   s.sayT = 2;
   updateControls();
-  if (joined.length === CREW.length) caption('All hands on deck! The whole crew is aboard.', 5);
+  if (joined.length === crewHere().length) caption('All hands on deck! The whole crew is aboard.', 5);
 }
 
 let captionHold = 0;
@@ -277,7 +277,7 @@ function caption(text, hold = 0) {
 
 const KEYMAP = { ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right', ArrowUp: 'up', w: 'up', W: 'up', ArrowDown: 'down', s: 'down', S: 'down' };
 addEventListener('keydown', e => {
-  if (!mode) return;
+  if (!mode || questPaused) return;
   if (swordDuel && duelFinished) {   // after a win, Space carries the story on
     if (e.key === ' ' && !e.repeat && !e.target.closest?.('button,input')) { e.preventDefault(); action(); }
     return;
@@ -308,7 +308,9 @@ function update(dt) {
   t += dt;
   if (!mode) return;
   if (swordDuel) { swordDuel.update(dt); return; }
+  if (questPaused) return;
   captionHold = Math.max(0, captionHold - dt);
+  if (mode === 'free' && !fadeDir) quest.tick(dt);
   if (mode === 'story') updateScene(dt);
   if (fadeDir) {
     fade = clamp(fade + fadeDir * dt / .3, 0, 1);
@@ -550,6 +552,7 @@ function resetAdventure(nextMode, startAt = 0) {
     const [fx, y, rm = 'deck'] = PIRATES[k].station;
     Object.assign(st[k], { room: rm, x: fx * ROOMS[rm].w, y, sayT: 0, moving: false });
   });
+  if (mode === 'free') CREW.filter(locked).forEach(k => st[k].room = 'hidden');   // not met yet in the treasure hunt
   if (mode === 'story') {
     st.cutlass.room = 'hidden';
     [...CREW, ...VILLAINS].filter(k => !STORY_CREW.includes(k)).forEach(k => st[k].room = 'hidden');
@@ -569,6 +572,7 @@ function resetAdventure(nextMode, startAt = 0) {
   $('storyPanel').hidden = mode !== 'story'; $('freePanel').hidden = mode !== 'free';
   $('modeLabel').textContent = mode === 'story' ? 'The adventure begins' : 'Exploring the ship';
   $('skipIntro').hidden = mode !== 'story'; $('replayIntro').hidden = mode === 'story';
+  quest.setActive(mode === 'free');
   $('tourText').textContent = 'Explore at your own pace, or let Ruby show you around.';
   $('tourNext').textContent = 'Start the ship tour';
   if (mode === 'story') { if (startAt) enterStoryStep(startAt); else showStory(); }
@@ -722,6 +726,36 @@ $('tourNext').addEventListener('click', () => {
   $('tourNext').textContent = tourStop === TOUR.length - 1 ? 'Take the tour again' : 'Next tour stop';
 });
 
+// ---- the treasure hunt (episodes.js runs it; the story is in quest.js) ----
+let quest = null, questPaused = false;
+const locked = k => !!quest?.isLocked(k);
+const crewHere = () => CREW.filter(k => !locked(k));
+function figureStyle(key) {
+  // a full-length portrait for the episode scenes, cropped like the stage drawing when the art has a `portrait` box
+  const p = PIRATES[key], W = p.img_.width, H = p.img_.height, [sx, sy, sw, sh] = p.portrait || [0, 0, W, H];
+  return `background-image:url('${p.img}');aspect-ratio:${sw}/${sh};--s:${p.size};background-size:${W / sw * 100}% ${H / sh * 100}%;` +
+         `background-position:${W > sw ? sx / (W - sw) * 100 : 0}% ${H > sh ? sy / (H - sh) * 100 : 0}%`;
+}
+const questApi = {
+  caption: (text, hold) => caption(text, hold),
+  face: (key, size) => faceStyle(key, size),
+  figure: figureStyle,
+  name: key => PIRATES[key]?.name || key,
+  keys: () => Object.keys(PIRATES),
+  isLocked: locked,
+  room: () => (fadeDir ? null : room),
+  roomName: key => ROOMS[key]?.name || key,
+  roomImg: key => ROOMS[key]?.img || '',
+  pause(on) { questPaused = on; Object.keys(keys).forEach(k => keys[k] = false); if (!on) last = performance.now(); },
+  unlock(key) {
+    // they appear at their usual spot, ready to be invited
+    const [fx, y, rm = 'deck'] = PIRATES[key].station;
+    Object.assign(st[key], { room: rm, x: fx * ROOMS[rm].w, y, sayT: 0, moving: false });
+    updateControls();
+  },
+  restart: () => resetAdventure('free'),
+};
+
 // ---- loop ----
 let last = 0;
 function frame(now) {
@@ -741,6 +775,7 @@ function loadImg(src) { return new Promise((res, rej) => { const i = new Image()
   (mode === 'story' ? [] : [...CREW, ...VILLAINS]).forEach(k => { const [fx, y, rm = 'deck'] = PIRATES[k].station; st[k] = { room: rm, x: fx * ROOMS[rm].w, y, phase: 0, moving: false, lean: 0, facing: 1, sayT: 0 }; });
   trail = [];
   for (let x = 260 - SPACING - 6; x <= 260; x += SAMPLE) trail.push({ x, y: 500 });
+  quest = window.createSoulmatesQuest(questApi);
   buildControls();
   resetAdventure(introDone() ? 'free' : 'story');
   requestAnimationFrame(now => { last = now; requestAnimationFrame(frame); });

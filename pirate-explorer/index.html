@@ -33,7 +33,10 @@
 
       <div class="hud">
         <div class="pill"><b id="placeName">The Ship’s Deck</b></div>
-        <div class="pill" id="crewPill" aria-live="polite">Crew aboard <b id="crewCount">0</b> / <span id="crewTotal">9</span></div>
+        <div class="hud-right">
+          <div class="pill" id="crewPill" aria-live="polite">Crew aboard <b id="crewCount">0</b> / <span id="crewTotal">9</span></div>
+          <div class="pill treasure-pill" id="treasurePill" hidden>Treasures <span class="slots" id="treasureSlots" aria-hidden="true"></span><span class="visually-hidden"><span id="treasureCount">0</span> of 3 found</span></div>
+        </div>
       </div>
 
       <div class="story-speech" id="storySpeech" hidden>
@@ -67,6 +70,15 @@
       </fieldset>
     </div>
 
+    <section class="adventure-panel quest-panel" id="questPanel" hidden aria-labelledby="questTitle">
+      <h2 id="questTitle">The ship’s log</h2>
+      <p class="quest-log" id="questLog" aria-live="polite"></p>
+      <div class="quest-actions"><button id="questNow" type="button">Look for trouble</button><button id="questReset" type="button" class="quiet">Start the hunt over</button></div>
+      <h3>Treasures found</h3>
+      <p id="treasureEmpty" class="muted">None yet. There are three out there somewhere.</p>
+      <ul class="treasure-list" id="treasureList"></ul>
+    </section>
+
     <section class="adventure-panel games-panel" aria-labelledby="gamesTitle">
       <h2 id="gamesTitle">Mini-games</h2>
       <nav class="games" aria-label="Choose a mini-game">
@@ -89,7 +101,36 @@
     </ul>
   </div>
 
+  <div class="quest-hook" id="questHook" hidden role="dialog" aria-labelledby="hookTitle" aria-describedby="hookText">
+    <span class="face hook-face" id="hookFace" hidden></span>
+    <div class="hook-body">
+      <small id="hookKind"></small>
+      <b id="hookTitle"></b>
+      <p id="hookText"></p>
+      <div class="hook-actions"><button id="hookGo" type="button" class="primary">Let’s do it!</button><button id="hookLater" type="button">Maybe later</button></div>
+    </div>
+  </div>
+
+  <div class="episode" id="episode" hidden role="dialog" aria-modal="true" aria-labelledby="epTitle">
+    <div class="ep-card">
+      <div class="ep-scene" id="epScene">
+        <div class="ep-cast" id="epCast"></div>
+      </div>
+      <div class="ep-speech" id="epSpeech" aria-live="polite"><b id="epSpeaker"></b><p id="epLine"></p></div>
+      <div class="ep-body">
+        <small id="epKind"></small>
+        <h2 id="epTitle"></h2>
+        <p id="epText"></p>
+        <div class="ep-treasure" id="epScore" hidden></div>
+        <p class="ep-prompt" id="epPrompt" hidden>What do you do?</p>
+        <div class="ep-actions" id="epActions"></div>
+      </div>
+    </div>
+  </div>
+
   <script src="chapter.js"></script>
+  <script src="quest.js"></script>
+  <script src="episodes.js"></script>
   <script src="sword-duel.js"></script>
   <script src="game.js"></script>
 </body>
