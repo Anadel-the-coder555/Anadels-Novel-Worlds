@@ -122,7 +122,7 @@ window.createSoulmatesQuest = api => {
     ep.text = b.text || '';
     ep.queue = (b.lines || []).map(parse);
     ep.line = 0;
-    ep.phase = ep.queue.length ? 'lines' : (b.choices ? 'choose' : 'lines');
+    ep.phase = b.game ? 'game-intro' : ep.queue.length ? 'lines' : (b.choices ? 'choose' : 'lines');
     ep.cast = b.cast || ep.e.cast || [];
   }
   function cast(speaking) {
@@ -151,8 +151,25 @@ window.createSoulmatesQuest = api => {
     $('epLine').textContent = line?.text || '';
     $('epSpeech').hidden = !line;
     $('epSpeech').classList.toggle('narration', !!line && !line.speaker);
+    const gaming = ep.phase === 'game' || ep.phase === 'game-done';
+    $('epGame').hidden = !gaming; $('epCast').hidden = gaming;
+    $('epScene').classList.toggle('playing', gaming);
     cast(key);
-    if (ep.phase === 'lines' || ep.phase === 'reply') {
+    if (ep.phase === 'game-intro') {
+      $('epText').textContent = b.how;
+      $('epPrompt').textContent = 'How to play'; $('epPrompt').hidden = false;
+      button('Play! →', startGame, 'primary');
+      return;
+    } else if (ep.phase === 'game') {
+      $('epText').textContent = b.how;
+      button('Give up', () => { stopGame(); ep.result = { won: false, score: 0, text: 'You gave up this time.' }; ep.phase = 'game-done'; draw(); }, 'quiet');
+    } else if (ep.phase === 'game-done') {
+      $('epText').textContent = ep.result.text;
+      if (!ep.result.won && b.mustWin) {
+        button('Try again', startGame, 'primary');
+        button('Back to the ship (try later)', () => close(false));
+      } else button('Continue →', () => { ep.score += ep.result.score || 0; nextBeat(); }, 'primary');
+    } else if (ep.phase === 'lines' || ep.phase === 'reply') {
       if (!line) { advance(); return; }
       button('Next →', advance, 'primary');
     } else if (ep.phase === 'choose') {
@@ -160,6 +177,18 @@ window.createSoulmatesQuest = api => {
       b.choices.forEach((c, i) => button(`${i + 1}. ${c.label}`, () => choose(c), 'choice'));
     } else if (ep.phase === 'end') drawEnd();
     $('epPrompt').hidden = ep.phase !== 'choose';
+  }
+  let stopGame = () => {};
+  function startGame() {
+    const b = ep.e.beats[ep.beat];
+    ep.phase = 'game'; draw();
+    $('epGame').scrollIntoView?.({ block: 'nearest' });
+    stopGame = window.runSoulmatesGame(b.game, $('epGame'), api, result => {
+      stopGame = () => {};
+      if (!ep) return;
+      ep.result = result; ep.phase = 'game-done'; draw();
+      $('epActions').querySelector('button.primary')?.focus({ preventScroll: true });
+    });
   }
   function advance() {
     if (ep.line < ep.queue.length - 1) { ep.line++; draw(); return; }
@@ -222,6 +251,7 @@ window.createSoulmatesQuest = api => {
     updateHud();
   }
   function close(completed) {
+    stopGame(); stopGame = () => {};
     const e = ep?.e;
     ep = null; $('episode').hidden = true; api.pause(false);
     if (!completed && e) { later[e.id] = clock; nextAt = clock + LATER; }
@@ -264,7 +294,7 @@ window.createSoulmatesQuest = api => {
 
   // ---- keyboard inside the episode: Space/Enter for the main button, number keys for choices ----
   addEventListener('keydown', e => {
-    if (!ep) return;
+    if (!ep || ep.phase === 'game') return;
     if (e.key === 'Escape') return;
     if (/^[1-9]$/.test(e.key) && ep.phase === 'choose') {
       const c = ep.e.beats[ep.beat].choices[+e.key - 1]; if (c) { e.preventDefault(); choose(c); }
@@ -300,6 +330,9 @@ window.createSoulmatesQuest = api => {
       $('treasurePill').hidden = !on; $('questPanel').hidden = !on;
       if (!on) { hook = heading = null; $('questHook').hidden = true; }
       if (on) { welcomeBack(); updateLog(); }
+      // for testing: index.html?episode=wagon opens that episode straight away
+      const want = on && new URLSearchParams(location.search).get('episode');
+      if (want && byId[want] && !ep) setTimeout(() => startEpisode(byId[want]), 300);
     },
   };
 };

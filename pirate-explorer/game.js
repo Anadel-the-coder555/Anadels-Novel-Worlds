@@ -741,6 +741,7 @@ const questApi = {
   face: (key, size) => faceStyle(key, size),
   figure: figureStyle,
   name: key => PIRATES[key]?.name || key,
+  pirate: key => PIRATES[key],
   keys: () => Object.keys(PIRATES),
   isLocked: locked,
   room: () => (fadeDir ? null : room),

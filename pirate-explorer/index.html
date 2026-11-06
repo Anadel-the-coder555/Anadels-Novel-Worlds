@@ -115,6 +115,11 @@
     <div class="ep-card">
       <div class="ep-scene" id="epScene">
         <div class="ep-cast" id="epCast"></div>
+        <canvas class="ep-game" id="epGame" hidden aria-label="Mini-game"></canvas>
+      </div>
+      <div class="game-pad" id="gamePad" hidden>
+        <div class="gp-dirs"><button type="button" data-k="left" aria-label="Left">◀</button><button type="button" data-k="up" aria-label="Up">▲</button><button type="button" data-k="down" aria-label="Down">▼</button><button type="button" data-k="right" aria-label="Right">▶</button></div>
+        <button type="button" class="gp-act" data-k="act">Action</button>
       </div>
       <div class="ep-speech" id="epSpeech" aria-live="polite"><b id="epSpeaker"></b><p id="epLine"></p></div>
       <div class="ep-body">
@@ -130,6 +135,7 @@
 
   <script src="chapter.js"></script>
   <script src="quest.js"></script>
+  <script src="minigames.js"></script>
   <script src="episodes.js"></script>
   <script src="sword-duel.js"></script>
   <script src="game.js"></script>
