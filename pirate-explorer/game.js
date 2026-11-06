@@ -119,6 +119,19 @@ const ROOMS = {
     doors: [{ x: .1, to: 'dining', at: .87, label: 'Back to the dining salon' }],
     spots: [[.28, 'A big chart of the islands, with routes marked in ink.'], [.5, 'The captain’s desk, buried in maps and a brass sextant.'],
             [.68, 'Tall windows behind the desk. You can see the rigging outside.'], [.9, 'A model ship on the bookshelf. Someone built it by hand.']] },
+  // Places the treasure hunt takes you (no doors lead there): its episodes play in them, and the mini-games use them as backdrops.
+  galley: { name: 'Odessa’s Galley', img: 'galley.jpg', yBack: 470, yFront: 530, scale: 1.45, doors: [],
+    spots: [[.2, 'A big iron range, and a copper pot that’s always on the boil.'], [.5, 'A scrubbed table under three portholes full of sea.'], [.9, 'Steep steps up to the deck.']] },
+  goldtooth: { name: 'Goldtooth’s Ship', img: 'goldtooth-ship.jpg', yBack: 420, yFront: 530, outside: true, doors: [],
+    spots: [[.25, 'Gilded cabin doors, far too fancy for a pirate.'], [.5, 'Goldtooth’s wheel, polished until it shines.']] },
+  evangeline: { name: 'Evangeline’s Ship', img: 'evangeline-ship.jpg', yBack: 440, yFront: 530, outside: true, doors: [],
+    spots: [[.3, 'A grand stair up to the quarterdeck.'], [.75, 'A row of cannons, every one of them loaded.']] },
+  ballroom: { name: 'The Royal Ballroom', img: 'palace-ballroom.jpg', yBack: 450, yFront: 530, scale: 1.2, doors: [],
+    spots: [[.5, 'A crystal chandelier over a marble floor.']] },
+  gallery: { name: 'The Ballroom Gallery', img: 'palace-gallery.jpg', yBack: 498, yFront: 532, scale: 1.25, doors: [],
+    spots: [[.5, 'A painted ceiling, and the whole ballroom spread out below the balustrade.']] },
+  town: { name: 'The Harbour Town', img: 'harbour-town.jpg', yBack: 505, yFront: 535, outside: true, scale: .95, doors: [],
+    spots: [[.5, 'Market stalls, shuttered windows and wisteria on every wall.']] },
 };
 
 const canvas = document.getElementById('game');
@@ -941,7 +954,8 @@ function loadImg(src) { return new Promise((res, rej) => { const i = new Image()
   for (let x = 260 - SPACING - 6; x <= 260; x += SAMPLE) trail.push({ x, y: 500 });
   quest = window.createSoulmatesQuest(questApi);
   buildControls();
-  resetAdventure(introDone() ? 'free' : 'story');
+  const testLink = /[?&](episode|game)=/.test(location.search);   // test links skip the intro (and don't mark it done)
+  resetAdventure(introDone() || testLink ? 'free' : 'story');
   requestAnimationFrame(now => { last = now; requestAnimationFrame(frame); });
 })().catch(error => {
   $('modeLabel').textContent = 'The ship could not load. Please reload to try again.';

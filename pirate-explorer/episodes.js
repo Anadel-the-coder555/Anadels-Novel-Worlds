@@ -94,8 +94,8 @@ window.createSoulmatesQuest = api => {
   // shown under a place name (`label`) when it's somewhere off the ship. Beats can add `room`, `label`, `cast`,
   // `place` ({ key: x fraction }) and `approach` (walk Ruby up to someone first, with `goal` as the instruction).
   const STAGE = {
-    hall: ['hall'], ballroom: ['dining', 'The Royal Ball'], island: ['island'], dining: ['dining'], deck: ['deck'],
-    town: ['deck', 'The Harbour'], chapel: ['upper', 'Goldtooth’s Ship'], study: ['study'], rival: ['upper', 'Evangeline’s Ship'],
+    hall: ['hall'], ballroom: ['ballroom', 'The Royal Ball'], gallery: ['gallery', 'The Royal Ball'], island: ['island'], dining: ['dining'], galley: ['galley'], deck: ['deck'],
+    town: ['town'], chapel: ['goldtooth'], study: ['study'], rival: ['evangeline'],
     sea: ['deck'], river: ['island', 'The Jungle River'], temple: ['island', 'The Old Master’s Hill'],
     eastern: ['deck', 'Facing the Pirate King’s Fleet'], night: ['study', 'The Captain’s Study, at Night'],
   };
@@ -230,6 +230,14 @@ window.createSoulmatesQuest = api => {
       // for testing: index.html?episode=wagon opens that episode once, without saving anything
       const want = on && !testRun && new URLSearchParams(location.search).get('episode');
       if (want && byId[want] && !ep) { testRun = true; setTimeout(() => { startEpisode(byId[want]); ep.debug = true; }, 300); }
+      // index.html?game=wagon goes straight to that mini-game, in its episode's place and company
+      const game = on && !testRun && new URLSearchParams(location.search).get('game');
+      const home = game && Q.events.find(x => x.beats.some(b => b.game === game));
+      if (home && !ep) {
+        testRun = true;
+        const only = { ...home, beats: [{ ...home.beats.find(b => b.game === game), cast: home.cast }] };
+        setTimeout(() => { startEpisode(only); ep.debug = true; }, 300);
+      }
     },
   };
 };

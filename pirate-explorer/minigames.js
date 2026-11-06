@@ -114,6 +114,8 @@ function makeKit(canvas, api, done) {
       const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, a); gr.addColorStop(1, b); g.fillStyle = gr; g.fillRect(0, 0, W, H);
     },
     image,
+    // a room's painting once it has loaded (null until then, or if the room has none)
+    roomImage(name) { const src = api.roomImg(name), img = src && image(src); return img && img.complete && img.width ? img : null; },
     shake: 0,
     end(result) { cleanup(); done(result); },
   };
@@ -302,7 +304,7 @@ GAMES.cooking = k => {
       }
     },
     draw() {
-      const g = k.g; k.backdrop('dining'); g.fillStyle = 'rgba(30,18,8,.35)'; g.fillRect(0, 0, W, H);
+      const g = k.g; k.backdrop('galley'); g.fillStyle = 'rgba(30,18,8,.35)'; g.fillRect(0, 0, W, H);
       k.sprite('odessa', 150, 400, 230);
       k.sprite('ruby', 820, 400, 225, true);
       // counter and pot
@@ -358,9 +360,14 @@ GAMES.wagon = k => {
       else if (time <= 0) k.end({ won: false, score: 1, text: 'Goldtooth’s men got away down the hill. The dog is very disappointed.' });
     },
     draw() {
-      const g = k.g; k.backdrop('town');
-      // buildings scrolling behind
-      for (let i = -1; i < 7; i++) { const x = ((i * 170 - scroll * .3) % (170 * 7) + 170 * 7) % (170 * 7) - 170; g.fillStyle = ['#d8b48a', '#c99f7a', '#e3caa0'][(i + 7) % 3]; g.fillRect(x, 70, 150, 150); g.fillStyle = '#8a4b3a'; g.beginPath(); g.moveTo(x - 10, 70); g.lineTo(x + 75, 20); g.lineTo(x + 160, 70); g.fill(); g.fillStyle = '#5d7d9a'; g.fillRect(x + 25, 110, 30, 34); g.fillRect(x + 95, 110, 30, 34); }
+      const g = k.g, street = k.roomImage('town');
+      // the town scrolling behind: the painted street (every other copy mirrored, so the joins match), or simple houses
+      if (street) {   // a plain strip of sky on top, so the bands above the field don't smear the rooftops
+        g.fillStyle = '#a9cfe6'; g.fillRect(0, 0, W, 12);
+        const h = 206, w = street.width * h / street.height, off = (scroll * .3) % (w * 2);
+        for (let i = 0, x = -off; x < W; i++, x += w) { g.save(); if (i % 2) { g.translate(x + w, 0); g.scale(-1, 1); g.drawImage(street, 0, 10, w, h); } else g.drawImage(street, x, 10, w, h); g.restore(); }
+      } else k.backdrop('town');
+      if (!street) for (let i = -1; i < 7; i++) { const x = ((i * 170 - scroll * .3) % (170 * 7) + 170 * 7) % (170 * 7) - 170; g.fillStyle = ['#d8b48a', '#c99f7a', '#e3caa0'][(i + 7) % 3]; g.fillRect(x, 70, 150, 150); g.fillStyle = '#8a4b3a'; g.beginPath(); g.moveTo(x - 10, 70); g.lineTo(x + 75, 20); g.lineTo(x + 160, 70); g.fill(); g.fillStyle = '#5d7d9a'; g.fillRect(x + 25, 110, 30, 34); g.fillRect(x + 95, 110, 30, 34); }
       g.fillStyle = '#b89b72'; g.fillRect(0, 214, W, H); g.fillStyle = 'rgba(0,0,0,.08)'; LANES.forEach(y => g.fillRect(0, y + 28, W, 3));
       for (let i = 0; i < 20; i++) { g.fillStyle = 'rgba(90,70,40,.25)'; g.fillRect(((i * 97 - scroll) % W + W) % W, 240 + (i * 53) % 170, 18, 6); }
       // the getaway cart, ahead
@@ -377,7 +384,9 @@ GAMES.wagon = k => {
         g.restore();
       });
       // our wagon: horse, Absalom driving, friends and a wet dog in the back
-      const bob = Math.abs(Math.sin(k.t * 12)) * 3, x = 200, y = ly;
+      const bob = Math.abs(Math.sin(k.t * 12)) * 3, x = 200, y = ly, cart = k.image('wagon.png');
+      if (cart.complete && cart.width) { const h = 116, w = cart.width * h / cart.height; g.drawImage(cart, x - 100, y + 28 - h - bob, w, h); }
+      else {
       g.fillStyle = '#8a5a34'; g.beginPath(); g.ellipse(x + 120, y - 18 - bob, 40, 20, 0, 0, 7); g.fill(); g.fillRect(x + 145, y - 60 - bob, 16, 44); g.beginPath(); g.ellipse(x + 162, y - 62 - bob, 18, 10, .3, 0, 7); g.fill();
       g.fillStyle = '#5a3a24'; [x + 95, x + 140].forEach((lx, i) => g.fillRect(lx, y - 2, 8, 26 - (i ? bob : -bob)));
       g.fillStyle = '#7a5230'; g.fillRect(x - 80, y - 30, 160, 34); g.fillStyle = '#5b3d22'; g.fillRect(x - 84, y - 34, 168, 8);
@@ -386,6 +395,7 @@ GAMES.wagon = k => {
       g.fillStyle = '#9a8a72'; g.beginPath(); g.ellipse(x - 62, y - 40 - bob, 14, 10, 0, 0, 7); g.fill(); g.beginPath(); g.arc(x - 76, y - 48 - bob, 8, 0, 7); g.fill();
       g.fillStyle = 'rgba(160,210,255,.8)'; for (let i = 0; i < 3; i++) g.fillRect(x - 70 + i * 6, y - 30 - ((k.t * 60 + i * 9) % 20), 2, 4);
       g.fillStyle = '#2b1a10'; [x - 50, x + 50].forEach(wx => { g.beginPath(); g.arc(wx, y + 8, 18, 0, 7); g.fill(); });
+      }
       k.text('Catch Goldtooth’s men!', 20, 26, { align: 'left', size: 24, font: 'display' });
       k.bar(250, 14, 300, 22, 1 - gap, '#ffc25a', 'Closing in');
       timerText(k, time);
@@ -431,7 +441,7 @@ GAMES.wedding = k => {
       function near() { return GAGS.find(g => Math.abs(g.x - x) < 55); }
     },
     draw() {
-      const g = k.g; k.backdrop('chapel');
+      const g = k.g; k.backdrop('goldtooth');
       g.fillStyle = '#b8323a'; g.fillRect(200, 300, 620, 30); // carpet
       g.fillStyle = 'rgba(80,50,30,.25)'; for (let i = 0; i < 6; i++) { k.rr(60 + i * 140, 250, 100, 40, 10); g.fill(); }
       // rigging with the crew peeking down
@@ -526,7 +536,7 @@ GAMES.charm = k => {
       function charm(gl) { gl.interest = Math.min(1, gl.interest + .35); charms++; pop.add(pick(['“What a lovely blade!”', '“May I have this dance?”', '“Is that a new hat?”', '“You sing like a siren!”']), gl.x, 130, '#ffd0de', 16); }
     },
     draw() {
-      const g = k.g; k.backdrop('rival');
+      const g = k.g; k.backdrop('evangeline');
       for (let i = 0; i < 8; i++) { g.fillStyle = ['#ffd27a', '#ff9ac0', '#9ad7ff'][i % 3]; g.beginPath(); g.arc(60 + i * 120, 40 + Math.sin(k.t * 2 + i) * 6, 7, 0, 7); g.fill(); }
       girls.forEach((gl, i) => {
         k.figure(gl.x, 360, 190, { coat: gl.coat, hair: gl.hair, hat: i % 2 ? '#2a1c14' : null, sash: '#f3e6cc', squash: Math.sin(k.t * 5 + i) * .015 });

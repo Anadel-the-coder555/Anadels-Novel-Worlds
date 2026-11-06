@@ -97,7 +97,7 @@ window.SOULMATES_QUEST = {
       ends: [[0, 'Two weeks later the ship comes back. The crews line the rail, grinning. Ruby has a great many chores to hand out.'],
              [6, 'Two weeks later the ship comes back. Ruby and Cutlass are sitting very close by the fire, and pretend they weren’t. Both crews cheer.']] },
 
-    { id: 'cooking', level: 0, kind: 'crew', from: 'odessa', title: 'Odessa’s Cooking Show', goto: 'dining', bg: 'dining', cast: ['ruby', 'odessa', 'cutlass'],
+    { id: 'cooking', level: 0, kind: 'crew', from: 'odessa', title: 'Odessa’s Cooking Show', goto: 'dining', bg: 'galley', cast: ['ruby', 'odessa', 'cutlass'],
       hook: 'Captain! I’m doing a cooking show in the dining salon, and I need a helper who can stir AND be charming.',
       gotoHint: 'Odessa is waiting in the dining salon, through the captain’s quarters.', accept: 'I’ll help',
       beats: [
@@ -204,7 +204,7 @@ window.SOULMATES_QUEST = {
       failText: 'Crispin shakes his head. “The evidence says otherwise.” Look at the clues again: rosewater, small bare wet footprints, a latch opened from inside.',
       ends: [[0, 'The mystery is solved! Coral sails for Evangeline, captain of the girl pirates, and Ruby’s chart is already on Evangeline’s ship. Crispin keeps the hat.']] },
 
-    { id: 'disguise', level: 1, kind: 'crew', from: 'tempest', title: 'Dress Up as a Lady', bg: 'ballroom', cast: ['tempest', 'cutlass', 'jade', 'monsoon'],
+    { id: 'disguise', level: 1, kind: 'crew', from: 'tempest', title: 'Dress Up as a Lady', bg: 'ballroom', room: 'gallery', cast: ['tempest', 'cutlass', 'jade', 'monsoon'],
       hook: 'Captain, I’ve got gowns, wigs and rouge, and five boys who need to pass as ladies. Tonight.',
       beats: [{ text: 'There’s a royal ball ashore, and the guests are whispering about pirates. Cutlass’s boys would be recognised anywhere. So tonight, they go as ladies. Ridiculous ladies.',
                 lines: ['Tempest: “Hold still.”', 'Cutlass: “I refuse.”', 'Tempest: “Hold. Still.”'] }],
