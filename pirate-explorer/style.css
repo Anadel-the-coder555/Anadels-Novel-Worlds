@@ -129,57 +129,20 @@ dialog button b{display:block;font:400 27px var(--display);margin-bottom:6px}dia
 .treasure-list{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px}
 .treasure-list b{color:var(--brass)}
 
-/* the episode: a scene with the cast, then narration and choices */
-.episode{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:rgba(6,10,14,.78);overflow-y:auto}
-.ep-card{width:min(100%,880px);border-radius:8px;overflow:hidden;background:var(--ink-2);box-shadow:0 30px 80px -20px #000,0 0 0 1px rgba(210,162,76,.4)}
-.ep-scene{position:relative;aspect-ratio:16/7;min-height:180px;background:#2c3e4a center/cover no-repeat;container-type:inline-size}
-.ep-scene::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 55%,rgba(10,14,18,.55))}
-.bg-ballroom{background-image:radial-gradient(ellipse at 50% 0,#f6d98a 0,#b7843a 30%,#4a2c17 75%)!important}
-.bg-town{background-image:linear-gradient(#9fc6e0,#e7d5b0 55%,#a07a52 56%,#6b4d31)!important}
-.bg-jungle{background-image:linear-gradient(#5f9b62,#2f5d34 55%,#1c3a22)!important}
-.bg-river{background-image:linear-gradient(#5f9b62 0,#2f5d34 45%,#3f8aa0 46%,#1f5568)!important}
-.bg-sea{background-image:radial-gradient(ellipse at 50% -10%,#bfe6e3 0,#3fa2a8 30%,#145067 70%,#0a2a3c)!important}
-.bg-night{background-image:radial-gradient(circle at 75% 25%,#f3e6cc 0 2%,transparent 2.5%),linear-gradient(#0d1730,#26365c 70%,#3a2816 71%)!important}
-.bg-rival{background-image:linear-gradient(#e7a7b8,#a55d7a 45%,#5b3a2a 46%,#3a2418)!important}
-.bg-chapel{background-image:radial-gradient(ellipse at 50% 20%,#fff3dc 0,#e6b8a2 35%,#7a4a33 75%)!important}
-.bg-eastern{background-image:linear-gradient(#f0b46a,#c4553b 45%,#2a4b6b 46%,#12283c)!important}
-.bg-temple{background-image:linear-gradient(#d9e3d0,#9fb59a 50%,#6b5a44 51%,#463a2b)!important}
-.ep-cast{position:absolute;inset:8% 2% 0;display:flex;justify-content:center;align-items:flex-end;gap:0}
-.ep-figure{height:calc(var(--s,1) * 100%);background-repeat:no-repeat;flex:0 1 auto;min-width:0;margin:0 -1.2cqw;filter:brightness(.82) saturate(.9);transition:filter .25s,transform .25s;z-index:1}
-.ep-figure.speaking{filter:none;transform:translateY(-1.5%);z-index:2}
-.ep-speech{position:relative;margin:14px 22px 0;background:#fff8ea;color:#3a2816;border-radius:10px;padding:8px 16px 10px;font-family:var(--story)}
-.ep-speech::before{content:"";position:absolute;left:50%;top:-9px;border:9px solid transparent;border-top:0;border-bottom-color:#fff8ea;transform:translateX(-50%)}
-.ep-speech b{display:block;font:700 12px var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--brass-deep)}
-.ep-speech p{margin:2px 0 0;font-size:19px;line-height:1.4}
-.ep-speech.narration{background:#f3e6cc;font-style:italic}
-.ep-speech.narration::before{border-bottom-color:#f3e6cc}
-.ep-speech.narration b{display:none}
-.ep-body{padding:16px 22px 20px}
-.ep-body small{font:700 12px var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--brass)}
-.ep-body h2{font:400 clamp(26px,4vw,34px) var(--display);color:var(--sailcloth);margin:2px 0 6px}
-.ep-body p{font-family:var(--story);font-size:18px;line-height:1.5;margin:6px 0}
-.ep-prompt{color:var(--muted);font-family:var(--ui)!important;font-size:14px!important;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-.ep-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
-.ep-actions button{border:1px solid var(--brass);border-radius:5px;background:#342b1e;color:var(--sailcloth);padding:10px 16px;font:700 16px var(--ui);cursor:pointer;text-align:left}
-.ep-actions button.primary{background:var(--brass);color:#24170a}
-.ep-actions button.choice{flex:1 1 220px}
-.ep-actions button:hover{filter:brightness(1.12)}
-.ep-treasure{display:flex;gap:14px;align-items:center;margin:12px 0;padding:12px 16px;border-radius:6px;background:#2b2616;box-shadow:inset 0 0 0 1px var(--brass)}
-.ep-treasure-icon{font-size:40px;color:var(--brass);line-height:1}
-.ep-treasure small{display:block}
-.ep-treasure b{display:block;font:400 26px var(--display);color:var(--sailcloth)}
-.ep-treasure em{display:block;color:var(--text);font-family:var(--story)}
-@media (max-width:560px){.ep-scene{min-height:0}.ep-speech{margin:12px 16px 0}.ep-speech p{font-size:17px}.ep-body{padding:14px 16px 18px}.ep-body p{font-size:16px}.episode{padding:8px}}
 
-/* mini-games inside episodes */
-.ep-scene.playing{aspect-ratio:16/7;background:#0f1a22!important}
-.ep-scene.playing::after{display:none}
-.ep-game{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+/* the touch pad for mini-games */
 .game-pad{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px 0;user-select:none;-webkit-user-select:none}
 .gp-dirs{display:flex;gap:8px}
 .game-pad button{min-width:54px;min-height:54px;border-radius:12px;border:2px solid rgba(243,230,204,.6);background:#22343f;color:var(--sailcloth);font:700 20px var(--ui);touch-action:none;-webkit-tap-highlight-color:transparent;cursor:pointer}
 .game-pad button.gp-act{min-width:120px;font:400 22px var(--display);background:#342b1e;border-color:var(--brass)}
 .game-pad button.held{background:rgba(210,162,76,.6)}
 @media (pointer:fine){.game-pad{display:none!important}}
-.ep-actions button.quiet{background:transparent;border-color:rgba(243,230,204,.25);color:var(--muted);font-weight:500}
-@media (max-width:560px){.ep-scene.playing{aspect-ratio:16/8}}
+
+/* episodes on the stage */
+.stage-game{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair;z-index:3}
+#storyActions button.primary{background:var(--brass);color:#24170a}
+#storyActions button.choice{flex:1 1 220px;text-align:left}
+#storyActions button.quiet{background:transparent;border-color:rgba(243,230,204,.25);color:var(--muted);font-weight:500}
+#storyPanel .game-pad{padding:12px 0 0}
+.story-speech.narration .speech-content{font-style:italic}
+.story-speech.narration #speechSpeaker{display:none}

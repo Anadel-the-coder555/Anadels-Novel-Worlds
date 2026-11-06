@@ -6,14 +6,12 @@
 const Q = window.SOULMATES_QUEST;
 const SAVE_KEY = 'soulmates-quest-v1';
 const FIRST_WAIT = 25, GAP = [40, 60], LATER = 30;   // seconds of exploring before the first event, between events, after "later"
-const ALIAS = { goldtooth: 'clement', 'clement “goldtooth”': 'clement' };
-const BGS = ['ballroom', 'town', 'jungle', 'river', 'sea', 'night', 'rival', 'chapel', 'eastern', 'temple'];
 const $ = id => document.getElementById(id);
 const byId = Object.fromEntries(Q.events.map(e => [e.id, e]));
 
 window.createSoulmatesQuest = api => {
   let save = load();
-  let clock = 0, nextAt = FIRST_WAIT, hook = null, heading = null, ep = null, active = false;
+  let clock = 0, nextAt = FIRST_WAIT, hook = null, heading = null, ep = null, active = false, testRun = false;
   const later = {};   // id -> clock time it was put off
 
   function load() {
@@ -70,6 +68,7 @@ window.createSoulmatesQuest = api => {
     $('hookGo').textContent = e.accept || (e.kind === 'crew' ? 'Let’s do it!' : 'Find out');
     card.dataset.kind = e.kind;
     card.hidden = false;
+    if (who) api.approach(who, e.hook);
     $('hookGo').focus({ preventScroll: true });
     updateLog();
   }
@@ -90,173 +89,81 @@ window.createSoulmatesQuest = api => {
     updateLog();
   }
 
-  // ---- playing an episode ----
-  function parse(line) {
-    const m = /^([^:“]{1,40}):\s*“([\s\S]*)”$/.exec(line);
-    return m ? { speaker: m[1].trim(), text: '“' + m[2] + '”' } : { speaker: '', text: line };
+  // ---- playing an episode, live on the stage ----
+  // Each beat in quest.js becomes a stage scene. Where it happens: the episode's `room` (or one picked from its `bg`),
+  // shown under a place name (`label`) when it's somewhere off the ship. Beats can add `room`, `label`, `cast`,
+  // `place` ({ key: x fraction }) and `approach` (walk Ruby up to someone first, with `goal` as the instruction).
+  const STAGE = {
+    hall: ['hall'], ballroom: ['dining', 'The Royal Ball'], island: ['island'], dining: ['dining'], deck: ['deck'],
+    town: ['deck', 'The Harbour'], chapel: ['upper', 'Goldtooth’s Ship'], study: ['study'], rival: ['upper', 'Evangeline’s Ship'],
+    sea: ['deck'], river: ['island', 'The Jungle River'], temple: ['island', 'The Old Master’s Hill'],
+    eastern: ['deck', 'Facing the Pirate King’s Fleet'], night: ['study', 'The Captain’s Study, at Night'],
+  };
+  function layout(keys, fixed = {}, party) {
+    const rest = keys.filter(k => !party.includes(k) && fixed[k] === undefined && api.keys().includes(k));
+    const cast = {};
+    rest.forEach((k, i) => { cast[k] = [rest.length === 1 ? .62 : .46 + i * (.44 / Math.max(1, rest.length - 1)), undefined, -1]; });
+    Object.entries(fixed).forEach(([k, fx]) => { cast[k] = [fx, undefined, -1]; });
+    return cast;
   }
-  function speakerKey(name) {
-    const n = name.replace(/\s*\(.*\)$/, '').trim().toLowerCase();
-    if (ALIAS[n]) return ALIAS[n];
-    return api.keys().find(k => k === n || api.name(k).toLowerCase() === n || api.name(k).toLowerCase() === 'captain ' + n) || null;
+  function buildScenes(e) {
+    const [room0, label0] = STAGE[e.room || e.bg] || ['deck'];
+    const party = ['ruby', ...((e.cast || []).includes('cutlass') ? ['cutlass'] : [])];
+    let shown = [];
+    return e.beats.map((b, i) => {
+      const sc = { title: e.title, text: b.text || '', dialogue: (b.lines || []).join('\n'), choices: b.choices, game: b.game, how: b.how, mustWin: b.mustWin, party };
+      if (i === 0 || b.room) { sc.room = b.room || room0; sc.at = b.at ?? .16; sc.label = b.label || e.label || label0; }
+      const list = b.cast || (i === 0 ? e.cast || [] : null);
+      if (list || b.place) {
+        const cast = layout(list || shown, b.place || {}, party);
+        shown.filter(k => !cast[k] && !party.includes(k)).forEach(k => { cast[k] = null; });   // leave the scene
+        shown = Object.keys(cast).filter(k => cast[k]);
+        sc.cast = cast;
+      }
+      if (b.approach) {
+        const target = sc.cast?.[b.approach]?.[0] ?? .62;
+        sc.walk = target - .09; sc.goal = b.goal || `Walk over to ${api.name(b.approach)}.`;
+      }
+      return sc;
+    });
   }
   function startEpisode(e) {
     heading = null; hook = null; $('questHook').hidden = true;
-    ep = { e, beat: 0, line: 0, phase: 'lines', score: 0, queue: [] };
-    const box = $('episode');
-    box.hidden = false;
-    const bg = $('epScene');
-    bg.className = 'ep-scene';
-    bg.style.backgroundImage = '';
-    if (BGS.includes(e.bg)) bg.classList.add('bg-' + e.bg);
-    else if (e.bg === 'island' || api.roomImg(e.bg)) bg.style.backgroundImage = `url('${api.roomImg(e.bg)}')`;
-    $('epKind').textContent = e.kind === 'crew' ? `${api.name(e.from)}’s idea` : e.kind === 'heart' ? 'Someone new' : 'The story';
-    $('epTitle').textContent = e.title;
-    api.pause(true);
-    queueBeat();
-    draw();
-    setTimeout(() => $('epActions').querySelector('button')?.focus({ preventScroll: true }), 30);
+    ep = { e };
+    api.playScenes(buildScenes(e), { onEnd: score => endScenes(e, score), onClose: r => close(e, r.completed) });
   }
-  function queueBeat() {
-    const b = ep.e.beats[ep.beat];
-    ep.text = b.text || '';
-    ep.queue = (b.lines || []).map(parse);
-    ep.line = 0;
-    ep.phase = b.game ? 'game-intro' : ep.queue.length ? 'lines' : (b.choices ? 'choose' : 'lines');
-    ep.cast = b.cast || ep.e.cast || [];
-  }
-  function cast(speaking) {
-    const row = $('epCast'); row.replaceChildren();
-    ep.cast.filter(k => api.keys().includes(k) && (!api.isLocked(k) || k === ep.e.unlock)).forEach(k => {
-      const fig = document.createElement('div');
-      fig.className = 'ep-figure' + (k === speaking ? ' speaking' : '');
-      fig.title = api.name(k);
-      fig.setAttribute('style', api.figure(k, 260));
-      row.appendChild(fig);
-    });
-  }
-  function button(label, fn, cls) {
-    const b = document.createElement('button'); b.type = 'button'; b.textContent = label;
-    if (cls) b.className = cls;
-    b.addEventListener('click', fn); $('epActions').appendChild(b); return b;
-  }
-  function draw() {
-    const b = ep.e.beats[ep.beat];
-    $('epText').textContent = ep.text;
-    $('epActions').replaceChildren();
-    $('epScore').hidden = true;
-    const line = ep.phase === 'lines' || ep.phase === 'reply' ? ep.queue[ep.line] : null;
-    const key = line?.speaker ? speakerKey(line.speaker) : null;
-    $('epSpeaker').textContent = line?.speaker || '';
-    $('epLine').textContent = line?.text || '';
-    $('epSpeech').hidden = !line;
-    $('epSpeech').classList.toggle('narration', !!line && !line.speaker);
-    const gaming = ep.phase === 'game' || ep.phase === 'game-done';
-    $('epGame').hidden = !gaming; $('epCast').hidden = gaming;
-    $('epScene').classList.toggle('playing', gaming);
-    cast(key);
-    if (ep.phase === 'game-intro') {
-      $('epText').textContent = b.how;
-      $('epPrompt').textContent = 'How to play'; $('epPrompt').hidden = false;
-      button('Play! →', startGame, 'primary');
-      return;
-    } else if (ep.phase === 'game') {
-      $('epText').textContent = b.how;
-      button('Give up', () => { stopGame(); ep.result = { won: false, score: 0, text: 'You gave up this time.' }; ep.phase = 'game-done'; draw(); }, 'quiet');
-    } else if (ep.phase === 'game-done') {
-      $('epText').textContent = ep.result.text;
-      if (!ep.result.won && b.mustWin) {
-        button('Try again', startGame, 'primary');
-        button('Back to the ship (try later)', () => close(false));
-      } else button('Continue →', () => { ep.score += ep.result.score || 0; nextBeat(); }, 'primary');
-    } else if (ep.phase === 'lines' || ep.phase === 'reply') {
-      if (!line) { advance(); return; }
-      button('Next →', advance, 'primary');
-    } else if (ep.phase === 'choose') {
-      $('epPrompt').textContent = 'What do you do?';
-      b.choices.forEach((c, i) => button(`${i + 1}. ${c.label}`, () => choose(c), 'choice'));
-    } else if (ep.phase === 'end') drawEnd();
-    $('epPrompt').hidden = ep.phase !== 'choose';
-  }
-  let stopGame = () => {};
-  function startGame() {
-    const b = ep.e.beats[ep.beat];
-    ep.phase = 'game'; draw();
-    $('epGame').scrollIntoView?.({ block: 'nearest' });
-    stopGame = window.runSoulmatesGame(b.game, $('epGame'), api, result => {
-      stopGame = () => {};
-      if (!ep) return;
-      ep.result = result; ep.phase = 'game-done'; draw();
-      $('epActions').querySelector('button.primary')?.focus({ preventScroll: true });
-    });
-  }
-  function advance() {
-    if (ep.line < ep.queue.length - 1) { ep.line++; draw(); return; }
-    const b = ep.e.beats[ep.beat];
-    if (ep.phase === 'lines' && b.choices) { ep.phase = 'choose'; ep.queue = []; draw(); return; }
-    nextBeat();
-  }
-  function choose(c) {
-    ep.score += c.score || 0;
-    ep.queue = (c.reply || []).map(parse); ep.line = 0; ep.phase = 'reply';
-    if (!ep.queue.length) nextBeat(); else draw();
-  }
-  function nextBeat() {
-    if (ep.beat < ep.e.beats.length - 1) { ep.beat++; queueBeat(); draw(); return; }
-    ep.phase = 'end'; draw();
-  }
-  function drawEnd() {
-    const e = ep.e;
-    $('epSpeech').hidden = true;
-    cast(null);
-    if (e.pass && ep.score < e.pass) {
-      $('epText').textContent = e.failText || 'Not quite. Try again!';
-      button('Try again', () => { ep.beat = 0; ep.score = 0; queueBeat(); draw(); }, 'primary');
-      button('Back to the ship (try later)', () => close(false));
-      return;
-    }
-    const end = (e.ends || [[0, '']]).filter(([min]) => ep.score >= min).pop();
-    $('epText').textContent = end[1];
-    if (e.play) {
-      button(e.play.label + ' →', () => { finish(e, true); location.href = e.play.href; }, 'primary');
-      button('Skip the game, back to the ship', () => { finish(e); close(true); });
-      return;
-    }
-    if (e.item !== undefined) {
-      const tr = Q.treasures[e.item];
-      $('epScore').hidden = false;
-      $('epScore').innerHTML = '';
-      const icon = document.createElement('span'); icon.className = 'ep-treasure-icon'; icon.textContent = tr.icon;
-      const words = document.createElement('span');
-      words.innerHTML = '<small>Treasure found!</small>';
-      const name = document.createElement('b'); name.textContent = tr.name;
-      const desc = document.createElement('em'); desc.textContent = tr.text;
-      words.append(name, desc);
-      $('epScore').append(icon, words);
-    }
+  // the closing scene: the ending, a treasure, a mini-game page to open, or a retry
+  function endScenes(e, score) {
+    if (e.pass && score < e.pass) return [{ title: e.title, text: e.failText || 'Not quite. Try again!', actions: [
+      { label: 'Try again', fn: () => startEpisode(e) },
+      { label: 'Back to the ship (try later)', fn: () => api.closeScenes({ completed: false }) }] }];
+    const end = (e.ends || [[0, '']]).filter(([min]) => score >= min).pop()[1];
+    if (e.play) return [{ title: e.title, text: end, actions: [
+      { label: e.play.label + ' →', fn: () => { finish(e, true); location.href = e.play.href; } },
+      { label: 'Skip the game, back to the ship', fn: () => { finish(e); api.closeScenes({ completed: true }); } }] }];
     finish(e);
-    button(e.id === 'finale' ? 'Sail on' : 'Back to the ship', () => close(true), 'primary');
+    const tr = e.item !== undefined ? Q.treasures[e.item] : null;
+    return [{ title: tr ? `Treasure found: ${tr.icon} ${tr.name}` : e.title, text: tr ? `${end} ${tr.text}` : end,
+      actions: [{ label: e.id === 'finale' ? 'Sail on' : 'Back to exploring', fn: () => api.closeScenes({ completed: true }) }] }];
   }
-  // `playing`: leaving for a mini-game page; the event is marked done now, and the return caption shows when the ship reloads
   function finish(e, playing) {
-    if (done(e.id)) return;
+    if (done(e.id) || ep?.debug) return;
     save.done.push(e.id);
     if (e.item !== undefined && !save.items.includes(e.item)) save.items.push(e.item);
     if (playing) save.pending = e.id;
     save.lastKind = e.kind === 'crew' ? 'crew' : 'plot';
     persist();
     nextAt = clock + GAP[0] + Math.random() * (GAP[1] - GAP[0]);
-    if (e.unlock) api.unlock(e.unlock);
     if (e.item !== undefined) nextAt = clock + 20;   // the next villain's rumour arrives soon after
     updateHud();
   }
-  function close(completed) {
-    stopGame(); stopGame = () => {};
-    const e = ep?.e;
-    ep = null; $('episode').hidden = true; api.pause(false);
-    if (!completed && e) { later[e.id] = clock; nextAt = clock + LATER; }
-    if (completed && e?.unlock) api.caption(`${api.name(e.unlock)} has joined the ship! Find them and invite them to walk with you.`, 6);
-    else if (completed && e?.item !== undefined && level() < 3) api.caption(`${Q.treasures[e.item].name} is safe aboard. ${Q.rumours[level()]}`, 8);
+  function close(e, completed) {
+    const debug = ep?.debug;
+    ep = null;
+    if (!completed) { later[e.id] = clock; nextAt = clock + LATER; }
+    else if (debug) api.caption('That was a test run (?episode=…), so nothing was saved.', 5);
+    else if (e.unlock) api.caption(`${api.name(e.unlock)} has joined the ship! Find them and invite them to walk with you.`, 6);
+    else if (e.item !== undefined && level() < 3) api.caption(`${Q.treasures[e.item].name} is safe aboard. ${Q.rumours[level()]}`, 8);
     updateLog();
   }
 
@@ -292,16 +199,6 @@ window.createSoulmatesQuest = api => {
     $('questNow').disabled = !!hook || done('finale');
   }
 
-  // ---- keyboard inside the episode: Space/Enter for the main button, number keys for choices ----
-  addEventListener('keydown', e => {
-    if (!ep || ep.phase === 'game') return;
-    if (e.key === 'Escape') return;
-    if (/^[1-9]$/.test(e.key) && ep.phase === 'choose') {
-      const c = ep.e.beats[ep.beat].choices[+e.key - 1]; if (c) { e.preventDefault(); choose(c); }
-    } else if ((e.key === ' ' || e.key === 'Enter') && !e.target.closest?.('button')) {
-      const b = $('epActions').querySelector('button.primary'); if (b) { e.preventDefault(); b.click(); }
-    }
-  });
   $('hookGo').addEventListener('click', acceptHook);
   $('hookLater').addEventListener('click', postpone);
   $('questNow').addEventListener('click', lookForTrouble);
@@ -330,9 +227,9 @@ window.createSoulmatesQuest = api => {
       $('treasurePill').hidden = !on; $('questPanel').hidden = !on;
       if (!on) { hook = heading = null; $('questHook').hidden = true; }
       if (on) { welcomeBack(); updateLog(); }
-      // for testing: index.html?episode=wagon opens that episode straight away
-      const want = on && new URLSearchParams(location.search).get('episode');
-      if (want && byId[want] && !ep) setTimeout(() => startEpisode(byId[want]), 300);
+      // for testing: index.html?episode=wagon opens that episode once, without saving anything
+      const want = on && !testRun && new URLSearchParams(location.search).get('episode');
+      if (want && byId[want] && !ep) { testRun = true; setTimeout(() => { startEpisode(byId[want]); ep.debug = true; }, 300); }
     },
   };
 };

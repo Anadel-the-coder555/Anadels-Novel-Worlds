@@ -3,7 +3,8 @@
 // The kit `k` gives a 960x420 canvas, input (keys, edge presses, pointer), and drawing helpers that use the crew's art.
 (() => {
 'use strict';
-const W = 960, H = 420;
+const W = 960, H = 420;            // the game's own playfield
+const FRAME_H = 540, OFF = (FRAME_H - H) / 2;   // it sits in the middle of the 16:9 stage
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -11,7 +12,9 @@ const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
 // ---------------- the kit ----------------
 function makeKit(canvas, api, done) {
-  const g = canvas.getContext('2d');
+  // games draw into an offscreen 960x420 field, which is then shown on the stage canvas
+  const field = document.createElement('canvas');
+  const g = field.getContext('2d');
   const keys = { left: false, right: false, up: false, down: false, act: false };
   let pressed = new Set();
   const pointer = { x: W / 2, y: H / 2, down: false, clicked: false, moved: false };
@@ -26,7 +29,7 @@ function makeKit(canvas, api, done) {
     keys[k] = true;
   };
   const onUp = e => { const k = KEYMAP[e.key]; if (k) keys[k] = false; };
-  const toLogical = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H]; };
+  const toLogical = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * FRAME_H - OFF]; };
   const pMove = e => { [pointer.x, pointer.y] = toLogical(e); pointer.moved = true; };
   const pDown = e => { pMove(e); pointer.down = true; pointer.clicked = true; e.preventDefault(); };
   const pUp = () => { pointer.down = false; };
@@ -45,7 +48,7 @@ function makeKit(canvas, api, done) {
   const image = src => { if (!imgCache[src]) { const i = new Image(); i.src = src; imgCache[src] = i; } return imgCache[src]; };
 
   const k = {
-    W, H, g, keys, pointer, rand, clamp, pick, reduceMotion, t: 0,
+    W, H, g, field, keys, pointer, rand, clamp, pick, reduceMotion, t: 0,
     hit: name => pressed.has(name),
     clicked: () => pointer.clicked,
     setControls(list, label) {
@@ -129,7 +132,11 @@ window.runSoulmatesGame = (name, canvas, api, onEnd) => {
   const make = GAMES[name];
   let finished = false, raf = 0, last = performance.now();
   const k = makeKit(canvas, api, result => { finished = true; cancelAnimationFrame(raf); setTimeout(() => onEnd(result), 700); });
-  const resize = () => { const r = canvas.getBoundingClientRect(); const K = Math.min(2.5, (r.width / W) * (devicePixelRatio || 1)) || 1; canvas.width = Math.round(W * K); canvas.height = Math.round(H * K); k.scale = K; };
+  const out = canvas.getContext('2d');
+  const resize = () => {
+    const r = canvas.getBoundingClientRect(); const K = Math.min(2.5, (r.width / W) * (devicePixelRatio || 1)) || 1;
+    canvas.width = Math.round(W * K); canvas.height = Math.round(FRAME_H * K); k.field.width = Math.round(W * K); k.field.height = Math.round(H * K); k.scale = K;
+  };
   resize();
   const game = make(k);
   const frame = now => {
@@ -144,6 +151,14 @@ window.runSoulmatesGame = (name, canvas, api, onEnd) => {
     const g = k.g; g.setTransform(k.scale, 0, 0, k.scale, 0, 0);
     if (k.shake > 0 && !reduceMotion) { g.translate(rand(-1, 1) * k.shake * 8, rand(-1, 1) * k.shake * 6); k.shake = Math.max(0, k.shake - .05); }
     game.draw();
+        const cw = canvas.width, ch = canvas.height;
+    out.setTransform(1, 0, 0, 1, 0, 0);
+    // the bands above and below continue the field's top and bottom edges (one pixel row stretched), slightly dimmed
+    const fh = k.field.height, band = OFF * k.scale;
+    out.drawImage(k.field, 0, 0, cw, 2, 0, 0, cw, band);
+    out.drawImage(k.field, 0, fh - 2, cw, 2, 0, ch - band, cw, band);
+    out.fillStyle = 'rgba(8,10,14,.25)'; out.fillRect(0, 0, cw, band); out.fillRect(0, ch - band, cw, band);
+    out.drawImage(k.field, 0, band, cw, H * k.scale);
   };
   raf = requestAnimationFrame(frame);
   return () => { cancelAnimationFrame(raf); k.cleanup(); };
@@ -630,8 +645,9 @@ GAMES.plank = k => {
       if (fallT > 0) { fallT += dt; if (fallT > 1.4) k.end({ won: false, score: 0, text: 'SPLASH! Cutlass goes into the sea.' }); return; }
       // balance: the plank wobbles, and you lean against it
       const lean = (k.keys.right ? 1 : 0) - (k.keys.left ? 1 : 0) || (k.pointer.down && k.pointer.y < 300 ? Math.sign(k.pointer.x - W / 2) : 0);
-      vel += (Math.sin(k.t * 1.7) * .9 + Math.sin(k.t * 3.1) * .6 + tilt * 1.5) * dt * (boss ? 1.05 : .8);
-      vel += lean * 2.6 * dt; vel *= .985; tilt += vel * dt;
+      const calm = Math.min(1, k.t / 2.5);   // a moment to find your feet
+      vel += (Math.sin(k.t * 1.7) * .5 + Math.sin(k.t * 3.1 + 1) * .35 + tilt * .45) * dt * (boss ? 1.25 : 1) * calm;
+      vel += lean * 2.2 * dt; vel *= .97; tilt += vel * dt;
       if (Math.abs(tilt) > 1) { fallT = .01; pop.add('Whoa—!', 560, 140, '#ff9c8a'); return; }
       swing = Math.max(0, swing - dt);
       if (!attack) { wait -= dt; if (wait <= 0) attack = { t: 0, wind: boss ? rand(.55, .8) : rand(.75, 1.1) }; }

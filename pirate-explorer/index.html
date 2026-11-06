@@ -22,6 +22,10 @@
     <section class="adventure-panel" id="storyPanel" hidden aria-labelledby="storyTitle">
       <h2 id="storyTitle"></h2><p id="storyText" aria-live="polite"></p><p id="storyDialogue" class="story-dialogue"></p><p id="storyGoal"></p><p class="story-help">Walk with the arrow keys or WASD, or use the touch controls. Choose an action below or press Space to continue.</p>
       <div id="storyActions"></div>
+      <div class="game-pad" id="gamePad" hidden>
+        <div class="gp-dirs"><button type="button" data-k="left" aria-label="Left">◀</button><button type="button" data-k="up" aria-label="Up">▲</button><button type="button" data-k="down" aria-label="Down">▼</button><button type="button" data-k="right" aria-label="Right">▶</button></div>
+        <button type="button" class="gp-act" data-k="act">Action</button>
+      </div>
     </section>
     <section class="adventure-panel" id="freePanel" hidden aria-label="Tours and games">
       <h2>Make yourself at home</h2><p id="tourText" aria-live="polite">Explore at your own pace, or let Ruby show you around.</p>
@@ -30,6 +34,7 @@
 
     <div class="stage" id="stage">
       <canvas id="game" aria-label="Soulmates ship exploration"></canvas>
+      <canvas class="stage-game" id="stageGame" hidden aria-label="Mini-game"></canvas>
 
       <div class="hud">
         <div class="pill"><b id="placeName">The Ship’s Deck</b></div>
@@ -108,28 +113,6 @@
       <b id="hookTitle"></b>
       <p id="hookText"></p>
       <div class="hook-actions"><button id="hookGo" type="button" class="primary">Let’s do it!</button><button id="hookLater" type="button">Maybe later</button></div>
-    </div>
-  </div>
-
-  <div class="episode" id="episode" hidden role="dialog" aria-modal="true" aria-labelledby="epTitle">
-    <div class="ep-card">
-      <div class="ep-scene" id="epScene">
-        <div class="ep-cast" id="epCast"></div>
-        <canvas class="ep-game" id="epGame" hidden aria-label="Mini-game"></canvas>
-      </div>
-      <div class="game-pad" id="gamePad" hidden>
-        <div class="gp-dirs"><button type="button" data-k="left" aria-label="Left">◀</button><button type="button" data-k="up" aria-label="Up">▲</button><button type="button" data-k="down" aria-label="Down">▼</button><button type="button" data-k="right" aria-label="Right">▶</button></div>
-        <button type="button" class="gp-act" data-k="act">Action</button>
-      </div>
-      <div class="ep-speech" id="epSpeech" aria-live="polite"><b id="epSpeaker"></b><p id="epLine"></p></div>
-      <div class="ep-body">
-        <small id="epKind"></small>
-        <h2 id="epTitle"></h2>
-        <p id="epText"></p>
-        <div class="ep-treasure" id="epScore" hidden></div>
-        <p class="ep-prompt" id="epPrompt" hidden>What do you do?</p>
-        <div class="ep-actions" id="epActions"></div>
-      </div>
     </div>
   </div>
 

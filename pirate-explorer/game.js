@@ -163,6 +163,10 @@ ROOMS.rivalCabin = { name: 'The Stranger’s Cabin', img: 'story-cabin.png', yBa
 let distantShip, swordDuel = null, duelFinished = false, duelWon = false, duelHome = 0;   // duelHome: where Ruby stands as each duel opens
 let sceneT = 0, storyTilt = 0, shakeT = 0, slideFrom = {};   // story staging: time in scene, deck lean, cannon jolt, slide start x
 const CHAPTER = window.SOULMATES_CHAPTER;
+// The scenes being played in story mode: the intro (CHAPTER), or a treasure-hunt episode (see playScenes).
+let SCENES = CHAPTER;
+const intro = () => SCENES === CHAPTER;
+let ep = null;   // the episode being played: { score, stage, reply, gameResult, … }
 
 const joined = [];                         // crew keys, in the order they came aboard
 const st = {};                             // per pirate: x, y, phase, moving, lean, say, sayT
@@ -170,10 +174,10 @@ let trail = [];
 let near = null, captionText = '', gulls = [];
 const keys = { left: false, right: false, up: false, down: false, hurry: false };
 
-const roomScale = () => mode === 'story' && room === 'upper' ? .85 : ROOMS[room].scale || 1;
+const roomScale = () => mode === 'story' && intro() && room === 'upper' ? .85 : ROOMS[room].scale || 1;
 const gap = () => SPACING * roomScale();      // followers keep a bigger gap when people are drawn bigger
 function party() {
-  if (mode === 'story') return CHAPTER[storyStep].party || (storyStep < 3 ? ['ruby', 'marietta'] : ['ruby']);
+  if (mode === 'story') return SCENES[storyStep].party || (!intro() ? ['ruby'] : storyStep < 3 ? ['ruby', 'marietta'] : ['ruby']);
   if (ROOMS[room]?.couple || ROOMS[pending?.to]?.couple) return [lead, ...CAPTAINS.filter(k => k !== lead)];   // just the two of them
   return [lead, ...CAPTAINS.filter(k => k !== lead && st[k]?.room !== 'hidden'), ...joined]; }
 
@@ -229,6 +233,7 @@ function action() {
   if (swordDuel) { if (!duelFinished) swordDuel.act('parry'); else if (duelWon) enterStoryStep(storyStep + 1); return; }
   if (mode === 'story') {
     if (dialogueIndex < storyLines().length - 1) { dialogueIndex++; showStory(); return; }
+    if (!intro()) { $('storyActions').querySelector('button.primary')?.click(); return; }
     const scene = CHAPTER[storyStep];
     if (scene.button && (storyReady || scene.walk === undefined)) enterStoryStep(storyStep + 1);
     else if (storyStep === CHAPTER.length - 1) finishIntro();
@@ -290,6 +295,7 @@ addEventListener('keydown', e => {
   const onButton = e.target.closest && e.target.closest('button,input');
   if (KEYMAP[e.key]) { keys[KEYMAP[e.key]] = true; e.preventDefault(); return; }
   if (e.key === 'Shift') { keys.hurry = true; return; }
+  if (ep && ep.stage === 'choose' && /^[1-9]$/.test(e.key)) { const c = SCENES[storyStep].choices?.[+e.key - 1]; if (c) epChoose(c); return; }
   if (e.key === '1' || e.key === '2') { setLead(CAPTAINS[+e.key - 1]); return; }
   if ((e.key === ' ' || e.key === 'e' || e.key === 'E') && !onButton) { e.preventDefault(); action(); }
 });
@@ -319,13 +325,13 @@ function update(dt) {
   }
   const L = st[lead], RM = ROOMS[room];
   let dx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0), dy = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
-  if (fadeDir === 1 || (mode === 'story' && storyStep === 0)) dx = dy = 0;
+  if (fadeDir === 1 || (mode === 'story' && intro() && storyStep === 0) || (ep && ep.stage !== 'walk')) dx = dy = 0;   // in an episode, Ruby stays put while people talk
   const sp = (keys.hurry ? HURRY : WALK) * roomScale();
   if (dx || dy) {
     const n = Math.hypot(dx, dy);
     const nx = clamp(L.x + dx / n * sp * dt, 60, worldW - 60), ny = clamp(L.y + dy / n * sp * .55 * dt, RM.yBack, RM.yFront);
-    if (dx > 0 && RM.right && L.x >= worldW - 62) travel(RM.right.to, RM.right.at);
-    if (dx < 0 && RM.left && L.x <= 62) travel(RM.left.to, RM.left.at);
+    if (!ep && dx > 0 && RM.right && L.x >= worldW - 62) travel(RM.right.to, RM.right.at);
+    if (!ep && dx < 0 && RM.left && L.x <= 62) travel(RM.left.to, RM.left.at);
     const moved = Math.hypot(nx - L.x, ny - L.y);
     L.moving = moved > .01; L.phase += moved; L.lean = lerp(L.lean, dx, Math.min(1, dt * 8)); if (dx) L.facing = dx;
     L.x = nx; L.y = ny; keepOnFloor(RM, L);
@@ -335,7 +341,7 @@ function update(dt) {
   // followers walk toward their spot on the trail
   party().slice(1).forEach((key, i) => {
     const s = st[key];
-    if (mode === 'story' && room === 'upper' && !L.moving) { s.moving = false; return; }
+    if (mode === 'story' && intro() && room === 'upper' && !L.moving) { s.moving = false; return; }
     const p = trail[Math.max(0, trail.length - 1 - Math.round((i + 1) * gap() / SAMPLE))];
     const ddx = p.x - s.x, ddy = p.y - s.y, d = Math.hypot(ddx, ddy);
     const step = Math.min(d, (d > 160 ? HURRY * 1.3 : sp * 1.05) * dt);
@@ -346,6 +352,13 @@ function update(dt) {
   });
 
   Object.values(st).forEach(s => { if (s.sayT > 0) s.sayT -= dt; });
+  // a crewmate walking up to the captain with an idea
+  if (mode === 'free') CREW.forEach(k => {
+    const s = st[k]; if (s.target == null || s.room !== room || joined.includes(k)) return;
+    const d = s.target - s.x, step = Math.min(Math.abs(d), WALK * 1.2 * roomScale() * dt);
+    s.moving = step > .5; s.x += Math.sign(d) * step; s.phase = (s.phase || 0) + step; if (d) s.facing = Math.sign(d);
+    if (!s.moving) { s.target = null; s.moving = false; s.facing = Math.sign(st[lead].x - s.x) || 1; if (s.sayLater) { s.say = s.sayLater; s.sayT = 7; s.sayLater = null; } }
+  });
 
   const target = clamp(L.x - VW / 2, 0, worldW - VW);
   camX += (target - camX) * Math.min(1, dt * (reduceMotion ? 20 : 4));
@@ -357,11 +370,12 @@ function update(dt) {
     const s = st[k], ddx = Math.abs(s.x - L.x), ddy = Math.abs(s.y - L.y);
     if (ddx < 120 * roomScale() && ddy < 70 && ddx + ddy < best) { best = ddx + ddy; near = k; }   // reach grows with how big people are drawn
   });
-  if (mode === 'story' && !storyReady && CHAPTER[storyStep].walk !== undefined) {
-    const scene = CHAPTER[storyStep];
+  if (mode === 'story' && !storyReady && SCENES[storyStep].walk !== undefined) {
+    const scene = SCENES[storyStep];
     if (scene.direction === 'left' ? L.x <= worldW * scene.walk : L.x >= worldW * scene.walk) {
       storyReady = true;
       if (scene.auto) { enterStoryStep(storyStep + 1); return; }
+      if (ep && ep.stage === 'walk') ep.stage = afterWalkStage(scene);
       showStory();
     }
   }
@@ -372,9 +386,9 @@ function update(dt) {
   let spot = '', bestD = 130;
   RM.spots.forEach(([fx, text]) => { const d = Math.abs(L.x - fx * worldW); if (d < bestD) { bestD = d; spot = text; } });
   // in the story, place notes only while walking somewhere; otherwise they'd sit over the scene being played
-  if (mode === 'story' && (CHAPTER[storyStep].walk === undefined || storyReady)) spot = '';
+  if (mode === 'story' && (SCENES[storyStep].walk === undefined || storyReady)) spot = '';
   caption(near || doorNear || fadeDir ? '' : spot);
-  $('tInvite').textContent = mode === 'story' ? (CHAPTER[storyStep].button ? (storyReady || CHAPTER[storyStep].walk === undefined ? 'Continue' : 'Explore') : 'Set sail') : near ? (PIRATES[near].villain ? 'Talk' : 'Invite') : doorNear ? 'Go in' : 'Invite';
+  $('tInvite').textContent = mode === 'story' ? (!intro() ? 'Next' : CHAPTER[storyStep].button ? (storyReady || CHAPTER[storyStep].walk === undefined ? 'Continue' : 'Explore') : 'Set sail') : near ? (PIRATES[near].villain ? 'Talk' : 'Invite') : doorNear ? 'Go in' : 'Invite';
 
   // gulls wheeling over the water
   if (!reduceMotion && RM.outside) {
@@ -457,7 +471,7 @@ function drawPirate(key) {
 
 function storyViewRoom() {
   // Cut to the main deck for Scarlett and Tempest without moving Ruby from the helm.
-  return mode === 'story' && storyStep === 0 ? 'deck' : room;
+  return mode === 'story' && intro() && storyStep === 0 ? 'deck' : room;
 }
 function render() {
   const savedView = { room, worldW, camX };
@@ -486,15 +500,15 @@ function render() {
     const g = ctx.createLinearGradient(0, R0.yoff, 0, R0.yoff + 60); g.addColorStop(0, R0.sky[1]); g.addColorStop(1, 'rgba(61,141,207,0)');
     ctx.fillStyle = g; ctx.fillRect(0, R0.yoff, VW, 60);
   }
-  if (mode === 'story' && room === 'upper' && storyStep === 2) {
+  if (mode === 'story' && intro() && room === 'upper' && storyStep === 2) {
     // far off on the water between the shrouds; the keel is cut at the waterline so the hull sits in the sea
     const w = 130, h = w * distantShip.height / distantShip.width, keep = .9, bob = reduceMotion ? 0 : Math.sin(t * .8) * 1.5;
     ctx.drawImage(distantShip, 0, 0, distantShip.width, distantShip.height * keep, 1340 - camX - w / 2, 152 - h * keep + bob, w, h * keep);
   }
-  if (mode === 'story' && room === 'rivalCabin' && storyStep < 9) {
+  if (mode === 'story' && intro() && room === 'rivalCabin' && storyStep < 9) {
     ctx.fillStyle = 'rgba(4,10,20,.52)'; ctx.fillRect(0, 0, VW, VH);
   }
-  if (mode === 'story' && ['deck', 'upper'].includes(room) && storyStep <= 3) {
+  if (mode === 'story' && intro() && ['deck', 'upper'].includes(room) && storyStep <= 3) {
     const mist = ctx.createLinearGradient(0, 0, 0, 390);
     mist.addColorStop(0, 'rgba(190,205,213,.48)'); mist.addColorStop(1, 'rgba(190,205,213,.08)');
     ctx.fillStyle = mist; ctx.fillRect(0, 0, VW, VH);
@@ -542,6 +556,7 @@ function finishIntro() {
 $('skipIntro').addEventListener('click', finishIntro);
 $('replayIntro').addEventListener('click', () => resetAdventure('story'));
 function resetAdventure(nextMode, startAt = 0) {
+  if (nextMode === 'story') { endStageGame(); ep = null; SCENES = CHAPTER; }
   swordDuel = null; duelFinished = false; $('duelHud').hidden = true; $('touch').hidden = false;
   sceneT = storyTilt = shakeT = 0;
   mode = nextMode; lead = 'ruby'; joined.length = 0; storyStep = 0; storyReady = false; dialogueIndex = 0;
@@ -552,7 +567,10 @@ function resetAdventure(nextMode, startAt = 0) {
     const [fx, y, rm = 'deck'] = PIRATES[k].station;
     Object.assign(st[k], { room: rm, x: fx * ROOMS[rm].w, y, sayT: 0, moving: false });
   });
-  if (mode === 'free') CREW.filter(locked).forEach(k => st[k].room = 'hidden');   // not met yet in the treasure hunt
+  if (mode === 'free') {
+    CREW.filter(locked).forEach(k => st[k].room = 'hidden');   // not met yet in the treasure hunt
+    VILLAINS.forEach(k => st[k].room = 'hidden');              // villains only appear in their own episodes
+  }
   if (mode === 'story') {
     st.cutlass.room = 'hidden';
     [...CREW, ...VILLAINS].filter(k => !STORY_CREW.includes(k)).forEach(k => st[k].room = 'hidden');
@@ -577,13 +595,15 @@ function resetAdventure(nextMode, startAt = 0) {
   $('tourNext').textContent = 'Start the ship tour';
   if (mode === 'story') { if (startAt) enterStoryStep(startAt); else showStory(); }
 }
-function storyButton(label, fn) {
+function storyButton(label, fn, cls) {
   const b = document.createElement('button'); b.type = 'button'; b.textContent = label;
-  b.addEventListener('click', fn); $('storyActions').appendChild(b);
+  if (cls) b.className = cls;
+  b.addEventListener('click', fn); $('storyActions').appendChild(b); return b;
 }
 function enterStoryStep(next) {
   storyStep = next; dialogueIndex = 0;
-  const scene = CHAPTER[storyStep];
+  const scene = SCENES[storyStep];
+  if (ep) { endStageGame(); ep.reply = null; ep.gameResult = null; }
   storyReady = scene.walk === undefined;
   near = doorNear = null;
   Object.keys(keys).forEach(k => keys[k] = false);
@@ -592,26 +612,29 @@ function enterStoryStep(next) {
     // someone joining the walk shows up in the new place with Ruby
     party().forEach(k => { if (st[k].room === 'hidden') st[k].room = room; });
     arrive({ to: scene.room, at: scene.at });
+    if (scene.label) $('placeName').textContent = scene.label;
   }
   sceneT = 0; shakeT = scene.shake ? .7 : 0;
   Object.entries(scene.cast || {}).forEach(([k, v]) => {
     if (!v) { st[k].room = 'hidden'; return; }
     const [fx, y, facing] = v;
-    Object.assign(st[k], { room, x: fx * worldW, y: y ?? st[k].y, facing: facing ?? st[k].facing, moving: false, sayT: 0 });
+    const midY = (ROOMS[room].yBack + ROOMS[room].yFront) / 2 + 12;
+    Object.assign(st[k], { room, x: fx * worldW, y: y ?? (intro() ? st[k].y : midY), facing: facing ?? st[k].facing, moving: false, sayT: 0 });
     keepOnFloor(ROOMS[room], st[k]);
   });
   if (scene.cast?.ruby) { const L = st.ruby; trail = []; for (let d = party().length * gap() + 6; d >= 0; d -= SAMPLE) trail.push({ x: L.x - L.facing * d, y: L.y }); }
   slideFrom = Object.fromEntries(Object.keys(scene.slide || {}).map(k => [k, st[k].x]));
-  if (storyStep === 3) {
+  if (intro() && storyStep === 3) {
     STORY_CREW.forEach((key, i) => Object.assign(st[key], { room: 'deck', x: st.ruby.x + 100 + i * 70, y: 470 + i * 8, moving: false }));
   }
+  if (ep) ep.stage = scene.walk !== undefined ? 'walk' : afterWalkStage(scene);
   if (scene.reveal) Object.assign(st.cutlass, { room: 'rivalCabin', x: st.ruby.x + 160, y: st.ruby.y });
   showStory();
   if (scene.duel) { duelHome = st.ruby.x; startStoryDuel(); }
 }
 // Story staging that plays out over a scene: the deck's lean, slides, and people walking in or off.
 function updateScene(dt) {
-  const scene = CHAPTER[storyStep];
+  const scene = SCENES[storyStep];
   sceneT += dt; shakeT = Math.max(0, shakeT - dt);
   storyTilt = lerp(storyTilt, scene.tilt || 0, Math.min(1, dt * (scene.tilt ? 3 : 1.5)));
   const ease = p => p * p * (3 - 2 * p);
@@ -632,7 +655,7 @@ function updateScene(dt) {
 // a held duel pose from the scene: [sheet, frame], [sheet, from, to] played once, or ['idle'] breathing
 function scenePose(key) {
   if (mode !== 'story' || st[key].moving) return null;
-  const p = CHAPTER[storyStep].poses?.[key];
+  const p = SCENES[storyStep].poses?.[key];
   if (!p) return null;
   const [anim, a, b] = p;
   if (a === undefined) return { anim, frame: [0, 1, 2, 3, 2, 1][Math.floor(sceneT * 5) % 6], dx: 0 };
@@ -667,7 +690,19 @@ function startStoryDuel() {
   });
 }
 
+// 'Speaker: “line”' (episodes); anything else is narration
+function parseLine(line) {
+  const m = /^([^:“]{1,40}):\s*(“[\s\S]*”)$/.exec(line);
+  return m ? { speaker: m[1].trim(), text: m[2] } : { speaker: '', text: line };
+}
+function speakerKey(name) {
+  const n = (name || '').replace(/\s*\(.*\)$/, '').trim().toLowerCase();
+  if (n === 'the stranger') return 'cutlass';
+  if (n === 'goldtooth') return 'clement';
+  return Object.keys(PIRATES).find(k => k === n || PIRATES[k].name.toLowerCase() === n || PIRATES[k].name.toLowerCase() === 'captain ' + n) || null;
+}
 function storyLines() {
+  if (!intro()) return ep?.reply || (SCENES[storyStep].dialogue || '').split('\n').filter(Boolean).map(parseLine);
   return (CHAPTER[storyStep].dialogue || '').split('\n').filter(Boolean).map(line => {
     const colon = line.indexOf(':');
     return { speaker: line.slice(0, colon), text: line.slice(colon + 1).trim() };
@@ -676,11 +711,10 @@ function storyLines() {
 function positionStorySpeech() {
   if (mode !== 'story' || $('storySpeech').hidden) return;
   const line = storyLines()[dialogueIndex];
-  const key = { Ruby: 'ruby', 'Ruby (thinking)': 'ruby', Marietta: 'marietta', Scarlett: 'scarlett', Tempest: 'tempest', Arabella: 'arabella', Odessa: 'odessa',
-                'The stranger': 'cutlass', Cutlass: 'cutlass', Jade: 'jade', Bones: 'bones' }[line?.speaker];
+  const key = speakerKey(line?.speaker);
   const speaker = st[key];
   const view = storyViewRoom();
-  const viewCamera = view === room ? camX : clamp((st.scarlett.x + st.tempest.x) / 2 - VW / 2, 0, ROOMS[view].w - VW);
+  const viewCamera = view === room || !intro() ? camX : clamp((st.scarlett.x + st.tempest.x) / 2 - VW / 2, 0, ROOMS[view].w - VW);
   const heads = Object.values(st).filter(s => s.room === view && s.x - viewCamera > -100 && s.x - viewCamera < VW + 100);
   // Keep the entire bubble above the tallest visible character, including the ship's sway.
   const bottom = Math.max(30, Math.min(...heads.map(s => s.headY || s.y - 250)) - 18);
@@ -696,6 +730,8 @@ function positionStorySpeech() {
 $('speechNext').addEventListener('click', action);
 
 function showStory() {
+  if (!intro()) { showEpisodeScene(); return; }
+  document.querySelector('.story-help').hidden = false;
   const scene = CHAPTER[storyStep];
   $('storyTitle').textContent = scene.title;
   $('storyText').textContent = scene.text;
@@ -726,6 +762,121 @@ $('tourNext').addEventListener('click', () => {
   $('tourNext').textContent = tourStop === TOUR.length - 1 ? 'Take the tour again' : 'Next tour stop';
 });
 
+// ---- treasure-hunt episodes, played live on the stage ----
+// A scene: { title, text, dialogue, room, at, label, party, cast, walk, goal, choices, game, how, mustWin, actions }.
+// Stages within a scene: walk (reach the goal) -> talk (dialogue) -> choose -> reply -> game -> playing -> result.
+function afterWalkStage(scene) {
+  const lines = (scene.dialogue || '').split('\n').filter(Boolean);
+  return lines.length ? 'talk' : scene.choices ? 'choose' : scene.game ? 'game' : 'talk';
+}
+function nextScene() {
+  if (storyStep < SCENES.length - 1) { enterStoryStep(storyStep + 1); return; }
+  if (ep.onEnd && !ep.ended) {
+    ep.ended = true;
+    const more = ep.onEnd(ep.score);
+    if (more?.length) { SCENES = SCENES.concat(more); enterStoryStep(storyStep + 1); return; }
+  }
+  closeScenes({ completed: true });
+}
+function epNext() {
+  const scene = SCENES[storyStep], lines = storyLines();
+  if (dialogueIndex < lines.length - 1) { dialogueIndex++; showStory(); return; }
+  if (ep.stage === 'talk' && scene.choices) { ep.stage = 'choose'; showStory(); return; }
+  if (scene.game && (ep.stage === 'talk' || ep.stage === 'reply')) { ep.stage = 'game'; ep.reply = null; dialogueIndex = 0; showStory(); return; }
+  nextScene();
+}
+function epChoose(c) {
+  ep.score += c.score || 0;
+  ep.reply = (c.reply || []).map(parseLine); dialogueIndex = 0; ep.stage = 'reply';
+  if (!ep.reply.length) { ep.reply = null; epNext(); } else showStory();
+}
+function showEpisodeScene() {
+  const scene = SCENES[storyStep], lines = storyLines();
+  const talking = ep.stage === 'talk' || ep.stage === 'reply';
+  const line = talking ? lines[dialogueIndex] : null;
+  $('storyTitle').textContent = scene.title;
+  $('storyText').textContent = ep.stage === 'game' || ep.stage === 'playing' ? scene.how : ep.stage === 'result' ? ep.gameResult.text : scene.text || '';
+  $('storyDialogue').textContent = '';
+  $('storySpeech').hidden = !line || stageGameOn;
+  $('storySpeech').classList.toggle('narration', !!line && !line.speaker);
+  $('speechSpeaker').textContent = line?.speaker || '';
+  $('speechText').textContent = line?.text || '';
+  const last = dialogueIndex >= lines.length - 1;
+  $('speechNext').textContent = last ? 'Continue →' : 'Next line →'; $('speechNext').disabled = false;
+  $('storyGoal').textContent = ep.stage === 'walk' ? scene.goal || '' : ep.stage === 'choose' ? 'What do you do? (or press 1, 2, 3)' : ep.stage === 'game' ? 'How to play' : '';
+  $('storyActions').replaceChildren();
+  $('gamePad').hidden = !stageGameOn;
+  document.querySelector('.story-help').hidden = stageGameOn || ep.stage === 'game';
+  if (ep.stage === 'talk' || ep.stage === 'reply') {
+    if (!last) storyButton('Next line →', epNext, 'primary');
+    else if (scene.actions && !scene.choices && !scene.game) scene.actions.forEach((a, i) => storyButton(a.label, a.fn, i ? '' : 'primary'));
+    else storyButton('Continue →', epNext, 'primary');
+  } else if (ep.stage === 'choose') {
+    scene.choices.forEach((c, i) => storyButton(`${i + 1}. ${c.label}`, () => epChoose(c), 'choice'));
+  } else if (ep.stage === 'game') {
+    storyButton('Play! →', startStageGame, 'primary');
+  } else if (ep.stage === 'playing') {
+    storyButton('Give up', () => { endStageGame(); ep.gameResult = { won: false, score: 0, text: 'You gave up this time.' }; ep.stage = 'result'; showStory(); }, 'quiet');
+  } else if (ep.stage === 'result') {
+    if (!ep.gameResult.won && scene.mustWin) {
+      storyButton('Try again', startStageGame, 'primary');
+      storyButton('Back to the ship (try later)', () => closeScenes({ completed: false }));
+    } else storyButton('Continue →', () => { ep.score += ep.gameResult.score || 0; nextScene(); }, 'primary');
+  }
+  positionStorySpeech();
+}
+// mini-games run in a canvas laid over the stage
+let stopStageGame = () => {}, stageGameOn = false;
+function startStageGame() {
+  const scene = SCENES[storyStep];
+  ep.stage = 'playing'; stageGameOn = true; questPaused = true;
+  Object.keys(keys).forEach(k => keys[k] = false);
+  $('stageGame').hidden = false; $('touch').hidden = true; document.querySelector('.hud').hidden = true;
+  showStory();
+  $('stage').scrollIntoView?.({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+  stopStageGame = window.runSoulmatesGame(scene.game, $('stageGame'), questApi, result => {
+    endStageGame();
+    ep.gameResult = result; ep.stage = 'result'; showStory();
+    $('storyActions').querySelector('button.primary')?.focus({ preventScroll: true });
+  });
+}
+function endStageGame() {
+  stopStageGame(); stopStageGame = () => {};
+  if (!stageGameOn) return;
+  stageGameOn = false; questPaused = false; last = performance.now();
+  $('stageGame').hidden = true; $('touch').hidden = false; $('gamePad').hidden = true; document.querySelector('.hud').hidden = false;
+}
+// start an episode on the stage; opts.onEnd(score) may return closing scenes; opts.onClose({ completed }) when it's over
+function playScenes(list, opts = {}) {
+  endStageGame();
+  const savedJoined = ep ? ep.savedJoined : joined.slice();
+  ep = { score: 0, stage: 'talk', reply: null, gameResult: null, onEnd: opts.onEnd, onClose: opts.onClose, savedJoined };
+  SCENES = list; mode = 'story'; storyStep = 0; dialogueIndex = 0; storyReady = false;
+  fade = fadeDir = 0; pending = near = doorNear = null; captionHold = 0; caption('');
+  Object.keys(keys).forEach(k => keys[k] = false);
+  lead = 'ruby'; joined.length = 0; tourStop = -1;
+  ['cutlass', ...CREW, ...VILLAINS].forEach(k => Object.assign(st[k], { room: 'hidden', sayT: 0, target: null, moving: false }));
+  quest.setActive(false);
+  document.querySelector('.controls').hidden = true; document.querySelector('.legend').hidden = true;
+  $('storyPanel').hidden = false; $('freePanel').hidden = true;
+  $('modeLabel').textContent = 'The treasure hunt'; $('skipIntro').hidden = true; $('replayIntro').hidden = true;
+  updateControls();
+  enterStoryStep(0);
+  $('stage').scrollIntoView?.({ block: 'nearest' });
+}
+function closeScenes(result) {
+  if (!ep) return;
+  const done = ep;
+  endStageGame();
+  ep = null; SCENES = CHAPTER;
+  resetAdventure('free');
+  // whoever was following Ruby before the episode falls back in behind her
+  joined.push(...done.savedJoined.filter(k => !locked(k)));
+  if (joined.length) arrive({ to: 'deck', at: .36 });
+  updateControls();
+  done.onClose?.(result);
+}
+
 // ---- the treasure hunt (episodes.js runs it; the story is in quest.js) ----
 let quest = null, questPaused = false;
 const locked = k => !!quest?.isLocked(k);
@@ -755,6 +906,18 @@ const questApi = {
     updateControls();
   },
   restart: () => resetAdventure('free'),
+  playScenes, closeScenes,
+  // a crewmate with an idea walks up to Ruby and says it
+  approach(key, line) {
+    const s = st[key], L = st[lead];
+    if (!s || mode !== 'free') return;
+    if (!joined.includes(key) && s.room !== room) {
+      const fromRight = L.x < worldW / 2;
+      Object.assign(s, { room, x: clamp(fromRight ? camX + VW + 40 : camX - 40, 40, worldW - 40), y: L.y, moving: false });
+    }
+    s.target = joined.includes(key) ? null : L.x + (s.x > L.x ? 110 : -110) * roomScale();
+    s.say = line; s.sayT = s.target === null ? 7 : 0; s.sayLater = line;
+  },
 };
 
 // ---- loop ----

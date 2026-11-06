@@ -40,22 +40,23 @@ window.SOULMATES_QUEST = {
       gotoHint: 'Follow the thumping down to the Cabin Hall below decks.',
       cast: ['ruby', 'cutlass', 'absalom'],
       beats: [
-        { text: 'The thumping is loudest at the end of the hall. Absalom is leaning against a cabin door, whistling far too innocently.',
+        { place: { absalom: .84 }, approach: 'absalom', goal: 'The thumping comes from the end of the hall. Walk down to Absalom, who is leaning on a cabin door.',
+          text: 'The thumping is loudest at the end of the hall. Absalom is leaning against a cabin door, whistling far too innocently.',
           lines: ['Absalom: “Nothing in there, Captain. Just barrels. Very lively barrels.”', 'Ruby: “Barrels don’t hum sea shanties off-key, Absalom.”'],
           choices: [
             { label: 'Order him aside', score: 2, reply: ['Ruby: “Step aside. Now.”', 'Absalom: “Aye aye, Captain…”'] },
             { label: 'Ask Cutlass to handle his boy', score: 2, reply: ['Cutlass: “Absalom. Door. Open it.”', 'Absalom: “You never let me keep anything.”'] },
             { label: 'Bribe him with Odessa’s pie', score: 1, reply: ['Absalom: “…Is it the cherry one?”', 'He steps aside, already drooling.'] },
           ] },
-        { text: 'Inside the bedchamber, a young man in a velvet coat is tied to a chair, gagged with sailcloth. His boots are polished. His glare could sink a ship.',
-          cast: ['ruby', 'cutlass', 'absalom', 'crispin'],
+        { room: 'bedroom', at: .12, cast: ['absalom', 'crispin'], place: { absalom: .42, crispin: .74 }, approach: 'crispin', goal: 'Absalom opens the door. Someone is tied up by the window. Go to him.',
+          text: 'Inside the bedchamber, a young man in a velvet coat is tied to a chair, gagged with sailcloth. His boots are polished. His glare could sink a ship.',
           lines: ['Crispin: “Mmmph! MMPH!”', 'Absalom: “He was standing on the dock looking so lonely, Cap’n. I thought he’d make a fine shipmate!”'],
           choices: [
             { label: 'Untie him gently', score: 2, reply: ['Ruby loosens the ropes, one knot at a time.', 'Crispin: “…Thank you. I suppose.”'] },
             { label: 'Take the gag off first', score: 1, reply: ['Crispin: “Outrageous! Barbaric! I am LORD Crispin and I will see you all hanged!”', 'Ruby: “Perhaps the gag could go back on.”'] },
             { label: 'Let Cutlass cut him loose', score: 1, reply: ['Cutlass slices the ropes with one flourish. Also one of Crispin’s coat buttons.', 'Crispin: “That was SILK.”'] },
           ] },
-        { text: 'Crispin rubs his wrists and looks around the cabin as if it were a pigsty.', cast: ['ruby', 'cutlass', 'crispin'],
+        { text: 'Crispin rubs his wrists and looks around the cabin as if it were a pigsty.', cast: ['crispin'], place: { crispin: .6 },
           lines: ['Crispin: “I despise ships. I despise the sea. I especially despise pirates.”', 'Cutlass: “Then you’ve picked a terrible place to be kidnapped.”', 'Ruby: “You can go ashore at the next port… or stay for supper.”', 'Crispin: “…What is for supper?”'],
           choices: [
             { label: 'Promise him Odessa’s cooking', score: 2, reply: ['Crispin: “Fine. One meal. Then I leave.”', 'He does not leave.'] },
@@ -100,7 +101,8 @@ window.SOULMATES_QUEST = {
       hook: 'Captain! I’m doing a cooking show in the dining salon, and I need a helper who can stir AND be charming.',
       gotoHint: 'Odessa is waiting in the dining salon, through the captain’s quarters.', accept: 'I’ll help',
       beats: [
-        { text: 'The whole crew squeezes into the dining salon. Odessa ties an apron on Ruby with a flourish.',
+        { place: { odessa: .62 }, approach: 'odessa', goal: 'Odessa is at the head of the table with an apron for you. Go and join her.',
+          text: 'The whole crew squeezes into the dining salon. Odessa ties an apron on Ruby with a flourish.',
           lines: ['Odessa: “Welcome, hungry sailors, to Odessa’s Galley! Today’s dish is…”'],
           choices: [
             { label: 'Seven-spice fish stew', score: 2, reply: ['Odessa: “A classic! Smell that, everyone.”', 'Jade faints happily.'] },
@@ -160,7 +162,7 @@ window.SOULMATES_QUEST = {
       hook: 'Ruby wakes up in a lace gown on Goldtooth’s ship. Goldtooth has kidnapped her for the wedding!',
       accept: 'Wreck it',
       beats: [
-        { text: 'Barrels for pews. A cake taller than Hazel. Goldtooth in a powdered wig, the Sun Compass glinting around his neck. The crew hides in the rigging with baskets of tomatoes and fish. If the rescue isn’t funny enough, they will throw them.',
+        { place: { clement: .86 }, text: 'Barrels for pews. A cake taller than Hazel. Goldtooth in a powdered wig, the Sun Compass glinting around his neck. The crew hides in the rigging with baskets of tomatoes and fish. If the rescue isn’t funny enough, they will throw them.',
           lines: ['Goldtooth: “Dearly beloved, we are gathered here because I said so.”', 'Bones (in a fake beard, whispering): “Psst, Cutlass. The gags. Set them up while he isn’t looking.”'] },
         { game: 'wedding', how: 'Sneak Cutlass around the chapel and set up four gags. Hold Space (or hold a tap) at each one. Goldtooth keeps turning around: when you see “!”, stop moving. The crew’s patience runs down, so be quick and be funny.', mustWin: true },
         { text: 'The gags go off one after another: the wet dog charges down the aisle, the cake is a fish, the carpet is soap, and the bell goes CLANG like a frying pan. Cutlass swings in on a rope… straight into the fish-cake. The crew howls with laughter.' },
@@ -179,7 +181,8 @@ window.SOULMATES_QUEST = {
       hook: 'Ruby’s chart, the only one showing where the second treasure lies, has vanished from the study. Crispin has put on a deerstalker hat.',
       gotoHint: 'Meet Crispin in the captain’s study, past the dining salon.', accept: 'Investigate',
       beats: [
-        { text: 'Crispin paces the study with a magnifying glass.',
+        { place: { crispin: .55, monsoon: .7, jade: .84 }, approach: 'crispin', goal: 'Crispin is pacing by the desk in a deerstalker hat. Go and hear what he’s found.',
+          text: 'Crispin paces the study with a magnifying glass.',
           lines: ['Crispin: “Crispinlock Holmes, at your service. Monsoon, you are my Dr. Watson.”', 'Jade: “And me!”', 'Crispin: “There was meant to be ONE assistant.”', 'Jade: “I insisted!”', 'Monsoon: “He did insist.”'],
           },
         { game: 'mystery', how: 'Search the study with Crispin’s magnifying glass. Anything worth finding will glint when the glass is close. Inspect it with Space or a tap.' },
