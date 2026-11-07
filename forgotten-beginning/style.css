@@ -20,3 +20,12 @@ label{display:flex;align-items:center;gap:9px;font-size:14px}input{accent-color:
 @media(pointer:coarse){.touch{display:flex}.caption{bottom:70px}}
 @media(max-width:600px){body{padding:18px 12px}.hud{top:8px;left:8px;right:8px}.hud span{padding:5px 8px}.stage{border-radius:12px}.characters{width:100%}.character{flex:1}.character span{font-size:12px}.controls{gap:12px}}
 select{font:inherit;color:#244039;background:#f9fcf5;border:1px solid #c3d1c3;border-radius:10px;padding:10px;min-height:44px;max-width:100%}select:focus-visible{outline:3px solid #65866b;outline-offset:3px}
+.door{position:absolute;top:62px;right:16px;z-index:1;display:flex;align-items:center;gap:8px;background:#f7fcf0f0;border-color:#ffffffc0;border-radius:30px;font-weight:600;font-size:clamp(12px,1.4vw,15px);box-shadow:0 8px 24px -10px #1d2b14a0}
+.door kbd{margin-left:4px}.talk{padding:5px 16px 5px 5px}.talk img{width:34px;height:34px;border-radius:50%;object-fit:cover}
+.talk-card{position:absolute;z-index:2;left:50%;bottom:16px;transform:translateX(-50%);width:min(620px,calc(100% - 24px));display:flex;gap:16px;align-items:stretch;padding:12px;border-radius:16px;background:#f8f4ecf5;border:1px solid #fff;box-shadow:0 18px 40px -16px #2a2214c0;color:#3a3324}
+.talk-card>img{width:min(118px,22%);aspect-ratio:2/3;object-fit:cover;object-position:top;border-radius:10px;background:#0e0c0a;flex:none}
+.talk-card>div{display:flex;flex-direction:column;flex:1;min-width:0}.talk-card p{margin:0;line-height:1.5;font-size:clamp(13px,1.6vw,16px)}
+.talk-name{font-family:Georgia,serif;font-size:clamp(17px,2vw,21px)!important;margin-bottom:6px!important}.talk-name small{font-family:"Avenir Next","Segoe UI",sans-serif;font-size:12px;color:#8a7a5c;margin-left:6px}
+.talk-actions{margin-top:auto;padding-top:10px;display:flex;justify-content:flex-end;gap:8px}.talk-actions button{min-height:40px;padding:8px 14px;background:#fffdf7;border-color:#d9ccb2}.talk-actions button:hover{background:#efe6d2}
+
+@media(max-width:600px){.door{top:44px;right:8px;padding:8px 12px}.door kbd{display:none}.talk{padding:4px 12px 4px 4px}.talk-card{bottom:8px;padding:8px;gap:10px}.talk-card>img{width:64px}}

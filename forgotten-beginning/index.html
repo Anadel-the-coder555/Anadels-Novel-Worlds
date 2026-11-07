@@ -11,10 +11,17 @@
   <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
   <main class="world">
     <header><div><p class="eyebrow">A world of its own</p><h1>Forgotten Beginning</h1></div><a href="../realm-explorer/index.html">Ember ↗</a></header>
-    <p class="intro">Walk the green city promenade beneath glass towers and hanging gardens.</p>
-    <section class="stage" aria-label="Green city promenade">
+    <p class="intro">Walk the green city promenade beneath glass towers and hanging gardens, and step through the archway into the workshop where Brielle’s older brother, Grayson, makes his rings and instruments.</p>
+    <section class="stage" id="stage" data-place="promenade" aria-label="The green city">
       <canvas id="game" tabindex="0" aria-label="Brielle in blue trousers and Zendayo in a cream suit exploring the promenade"></canvas>
-      <div class="hud"><span>Green City Promenade</span><span id="distance">West entrance</span></div>
+      <div class="hud"><span id="place">Green City Promenade</span><span id="distance">West entrance</span></div>
+      <button class="door" id="door" hidden><span aria-hidden="true">▲</span> <span id="doorLabel"></span> <kbd aria-hidden="true">↑</kbd></button>
+      <button class="door talk" id="talk" hidden><img src="grayson-portrait.png" alt=""> Talk to Grayson <kbd aria-hidden="true">E</kbd></button>
+      <div class="talk-card" id="talkCard" role="dialog" aria-labelledby="talkName" hidden>
+        <img src="grayson.jpg" alt="Grayson grinning with two thumbs up">
+        <div><p class="talk-name" id="talkName">Grayson <small>Brielle’s older brother</small></p><p id="talkLine" aria-live="polite"></p>
+          <div class="talk-actions"><button id="talkClose">Close</button><button id="talkNext">Next ›</button></div></div>
+      </div>
       <p class="loading" id="loading" role="status">Opening the promenade…</p>
       <p class="caption" id="caption" role="status" hidden></p>
       <div class="touch"><button id="left" aria-label="Walk left">◀</button><button id="right" aria-label="Walk right">▶</button></div>
@@ -25,7 +32,7 @@
       <label for="brielleOutfit">Brielle’s outfit <select id="brielleOutfit" disabled><option value="0">Blue trousers</option><option value="1">White &amp; black dress</option></select></label>
       <button id="reset" disabled>Back to the entrance</button>
     </section>
-    <p class="instructions"><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> walk · <kbd>Shift</kbd> hurry · <kbd>1</kbd> / <kbd>2</kbd> choose who leads · <kbd>T</kbd> together or alone</p>
+    <p class="instructions"><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> walk · <kbd>Shift</kbd> hurry · <kbd>1</kbd> / <kbd>2</kbd> choose who leads · <kbd>T</kbd> together or alone · <kbd>↑</kbd> go through a door · <kbd>E</kbd> talk to Grayson</p>
   </main>
   <script src="game.js"></script>
 </body>

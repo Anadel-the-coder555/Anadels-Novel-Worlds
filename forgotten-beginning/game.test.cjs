@@ -6,7 +6,7 @@ const elements = new Map(), events = {}, draws = [];
 let savedOutfit = null;
 const context = new Proxy({ drawImage: (...a) => draws.push(a) }, { get: (o, k) => o[k] || (() => {}) });
 function get(id) {
-  if (!elements.has(id)) elements.set(id, { id, classList: { add() {}, remove() {} },
+  if (!elements.has(id)) elements.set(id, { id, dataset: {}, classList: { add() {}, remove() {} },
     setAttribute(k, v) { this[k] = v; }, addEventListener(k, f) { this[k] = f; }, focus() {},
     getBoundingClientRect: () => ({ width: 960 }), getContext: () => context,
     setPointerCapture() {}, closest: () => null });
@@ -20,8 +20,8 @@ const sandbox = { Math, Number, String, Promise, Error,
   addEventListener: (k, f) => events[k] = f, requestAnimationFrame() {},
 };
 let source = fs.readFileSync(path.join(__dirname, 'game.js'), 'utf8');
-source = source.replace(/\}\)\(\);\s*$/, `globalThis.gameTest = { update, render, choose, reset, keys, states,
-  state: () => ({ x, lead, camera, worldWidth, together }) }; })();`);
+source = source.replace(/\}\)\(\);\s*$/, `globalThis.gameTest = { update, render, choose, reset, keys, states, grayson,
+  state: () => ({ x, lead, camera, worldWidth, together, place: place.name, talk, fade }) }; })();`);
 vm.runInNewContext(source, sandbox);
 setImmediate(() => {
   const g = sandbox.gameTest;
@@ -58,6 +58,36 @@ setImmediate(() => {
   get('reset').click(); g.render(); assert.equal(draws.at(-1)[0].source, 'brielle-dress-walk.png');
   get('brielleOutfit').change({ target: { value: '0' } }); g.render();
   assert.equal(draws.at(-1)[0].source, 'girl-walk.png'); assert.equal(savedOutfit, '0');
+  // the archway on the promenade leads into Grayson's workshop
+  const key = k => events.keydown({ key: k, target: get('game'), preventDefault() {} });
+  g.choose(0); walk('right', 2.6);
+  const arch = .56 * g.state().worldWidth; while (g.state().x < arch - 40) walk('right', .1);
+  assert.equal(get('door').hidden, false); assert.equal(get('doorLabel').textContent, 'Into Grayson’s workshop');
+  key('ArrowUp'); for (let i = 0; i < 20; i++) g.update(.05);
+  assert.equal(g.state().place, 'Grayson’s Workshop'); assert.equal(g.state().fade, 0);
+  assert.equal(get('place').textContent, 'Grayson’s Workshop'); assert.equal(get('stage').dataset.place, 'workshop');
+  draws.length = 0; g.render();
+  assert.equal(draws[0][0].source, 'workshop.jpg'); assert(draws.some(d => d[0].source === 'grayson-walk.webp'), 'Grayson is in his workshop');
+  // he potters about on his own, then stops and turns to greet whoever walks up
+  const startX = g.grayson.x; for (let i = 0; i < 100; i++) g.update(.05); assert.notEqual(g.grayson.x, startX, 'Grayson moves between benches');
+  assert.equal(get('talk').hidden, true);
+  while (Math.abs(g.state().x - g.grayson.x) > 120) walk(g.state().x < g.grayson.x ? 'right' : 'left', .05);
+  assert.equal(g.grayson.greeting, true); assert.equal(g.grayson.moving, false);
+  assert.equal(g.grayson.facing, Math.sign(g.state().x - g.grayson.x));
+  assert.equal(get('talk').hidden, false); assert.match(get('caption').textContent, /sister/);
+  key('e'); assert(g.state().talk); assert.equal(get('talkCard').hidden, false);
+  assert.match(get('talkLine').textContent, /Brielle!/);
+  const held = g.state().x; walk('right', 1); assert.equal(g.state().x, held, 'no walking mid-conversation');
+  g.choose(1); assert.match(get('talkLine').textContent, /Zendayo!/);
+  for (let i = 0; i < 3; i++) get('talkNext').click(); assert.equal(get('talkNext').textContent, 'Goodbye');
+  get('talkNext').click(); assert.equal(g.state().talk, null); assert.equal(get('talkCard').hidden, true);
+  key('E'); events.keydown({ key: 'Escape', target: get('talkNext'), preventDefault() {} }); assert.equal(g.state().talk, null);
+  // and back out through the door to the promenade, arriving at the archway
+  walk('left', 20); assert.equal(get('doorLabel').textContent, 'Back out to the promenade');
+  key('w'); for (let i = 0; i < 20; i++) g.update(.05);
+  assert.equal(g.state().place, 'Green City Promenade'); assert(Math.abs(g.state().x - arch) < 2);
+  get('reset').click(); assert.equal(g.state().place, 'Green City Promenade'); assert.equal(g.state().x, 270);
+  console.log('Passed the workshop: archway door, fade, Grayson pottering, greeting, conversation for each leader, and the way back.');
   console.log('Passed loading, both characters, walking animation, follower trail, hurry, direction changes, lead selection, solo/together, camera, boundaries, touch cancellation, blur and reset.');
   console.log('Passed Brielle outfit switching, saved choice, dress while leading/following, matching frame dimensions, retained position and reset.');
 });
