@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Talent Bones / Fern</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../realm-nav.css">
+</head>
+<body>
+  <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
+  <main class="world">
+    <header><div><p class="eyebrow">A world of its own</p><h1>Talent Bones / Fern</h1></div></header>
+    <p class="intro">Wander the birch forest with your satchel over your shoulder. Someone is waiting among the ferns.</p>
+    <section class="stage" aria-label="Birch forest">
+      <canvas id="game" tabindex="0" aria-label="A boy in a red hoodie with a satchel walking through a sunlit birch forest"></canvas>
+      <div class="hud"><span>The Birch Forest</span><span id="distance">Forest edge</span></div>
+      <p class="loading" id="loading" role="status">Opening the forest…</p>
+      <p class="caption" id="caption" role="status" hidden></p>
+      <div class="touch"><button id="left" aria-label="Walk left">◀</button><button id="hello" aria-label="Say hello" hidden>👋</button><button id="right" aria-label="Walk right">▶</button></div>
+    </section>
+    <section class="controls" aria-label="Exploration controls">
+      <div class="characters"><span class="character"><img src="boy-portrait.png" alt=""><span>The boy<small>red hoodie and satchel</small></span></span><span class="character" id="fernCard"><img src="fern-portrait.png" alt=""><span>Fern<small id="fernNote">somewhere in the forest</small></span></span></div>
+      <button id="reset" disabled>Back to the forest edge</button>
+    </section>
+    <p class="instructions"><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> walk · <kbd>Shift</kbd> hurry · <kbd>↑</kbd> or <kbd>Enter</kbd> say hello when you reach Fern</p>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
