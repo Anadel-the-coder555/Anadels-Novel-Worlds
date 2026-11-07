@@ -223,7 +223,16 @@ function autopilot(b, dt) {
 const MAP = { ArrowUp: ['arrows', 'up'], ArrowDown: ['arrows', 'down'], ArrowLeft: ['arrows', 'left'], ArrowRight: ['arrows', 'right'],
   w: ['wasd', 'up'], s: ['wasd', 'down'], a: ['wasd', 'left'], d: ['wasd', 'right'], W: ['wasd', 'up'], S: ['wasd', 'down'], A: ['wasd', 'left'], D: ['wasd', 'right'] };
 const fresh = { arrows: false, wasd: false };
+// the title card stays up once everything has loaded, until you click the button or press a key
+let ready = false;
+function begin() { if (!ready || $('title').hidden) return; $('title').hidden = true; }
+$('begin').addEventListener('click', () => { audio(); begin(); });
 addEventListener('keydown', e => {
+  if (!$('title').hidden) {
+    if (e.target.closest?.('a,select,input') || e.key === 'Tab' || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (ready && !e.repeat) { e.preventDefault(); audio(); begin(); }
+    return;
+  }
   if (e.key === 'Escape' && cup.active) { e.preventDefault(); pauseMatch(); return; }
   if (talk) {
     if (['e', 'E', 'Enter', ' '].includes(e.key) && !e.repeat && !e.target.closest?.('button')) { e.preventDefault(); audio(); nextLine(); }
@@ -849,7 +858,7 @@ function loadImg(src) { return new Promise((res, rej) => { const i = new Image()
   try {
     await Promise.all([...Object.values(ROOMS).map(async r => { r.img_ = await loadImg(r.img); }), ...Object.values(BOYS).map(async c => { c.img_ = await loadImg(c.img); })]);
   } catch (error) {
-    banner(`${error.message} — refresh to try again.`); return;
+    banner(`${error.message} — refresh to try again.`); $('loading').textContent = `${error.message}. Refresh to try again.`; return;
   }
   setRoom('arduan');
   boys.arduan = makeBoy('arduan', 320); boys.lucio = makeBoy('lucio', 560); boys.lucio.facing = -1; boys.lilith = makeBoy('lilith', 900); boys.brayden = makeBoy('brayden', 1160); boys.brayden.facing = -1; boys.day = makeBoy('day', 440); boys.brennan = makeBoy('brennan', 1020);
@@ -859,6 +868,7 @@ function loadImg(src) { return new Promise((res, rej) => { const i = new Image()
   $('cupStart').disabled = false;
   $('catBtn').disabled = false;
   document.querySelectorAll('[data-event]').forEach(b => b.disabled = false);
+  ready = true; $('loading').hidden = true; $('begin').hidden = false;
   requestAnimationFrame(now => { last = now; requestAnimationFrame(frame); });
 })();
 })();
