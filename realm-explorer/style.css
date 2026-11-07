@@ -94,6 +94,20 @@ button:disabled{opacity:.5;cursor:wait}
 .gown[aria-pressed="true"]{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold);color:var(--parchment)}
 .gown:focus-visible,.done:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .dress-keys{margin:0;color:var(--muted);font-size:15px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+/* title card: Ember's cover, shown while the realm loads, then waits for a click or key */
+.title-screen{position:absolute;inset:0;z-index:20;background:#2a2a1e;overflow:hidden}
+.title-screen img{position:absolute;inset:0;width:100%;height:100%;display:block}
+.title-blur{object-fit:cover;filter:blur(24px) brightness(.8);transform:scale(1.15)}
+.title-art{object-fit:contain}
+.title-status,.title-go{position:absolute;right:2.4cqw;bottom:2.6cqw;margin:0;white-space:nowrap}
+.title-status{padding:.5em 1.1em;border-radius:999px;background:rgba(20,27,29,.72);color:var(--parchment);font:italic max(12px,1.5cqw) var(--story);backdrop-filter:blur(6px)}
+.title-go{padding:.6em 1.3em;border-radius:999px;border:1px solid rgba(216,164,70,.8);background:rgba(244,231,201,.95);color:var(--parchment-ink);font:max(14px,2cqw) var(--display);cursor:pointer;min-height:44px;box-shadow:0 0 0 0 rgba(216,164,70,.6),0 10px 30px -10px rgba(0,0,0,.6);animation:titleGlow 2.4s ease-in-out infinite}
+.title-go:hover{background:#fffaf0}
+.title-go:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+@keyframes titleGlow{50%{box-shadow:0 0 0 .5cqw rgba(216,164,70,.3),0 10px 30px -10px rgba(0,0,0,.6)}}
+.title-go .short{display:none}
+@container (max-width:620px){.title-go .long{display:none}.title-go .short{display:inline}.title-go,.title-status{font-size:13px;right:10px;bottom:10px}}
+@media (prefers-reduced-motion:reduce){.title-go{animation:none}}
 @media (prefers-reduced-motion:reduce){.placard,.caption{transition:none}.speech.on{animation:none}.gown img{transition:none}}
 
 /* ---- the atlas (map) ---- */

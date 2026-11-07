@@ -530,6 +530,21 @@ function setMusic(on) {
   try { localStorage.setItem('realm-music', on ? 'on' : 'off'); } catch (_) {}
   fadeMusic(on ? THEME_VOLUME : 0);
 }
+// ---- title card: stays up once everything has loaded, until the player clicks the button or presses a key
+let ready = false;
+function begin() {
+  if (!ready || $('title').hidden) return;
+  $('title').hidden = true;
+  if (musicOn) fadeMusic(THEME_VOLUME);
+}
+$('begin').addEventListener('click', begin);
+addEventListener('keydown', e => {
+  if ($('title').hidden) return;
+  if (e.target.closest?.('a,select,input,button') || e.key === 'Tab' || e.ctrlKey || e.metaKey || e.altKey) return;
+  e.stopImmediatePropagation(); e.preventDefault();   // the realm doesn't move behind the cover
+  if (ready && !e.repeat) begin();
+}, true);
+
 ['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, function first() {
   ['pointerdown', 'keydown'].forEach(x => removeEventListener(x, first));
   if (musicOn) fadeMusic(THEME_VOLUME);
@@ -779,7 +794,7 @@ function loadImg(src) { return new Promise((res, rej) => { const i = new Image()
     $('loadStatus').textContent = `${error.message}. Refresh to try again.`;
     return;
   }
-  $('loadStatus').hidden = true;
+  $('loadStatus').hidden = true; $('begin').hidden = false; ready = true;
   $('dressStart').disabled = false;
   document.querySelectorAll('.walker').forEach((b, k) => b.setAttribute('aria-pressed', k === lead ? 'true' : 'false'));
   enterPlace(0, 'left');
