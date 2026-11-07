@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Netherlands</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../realm-nav.css">
+</head>
+<body>
+  <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
+  <main class="world">
+    <header><div><p class="eyebrow">A realm of its own</p><h1>Netherlands</h1></div></header>
+    <p class="intro">Walk the autumn wood in a red velvet gown and cloak, along a sunlit path strewn with fallen leaves.</p>
+    <section class="stage" aria-label="Autumn wood">
+      <canvas id="game" tabindex="0" aria-label="A lady in a red velvet gown and gold-embroidered cloak walking along a path through an autumn forest"></canvas>
+      <div class="hud"><span>The Autumn Wood</span><span id="distance">The wood’s edge</span></div>
+      <p class="caption" id="caption" role="status">Opening the wood…</p>
+      <div class="touch"><button id="left" aria-label="Walk left">◀</button><button id="right" aria-label="Walk right">▶</button></div>
+    </section>
+    <section class="controls" aria-label="Exploration controls">
+      <div class="characters"><span class="character"><img src="lady-portrait.png" alt=""><span>The lady in red<small>velvet gown and embroidered cloak</small></span></span></div>
+      <button id="reset" disabled>Back to the wood’s edge</button>
+    </section>
+    <p class="instructions"><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> walk · <kbd>Shift</kbd> hurry</p>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
