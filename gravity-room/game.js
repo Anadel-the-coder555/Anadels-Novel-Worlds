@@ -249,6 +249,8 @@ $('zeroBtn').addEventListener('click', () => { audio(); toggleZero(); });
 $('swapBtn').addEventListener('click', () => { audio(); swap(); });
 $('catBtn').addEventListener('click', () => { audio(); selectCharacter('cat'); });
 $('doorBtn').addEventListener('click', () => { audio(); goThrough(); });
+// on phones the door button sits right on the stage, beside the arrow pad, whenever you're at a door
+$('tdoor').addEventListener('click', () => { audio(); goThrough(); });
 $('talk').addEventListener('click', () => { audio(); nextLine(); });
 $('restartBtn').addEventListener('click', () => {
   if (!room || cup.active || fadeDir) return;
@@ -568,11 +570,13 @@ function update(dt) {
     if (fadeDir === 1 && fade === 1) { arrive(); fadeDir = -1; }
     else if (fadeDir === -1 && fade === 0) fadeDir = 0;
   }
-  if (talk) { updateTalk(dt); clearKeys(); t += dt; return; }   // the world holds still while people talk
+  if (talk) { $('tdoor').hidden = true; updateTalk(dt); clearKeys(); t += dt; return; }   // the world holds still while people talk
   {
     const a = boys[ctrl.arrows]; doorNear = null;
     if (!cup.active && !zeroG && a.mode === 'surf' && a.surf === 'floor')
       ROOMS[roomK].doors.forEach(d => { if (Math.abs(a.p[0] - d.x * worldW) < 110) doorNear = d; });
+    const show = !!doorNear && !fadeDir;
+    if ($('tdoor').hidden === show) $('tdoor').hidden = !show;
   }
   t += dt; shake = Math.max(0, shake - dt); tilt *= Math.pow(.02, dt);
   ['arrows', 'wasd'].forEach(src => {
@@ -715,7 +719,7 @@ function offscreenHint() {
   });
 }
 function doorSign(wx, to, locked) {
-  const p = toScreen(wx, FY - H - 40), label = (locked ? '🔒 ' : '▲ ') + to, hint = locked || (isTouch() ? 'tap Go through the door' : 'press E');
+  const p = toScreen(wx, FY - H - 40), label = (locked ? '🔒 ' : '▲ ') + to, hint = locked || (isTouch() ? 'tap Go through' : 'press E');
   ctx.font = '600 18px "Fredoka", sans-serif';
   const w = ctx.measureText(label).width + 30, bx = clamp(p[0] - w / 2, 10, VW - w - 10), by = clamp(p[1] - 40, 50, VH - 70);
   ctx.fillStyle = 'rgba(30,50,40,.2)'; rr(bx + 2, by + 3, w, 48, 14); ctx.fill();
