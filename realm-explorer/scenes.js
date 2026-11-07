@@ -1073,6 +1073,8 @@ const HUBS = {
       customers: ['rosie', 'clara', 'posy'], hello: 'Everyone’s arrived for the picnic! Bring them what they ask for.',
       ask: asker(['Could I have {list}?', 'Ooh, {list}, please!', 'I’m starving! {list}?']), helps: item => `Here’s ${item.label.toLowerCase()}, dear!`,
       doneText: (n, s) => s >= 2 ? 'Nobody can eat another bite. Lila-Bella falls asleep in the sun.' : 'A lovely picnic, even if some had to wait for their scones.' }),
+    // not a game on this stage: it leaves the kitchen and lays the picnic on the grass by the lake (game.js, opts.picnic)
+    { id: 'lakepicnic', out: 'picnic', name: 'Have a picnic by the lake', icon: '🧺', blurb: 'Take the basket out to Aspen Meadow and lay the picnic on the grass.' },
   ] },
   treehouse: { title: 'Fun at the Treehouse', host: null, games: [
     { id: 'berries', kind: 'gather', mode: 'ground', name: 'Berry race', icon: '🫐', blurb: 'Who can pick the most before they vanish? Mind the bees.', time: 40, life: 2.6, every: .45, max: 7, items: [
@@ -1868,6 +1870,7 @@ function begin(g) {
   setupCast(g);
 }
 function choose(g) {
+  if (g.out) { const go = opts[g.out]; close(); go?.(); return; }   // e.g. the picnic out in the realm itself
   ui.panel.hidden = true; ui.panel.classList.remove('scene-chat');
   begin(g);
   ENGINES[g.kind].setup(g);

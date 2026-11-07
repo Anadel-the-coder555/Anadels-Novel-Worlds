@@ -36,6 +36,11 @@
       </div>
       <div class="goal" id="goal" hidden><b>Quest</b><span id="goalText"></span></div>
       <div class="banner" id="banner" aria-live="polite"></div>
+      <div class="title-screen" id="title" aria-label="Gravity Thief">
+        <img src="title.jpg" alt="Gravity Thief: some rules are meant to be broken. A boy in sunglasses and an olive jacket walks a mirrored skybridge, with a glass city hanging upside down above him">
+        <p class="title-status" id="loading" role="status">Turning the city upside down…</p>
+        <button class="title-go" id="begin" type="button" hidden aria-label="Step into the city"><span class="long">Step into the city</span><span class="short">Play</span> ▶</button>
+      </div>
       <div class="talk" id="talk" hidden role="dialog" aria-live="polite" aria-label="Story">
         <b id="talkWho"></b><p id="talkText"></p><span class="talk-next">Space / E ▶</span>
       </div>
@@ -47,6 +52,7 @@
           <button class="tbtn right" data-k="right" type="button" aria-label="Right">&#9654;</button>
           <button class="tbtn down" data-k="down" type="button" aria-label="Down">&#9660;</button>
         </div>
+        <button class="tdoor" id="tdoor" type="button" hidden>&#9650; Go through</button>
       </div>
     </div>
 
@@ -56,10 +62,12 @@
       <button class="act" id="doorBtn" type="button"><span>Go through the door</span><kbd>E</kbd></button>
       <button class="act" id="swapBtn" type="button"><span id="swapLabel">Arrows: Arduan</span><kbd>Tab</kbd></button>
       <button class="act" id="catBtn" type="button" disabled>Play as Cat</button>
+      <button class="act" id="storyBtn" type="button" aria-pressed="false">Play the shard adventure</button>
       <button class="act" id="restartBtn" type="button" hidden>Restart adventure</button>
     </div>
 
     <ul class="legend">
+      <li><b>Free roam</b> every door is open. Choose <b>Play the shard adventure</b> to hunt the Gravity Thief's shards instead</li>
       <li><b>Story</b> press <kbd>Space</kbd> or <kbd>E</kbd> (or tap the box) to keep the conversation going</li>
       <li>Follow the <b>Quest</b> at the top of the room. Edge arrows point to shards that are off-screen</li>
       <li><b>Arduan</b> <kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd></li>
@@ -70,6 +78,7 @@
       <li>Press away from the surface to jump. In mid-air, press a direction to fall that way</li>
       <li>Stand by a door and press <kbd>E</kbd> to go through: bedrooms, the living room, the street and the Academy</li>
       <li>Leave someone alone and they wander off by themselves</li>
+      <li><b>Sky City</b> from the villa street, go up the hill. Jump, then press <kbd>&uarr;</kbd> in mid-air to float up through the clouds to the upside-down city above. Land on it and it looks the right way up, even though you're the one hanging upside down</li>
     </ul>
     <section class="cup" id="cupMenu" aria-labelledby="cupTitle">
       <div class="cup-heading"><div><h2 id="cupTitle">Side quest · Academy Gravity Cup</h2><p>Need a break from the chase? Three events in the Academy atrium. Your story progress is saved.</p></div><button class="act" id="cupStart" disabled>Enter tournament</button></div>

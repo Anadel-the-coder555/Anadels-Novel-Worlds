@@ -88,6 +88,7 @@ for (const [key, hub] of Object.entries(E.HUBS)) {
     assert.equal(T.state().host.bubble.text, hub.greet);
   } else if (hub.games.length > 1) assert.equal(T.state().phase, 'menu', `${key} offers a choice`);
   for (const g of hub.games) {
+    if (g.out) continue;   // leaves the stage for the realm (the lake picnic): game.js tests that
     T.choose(g);
     const S = T.state();
     assert.equal(S.phase, 'intro');
@@ -108,6 +109,11 @@ for (const [key, hub] of Object.entries(E.HUBS)) {
   handlers.keydown({ key: 'Escape', preventDefault() {} });
   assert(!E.active(), `${key}: Esc leaves`);
 }
+// the kitchen's lake picnic leaves the stage and hands over to the realm's own picnic on the grass
+let picnicked = 0;
+E.start('kitchen', { cast, picnic: () => picnicked++ });
+T.choose(E.HUBS.kitchen.games.find(g => g.id === 'lakepicnic'));
+assert(!E.active(), 'the lake picnic leaves the kitchen'); assert.equal(picnicked, 1, 'and starts the picnic by the lake');
 // the leader can be anyone: a prince leading the villa dance gets Ember opposite him
 E.start('villa-dance', { cast: [cast[2], cast[0], cast[1], cast[3]] });
 assert.equal(T.state().player.name, 'Icy-Blue Prince'); assert.equal(T.state().partner.name, 'Ember');

@@ -30,7 +30,7 @@ const sandbox = { Math, Number, String, Promise, Error, URLSearchParams, locatio
 };
 let source = fs.readFileSync(path.join(__dirname, 'game.js'), 'utf8');
 source = source.replace(/\}\)\(\);\s*$/, `globalThis.testGame = { enterPlace, walkOff, useDoor, update, render, drawWalker, pickGown,
-  openMap, PLACES, LANDS, VILLA, state: () => ({ place, leaderX, worldW, door, gown, dressing }) }; })();`);
+  openMap, PLACES, LANDS, VILLA, state: () => ({ place, leaderX, worldW, door, gown, dressing, picnic }), startPicnic, toggleFood, closePicnic }; })();`);
 vm.runInNewContext(source, sandbox);
 setImmediate(() => {
   const g = sandbox.testGame;
@@ -154,7 +154,7 @@ setImmediate(() => {
   // games: each play door opens its hub, keys are paused while it's open, and the party stays put
   const playDoors = [[0, .64, 'garden'], [1, .22, 'horses'], [1, .55, 'festival'], [2, .58, 'treehouse'], [3, .18, 'kitchen'],
     [7, .1, 'carpenter'], [7, .44, 'stage'], [7, .63, 'dress'], [7, .88, 'haberdashery'], [17, .11, 'shoes'], [17, .26, 'toys'], [17, .42, 'books'],
-    [8, .3, 'royal-kitchen'], [9, .5, 'royal-event'], [g.VILLA, .86, 'boating'], [30, .845, 'villa-animals'], [27, .36, 'villa-dance'], [26, .68, 'villa-piano']];
+    [8, .3, 'royal-kitchen'], [9, .5, 'royal-event'], [g.VILLA, .86, 'boating'], [32, .78, 'villa-animals'], [27, .36, 'villa-dance'], [26, .68, 'villa-piano']];
   for (const [place, position, key] of playDoors) {
     gamesOpen = false;
     g.enterPlace(place, position); g.update(0);
@@ -199,4 +199,32 @@ setImmediate(() => {
   ['byzantine-foyer.jpg', 'byzantine-hall-doors.jpg', 'byzantine-hall-windows.jpg', 'byzantine-library.jpg', 'byzantine-ballroom.jpg', 'byzantine-dining.jpg', 'byzantine-balcony.jpg']
     .forEach((img, k) => { g.enterPlace(23 + k, .5); g.render(); assert(draws.some(d => d[0].source === img), img); });
   console.log('Passed the villa interior: foyer, both hallways, library, dining room, ballroom and balcony, and back out.');
+  // the gardens behind the villa: the rose garden by the lake, then the animal garden to its right
+  doorAt(30, .845, 31); assert.equal(get('placeName').textContent, 'Byzantine · Villa Gardens'); assert.equal(get('placeNum').textContent, 'behind the villa');
+  g.render(); assert(draws.some(d => d[0].source === 'byzantine-garden.jpg'));
+  g.walkOff('right'); settle(); assert.equal(get('placeName').textContent, 'Byzantine · Animal Garden');
+  g.render(); assert(draws.some(d => d[0].source === 'byzantine-animal-garden.jpg'));
+  g.walkOff('left'); settle(); assert.equal(g.state().place, 31);
+  doorAt(31, .5, 30);
+  console.log('Passed the villa gardens and the animal garden behind the terrace, and back.');
+  // picnics are laid out in the scene itself, not in the games window
+  [[0, .35], [1, .4], [2, .3], [31, .22]].forEach(([i, x]) => {
+    g.enterPlace(i, x); g.update(0);
+    assert.equal(g.state().door[1], 'picnic', `picnic spot in ${g.PLACES[i].name}`);
+    const before = opened.length;
+    g.useDoor(); settle();
+    assert.equal(opened.length, before, 'the picnic does not open the games window');
+    assert(g.state().picnic, 'picnic under way'); assert.equal(g.state().place, i);
+    assert.equal(get('picnicPanel').hidden, false);
+    g.render(); assert(draws.some(d => d[0].source === 'picnic/cheese.png'), 'food drawn on the blanket');
+    g.toggleFood('ice-cream'); settle(); g.render(); assert(draws.some(d => d[0].source === 'picnic/ice-cream.png'));
+    handlers.keydown({ key: 'ArrowRight', target: {}, preventDefault() {} }); settle();
+    assert(g.state().picnic, 'walking keys do not break up the picnic');
+    handlers.keydown({ key: 'Escape', target: {}, preventDefault() {} }); settle();
+    assert.equal(g.state().picnic, null); assert.equal(get('picnicPanel').hidden, true);
+  });
+  g.enterPlace(3, .18); g.startPicnic([2, .3]); settle();
+  assert.equal(g.state().place, 2, 'the kitchen picnic heads out to Aspen Meadow'); assert(g.state().picnic);
+  g.closePicnic(); settle();
+  console.log('Passed picnics on the grass in Castle Valley, the Lavender Fields, Aspen Meadow and the villa gardens, and the kitchen picnic.');
 });

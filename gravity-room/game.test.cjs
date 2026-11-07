@@ -19,7 +19,7 @@ const eventButtons = ['rings', 'parkour', 'style'].map(event => element(event, {
 // fixed randomness so wandering characters never jump mid-assertion
 const fixedMath = Object.assign(Object.create(Math), { random: () => .5 });
 const sandbox = { console, Math: fixedMath, Number, String, Promise, Error, Set,
-  localStorage: { getItem() {}, setItem() {} },
+  localStorage: { getItem: k => k === 'gravity-story-on' ? '1' : undefined, setItem() {} },   // these tests play the shard adventure
   setTimeout() {}, clearTimeout() {},
   matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} },
   document: { getElementById: get, querySelectorAll: q => q === '[data-event]' ? eventButtons : [], fonts: { load: async () => {} } },

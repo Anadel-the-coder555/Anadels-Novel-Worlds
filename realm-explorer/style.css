@@ -94,7 +94,42 @@ button:disabled{opacity:.5;cursor:wait}
 .gown[aria-pressed="true"]{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold);color:var(--parchment)}
 .gown:focus-visible,.done:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .dress-keys{margin:0;color:var(--muted);font-size:15px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+/* title card: Ember's cover, shown while the realm loads, then waits for a click or key */
+.title-screen{position:absolute;inset:0;z-index:20;background:#2a2a1e;overflow:hidden}
+.title-screen img{position:absolute;inset:0;width:100%;height:100%;display:block}
+.title-blur{object-fit:cover;filter:blur(24px) brightness(.8);transform:scale(1.15)}
+.title-art{object-fit:contain}
+.title-status,.title-go{position:absolute;right:2.4cqw;bottom:2.6cqw;margin:0;white-space:nowrap}
+.title-status{padding:.5em 1.1em;border-radius:999px;background:rgba(20,27,29,.72);color:var(--parchment);font:italic max(12px,1.5cqw) var(--story);backdrop-filter:blur(6px)}
+.title-go{padding:.6em 1.3em;border-radius:999px;border:1px solid rgba(216,164,70,.8);background:rgba(244,231,201,.95);color:var(--parchment-ink);font:max(14px,2cqw) var(--display);cursor:pointer;min-height:44px;box-shadow:0 0 0 0 rgba(216,164,70,.6),0 10px 30px -10px rgba(0,0,0,.6);animation:titleGlow 2.4s ease-in-out infinite}
+.title-go:hover{background:#fffaf0}
+.title-go:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+@keyframes titleGlow{50%{box-shadow:0 0 0 .5cqw rgba(216,164,70,.3),0 10px 30px -10px rgba(0,0,0,.6)}}
+.title-go .short{display:none}
+@container (max-width:620px){.title-go .long{display:none}.title-go .short{display:inline}.title-go,.title-status{font-size:13px;right:10px;bottom:10px}}
+@media (prefers-reduced-motion:reduce){.title-go{animation:none}}
 @media (prefers-reduced-motion:reduce){.placard,.caption{transition:none}.speech.on{animation:none}.gown img{transition:none}}
+
+/* ---- picnic panel (the picnic itself is drawn in the scene) ---- */
+body.picnicking .controls,body.picnicking .legend,body.picnicking .touch{display:none!important}
+.picnic-top{display:flex;flex-wrap:wrap;gap:12px 28px}
+.picnic-top>.group{flex:none;max-width:100%}
+.pblankets,.pbaskets{display:flex;flex-wrap:wrap;gap:8px}
+.pblanket,.pbasket{flex:none}
+.pblanket,.pbasket,.pfood{border-radius:6px;border:1px solid rgba(244,231,201,.16);background:var(--ink-2);color:var(--text);font:500 14px var(--ui);cursor:pointer}
+.pblanket{display:grid;place-items:center;padding:6px;width:64px;height:64px}
+.pblanket .chip{width:48px;height:48px;border-radius:4px;flex:none;background-color:var(--c);background-image:linear-gradient(90deg,var(--k) 50%,transparent 50%),linear-gradient(var(--k) 50%,transparent 50%);background-size:10px 10px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.pbasket{padding:4px 8px;width:88px;height:64px;display:grid;place-items:center}
+.pbasket img{max-width:100%;max-height:100%;object-fit:contain}
+.pfoods{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.pfood{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px;text-align:center;background:radial-gradient(ellipse at 50% 35%,#3a3428,var(--ink-2) 70%)}
+.pfood img{height:52px;width:100%;object-fit:contain;transition:transform .2s}
+.pfood:hover img{transform:translateY(-2px)}
+.pfood[aria-pressed="false"] img{opacity:.55;filter:saturate(.6)}
+.pblanket[aria-pressed="true"],.pbasket[aria-pressed="true"],.pfood[aria-pressed="true"]{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold);color:var(--parchment)}
+.pblanket:hover,.pbasket:hover{background:#28332f}
+.pblanket:focus-visible,.pbasket:focus-visible,.pfood:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.pfood img{transition:none}}
 
 /* ---- the atlas (map) ---- */
 .hud-right{display:flex;gap:8px;align-items:flex-start}
