@@ -856,35 +856,6 @@ const COOKS = [
     steps: [{ do: 'Squeeze the lemons', icon: '🍋', n: 8, text: 'Squeeze the lemons.' }, { add: 'lemon', text: 'Pour in the lemon juice.' }, { add: 'sugar', text: 'Stir in the sugar.' },
       { add: 'berries', text: 'Add berries for the pink.' }, { do: 'Stir it round', n: 6, text: 'Give it a good stir.' }] },
 ];
-const PICNIC_EXTRAS = [{ id: 'strawberries', label: 'Strawberries', icon: '🍓' }, { id: 'grapes', label: 'Grapes', icon: '🍇' }, { id: 'cheese', label: 'Cheese', icon: '🧀' }, { id: 'tea', label: 'A flask of tea', icon: '🫖' }];
-function picnicFood() {
-  const made = [];
-  store.get('basket', []).forEach(b => { if (!made.some(m => m.label === b.name)) made.push({ id: 'made-' + b.name, label: b.name, icon: b.icon, say: `Your own ${b.name.toLowerCase()}! Evelynn beams.` }); });
-  return [...made, ...PICNIC_EXTRAS];
-}
-const PICNIC = {
-  host: EVELYNN, scene: 'meadow', store: 'picnics',
-  hello: 'Let’s plan the loveliest picnic! Anything you bake or cook with me goes into the basket too.',
-  praise: PRAISE, surprise: 'A surprise picnic! How exciting.',
-  steps: [
-    { key: 'spot', label: 'Where shall we go?', options: [{ id: 'lavender', label: 'The lavender fields', icon: '🪻' }, { id: 'lake', label: 'By the aspen lake', icon: '🏞️' }, { id: 'falls', label: 'Under the waterfalls', icon: '💦' }, { id: 'tree', label: 'Beneath the treehouse', icon: '🌳' }] },
-    { key: 'blanket', label: 'The picnic blanket', options: [{ id: 'rose', label: 'Rose gingham', color: '#e7a3b6' }, { id: 'lav', label: 'Lavender check', color: '#b9a3dc' }, { id: 'sage', label: 'Sage stripes', color: '#a9c49a' }, { id: 'cream', label: 'Cream lace', color: '#efe3c8' }] },
-    { key: 'food', label: 'What goes in the basket?', multi: 4, options: picnicFood },
-    { key: 'touch', label: 'Pretty touches', multi: 2, options: [{ id: 'jar', label: 'A jar of wildflowers', icon: '💐' }, { id: 'bunting', label: 'Bunting in the branches', icon: '🎏' }, { id: 'cushions', label: 'Soft cushions', icon: '🛋️' }, { id: 'lantern', label: 'Little lanterns', icon: '🏮' }, { id: 'candle', label: 'A candle for later', icon: '🕯️' }] },
-    { key: 'friends', label: 'Who’s invited?', multi: 3, options: FRIENDS },
-  ],
-  preview: c => `<div class="picnic-art" style="--blanket:${c.blanket?.color || '#efe3c8'}"><p class="scene-label">${c.spot ? `${c.spot.icon} ${c.spot.label}` : 'Choose a spot…'}</p>
-    <div class="emoji-row">${(c.touch || []).map(o => `<span title="${o.label}">${o.icon}</span>`).join('')}</div>
-    <div class="mini-blanket">${(c.food || []).map(o => `<span title="${o.label}">${o.icon}</span>`).join('')}<span title="The basket">🧺</span></div>
-    <div class="emoji-row">${(c.friends || []).map(o => `<span title="${o.label}">${o.icon}</span>`).join('')}</div></div>`,
-  blanketColor: c => c.blanket.color,
-  arrange: c => [...c.food, ...c.touch, { label: 'The picnic basket', icon: '🧺' }],
-  arrangeHello: 'Now let’s set it all out. Where shall everything go?',
-  arrangeDone: 'Oh, it looks beautiful. Just like a painting.',
-  finishLabel: 'Pack the basket and go!',
-  doneTitle: () => 'A beautiful picnic',
-  finale: c => `You spread the ${c.blanket.label.toLowerCase()} blanket ${c.spot.id === 'tree' ? 'beneath the treehouse' : c.spot.id === 'falls' ? 'under the waterfalls' : c.spot.id === 'lake' ? 'by the aspen lake' : 'among the lavender'}. ${listNames(c.friends)} ${c.friends.length === 1 ? 'joins' : 'join'} you for ${listNames(c.food).toLowerCase()}, and the afternoon drifts by in sunshine.`,
-};
 const an = w => /^[aeiou]/i.test(w) ? 'An' : 'A';
 const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
 const listNames = list => { const n = list.map(o => o.label); return n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n.at(-1)}`; };
@@ -1146,7 +1117,8 @@ const HUBS = {
   kitchen: { title: 'Evelynn’s Kitchen', sub: 'Bake, cook and plan a beautiful picnic with Evelynn.', games: [
     { id: 'bake', name: 'Bake with Evelynn', icon: '🧁', blurb: 'Honey cakes, berry tart or lavender shortbread.', run: () => recipe({ host: EVELYNN, scene: 'kitchen', store: 'basket', pantry: KITCHEN_PANTRY, praise: PRAISE, dishes: BAKES, hello: 'Aprons on! What shall we bake today?' }) },
     { id: 'cook', name: 'Cook with Evelynn', icon: '🥪', blurb: 'Sandwiches, scones and pink lemonade for the basket.', run: () => recipe({ host: EVELYNN, scene: 'kitchen', store: 'basket', pantry: KITCHEN_PANTRY, praise: PRAISE, dishes: COOKS, hello: 'Let’s make something tasty to take along. What would you like?' }) },
-    { id: 'picnic', name: 'Plan a beautiful picnic', icon: '🧺', blurb: 'Choose the spot, the blanket and the food, then set it all out.', again: 'Plan another picnic', run: () => design(PICNIC) },
+    // the picnic happens out in the realm itself (game.js), not in this window: close it and head to the meadow
+    { id: 'picnic', name: 'Have a picnic by the lake', icon: '🧺', blurb: 'Take the basket out to Aspen Meadow and lay the picnic on the grass.', run: () => { const go = opts.picnic; dlg.close(); go?.(); } },
   ] },
   treehouse: { title: 'Fun at the Treehouse', sub: 'Little parties, berry picking, wild animals and games in the woods.', games: [
     { id: 'party', name: 'Throw a treehouse party', icon: '🎈', blurb: 'Choose a theme, treats and guests.', run: () => design(PARTY) },

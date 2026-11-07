@@ -13,16 +13,19 @@ const PLACES = [
   { name: 'Castle Valley', img: 'castle-valley.jpg', yoff: -24, ground: 506, ambient: 'birds',
     spots: [[.07, 'An old oak shades the road out of the valley.'], [.42, 'Waterfalls tumble beneath the old stone bridges.'], [.86, 'The castle gate stands open today.']],
     doors: [[.07, 19, .9, 'Take the road to Azurea', 'The road under the old oak leads out of the valley, all the way to Azurea, the blue continent.'],
+      [.35, 'picnic', null, 'Have a picnic by the waterfalls', 'The grass is soft and green beside the waterfalls. A perfect spot for a picnic.'],
       [.64, 'play', 'garden', 'Tend the royal gardens', 'The royal rose gardens bloom along the castle path. Old Bramble the gardener could use a hand.'],
       [.86, 8, .8, 'Enter the castle', 'The open castle gate leads into the sage-green dove hall.']] },
   { name: 'Lavender Fields', img: 'lavender-fields.jpg', yoff: -56, ground: 492, ambient: 'butterflies',
     spots: [[.09, 'A dry-stone wall and an old fence mark the edge of the fields.'], [.37, 'Far off, a little castle sits on the lake shore.'], [.75, 'The village rooftops rise beyond the lavender. A path leads to the market square.']],
     doors: [[.82, 7, .06, 'Visit Lavender Village', 'Follow the lavender-lined path into the village market square.'],
       [.22, 'play', 'horses', 'Visit Annalise’s horses', 'Annalise’s horses graze in the paddock beside the old fence.'],
+      [.4, 'picnic', null, 'Have a picnic in the lavender', 'A sunny patch of grass among the lavender, just right for a blanket.'],
       [.55, 'play', 'festival', 'Join the Lavender Festival', 'Bunting and music: the Lavender Festival is under way in the fields.']] },
   { name: 'Aspen Meadow', img: 'aspen-meadow.jpg', yoff: -36, ground: 500, ambient: 'leaves',
     spots: [[.1, 'White aspens whisper in the breeze.'], [.52, 'A mountain lake glitters between the pines.']],
     doors: [[.73, 3, .51, 'Climb into the treehouse', 'A treehouse with a spiral stair winds up the great tree.'],
+      [.3, 'picnic', null, 'Have a picnic by the lake', 'Soft grass runs down to the mountain lake. Evelynn’s picnic basket is ready.'],
       [.58, 'play', 'treehouse', 'Play at the treehouse', 'Berry bushes, shy woodland animals and games among the aspens around the treehouse.']] },
   // Treehouse rooms (`inside` = the outdoor place they belong to). Their edges are walls unless `left`/`right` names a room.
 // Downstairs is the kitchen; upstairs the three bedrooms run in a row: Rose | Loft | Mountain.
@@ -197,7 +200,8 @@ const PLACES = [
     right: 32,
     spots: [[.06, 'Carved stone urns overflow with white and pink roses.'], [.25, 'Clipped box hedges line the rose beds.'],
       [.62, 'An old stone bridge arches over the far end of the garden lake.'], [.86, 'Tall cypresses stand guard over the roses.']],
-    doors: [[.5, 30, .845, 'Back to the villa terrace', 'The stone path leads back up to the villa’s flowered terrace.']] },
+    doors: [[.22, 'picnic', null, 'Have a picnic among the roses', 'A lawn between the rose beds, with the garden lake beyond.'],
+      [.5, 30, .845, 'Back to the villa terrace', 'The stone path leads back up to the villa’s flowered terrace.']] },
   { name: 'Byzantine · Animal Garden', inside: 'byzantine', area: 'behind the villa', img: 'byzantine-animal-garden.jpg', yoff: -30, ground: 515, scale: .9, ambient: 'butterflies',
     left: 31,
     spots: [[.11, 'Bright parrots and a white dove chatter in the domed aviary.'], [.32, 'A white horse and a chestnut mare look out over the stable fence.'],
@@ -247,7 +251,7 @@ const RESIDENTS = [
 ];
 let nearbyResident = null;
 function talkToResident() {
-  if (!nearbyResident || dressing || fadeDir || playing()) return;
+  if (!nearbyResident || dressing || picnic || fadeDir || playing()) return;
   const resident = nearbyResident;
   say(`${resident.name}: ${resident.lines[resident.line]}`);
   resident.line = (resident.line + 1) % resident.lines.length;
@@ -334,6 +338,7 @@ function useDoor() {
   if (!door || fadeDir) return;
   if (door[1] === 'dress') openDressUp();
   else if (door[1] === 'play') openPlay(door[2]);
+  else if (door[1] === 'picnic') startPicnic();
   else travel(door[1], door[2]);
 }
 function travel(i, from) { fadeTo(() => enterPlace(i, from)); }
@@ -345,6 +350,7 @@ function openPlay(key) {
   window.EmberActivities.open(key, {
     duck: on => fadeMusic(on || !musicOn ? 0 : THEME_VOLUME),   // the theme hushes while the piano or dance music plays
     onClose: () => $('doorBtn').hidden || $('doorBtn').focus({ preventScroll: true }),
+    picnic: () => startPicnic([2, .3]),   // Evelynn's kitchen: carry the basket out to the lake in Aspen Meadow
   });
 }
 
@@ -378,7 +384,7 @@ function buildAtlas() {
   $('mapDialog').addEventListener('click', e => { if (e.target === $('mapDialog')) $('mapDialog').close(); });   // click outside the map
 }
 function openMap() {
-  if (dressing || fadeDir || $('mapDialog').open || playing()) return;
+  if (dressing || picnic || fadeDir || $('mapDialog').open || playing()) return;
   keys.left = keys.right = keys.hurry = false;
   const here = landOf(place);
   document.querySelectorAll('.land').forEach(b => {
@@ -402,6 +408,7 @@ try {
   if (Number.isInteger(saved) && saved >= 0 && saved < GOWNS.length) gown = prevGown = saved;
 } catch (_) { /* The wardrobe also works when storage is unavailable. */ }
 function openDressUp() {
+  if (picnic) return;
   fadeTo(() => {
     if (place !== 6) enterPlace(6, .57);
     dressing = true; keys.left = keys.right = keys.hurry = false;
@@ -440,6 +447,240 @@ function say(text) {
   const el = $('speech');
   el.textContent = text;
   el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');   // restart the pop
+}
+
+// ---- picnics: laid out on the grass in the scene itself, with the party standing round the blanket ----
+// Each thing is a cutout from the picnic sheet. `h` is its drawn height (px, before the place's scale),
+// `at` its home on the blanket: u from -1 (left edge) to 1 (right edge), v from 0 (back edge) to 1 (front edge).
+const PICNIC_BASKETS = [
+  { id: 'basket-lilac', label: 'Lilac lace basket', img: 'picnic/basket-lilac.png', h: 84 },
+  { id: 'basket-ribbon', label: 'Blue ribbon basket', img: 'picnic/basket-ribbon.png', h: 88 },
+  { id: 'basket-daisy', label: 'White blossom basket', img: 'picnic/basket-daisy.png', h: 92 },
+];
+const PICNIC_FOOD = [
+  { id: 'cheese', label: 'Cheese & figs', img: 'picnic/cheese.png', h: 46, at: [-.12, .06], line: 'Lila-Bella: Three kinds of cheese, and figs too!' },
+  { id: 'grapes', label: 'Grapes', img: 'picnic/grapes.png', h: 44, at: [.3, .04], line: 'Ember: Grapes from the vines by the lake.' },
+  { id: 'punch', label: 'Berry punch', img: 'picnic/punch.png', h: 70, at: [.74, .02], line: 'The Ivory & Gold Prince pours everyone a glass of berry punch.' },
+  { id: 'lemon-cakes', label: 'Lemon cakes', img: 'picnic/lemon-cakes.png', h: 40, at: [-.5, .5], line: 'Lila-Bella: Evelynn’s lemon cakes! I’m having two.' },
+  { id: 'cherry-pie', label: 'Cherry pie', img: 'picnic/cherry-pie.png', h: 38, at: [.04, .52], line: 'Ember: A cherry pie, still warm from the oven.' },
+  { id: 'lavender-tarts', label: 'Lavender tarts', img: 'picnic/lavender-tarts.png', h: 38, at: [.5, .5], line: 'Cashamir: Lavender tarts. They taste like the fields smell.' },
+  { id: 'sandwiches', label: 'Cucumber sandwiches', img: 'picnic/sandwiches.png', h: 40, at: [-.6, .96], line: 'Lila-Bella: Little sandwiches, with the crusts left on.' },
+  { id: 'croissant', label: 'Ham croissant', img: 'picnic/croissant.png', h: 38, at: [-.18, .98], line: 'The Ivory & Gold Prince: I’ll take the croissant, if no one minds.' },
+  { id: 'chicken-sandwich', label: 'Chicken & cranberry', img: 'picnic/chicken-sandwich.png', h: 37, at: [.24, .98], line: 'Ember: Chicken and cranberry, my favourite.' },
+  { id: 'ice-cream', label: 'Berry ice cream', img: 'picnic/ice-cream.png', h: 50, at: [.63, .96], line: 'Cashamir: Ice cream! Quick, before the sun gets to it.' },
+  { id: 'tea', label: 'Teacups & plates', img: 'picnic/teacup.png', line: 'Ember: A cup and a plate for everyone.' },
+];
+// the tea things: a plate with a teacup on it for each of the four, two at each end of the blanket
+const PICNIC_SETTINGS = [[-.9, .44], [.92, .44], [-.94, .98], [.96, .98]];
+const PICNIC_PLATE = { img: 'picnic/plate.png', h: 15 }, PICNIC_CUP = { img: 'picnic/teacup.png', h: 21 };
+const BLANKETS = [
+  { id: 'rose', label: 'Rose gingham', color: '#e795ab', check: 'rgba(255,255,255,.34)', hem: '#b8607a' },
+  { id: 'lavender', label: 'Lavender check', color: '#ae97da', check: 'rgba(255,255,255,.32)', hem: '#7d66ab' },
+  { id: 'sage', label: 'Sage gingham', color: '#9cc08c', check: 'rgba(255,255,255,.32)', hem: '#6c8f5e' },
+  { id: 'cream', label: 'Cream & gold', color: '#f3e7cc', check: 'rgba(196,150,80,.22)', hem: '#c9a463' },
+];
+let picnic = null;              // while picnicking: { cx, blanket, basket, food: Set, pos: {id: [u, v]}, drop: {id: 0..1}, drag }
+function picnicPrefs() {
+  let p = null;
+  try { p = JSON.parse(localStorage.getItem('realm-picnic')); } catch (_) {}
+  if (!p || typeof p !== 'object') p = {};
+  return {
+    blanket: BLANKETS.some(b => b.id === p.blanket) ? p.blanket : 'rose',
+    basket: PICNIC_BASKETS.some(b => b.id === p.basket) ? p.basket : 'basket-lilac',
+    food: new Set(Array.isArray(p.food) ? p.food.filter(id => PICNIC_FOOD.some(f => f.id === id)) : ['cheese', 'grapes', 'punch', 'cherry-pie', 'sandwiches', 'tea']),
+  };
+}
+function savePicnicPrefs() {
+  try { localStorage.setItem('realm-picnic', JSON.stringify({ blanket: picnic.blanket, basket: picnic.basket, food: [...picnic.food] })); } catch (_) {}
+}
+// the blanket on the grass, in perspective: narrower at the back edge than the front
+function blanketGeom() {
+  const s = sizeAt(), g = PLACES[place].ground;
+  return { s, cx: picnic.cx - camX, yb: g - 46 * s, yf: g + 26 * s, hb: 205 * s, hf: 255 * s };
+}
+function onBlanket(G, u, v) { return { x: G.cx + u * lerp(G.hb, G.hf, v), y: lerp(G.yb, G.yf, v), k: G.s * (.86 + .14 * v) }; }
+// the party stands round the blanket: the leader and one friend at each end, the others a little further out
+const PICNIC_STAND = [[-305, 1], [305, -1], [-405, 1], [405, -1]];
+function placePartyForPicnic() {
+  const s = sizeAt();
+  party().forEach((wi, slot) => {
+    const st = walkerState[wi], [dx, f] = PICNIC_STAND[slot];
+    st.x = picnic.cx + dx * s; st.facing = f; st.moving = false;
+  });
+}
+function startPicnic(to) {
+  if (picnic || dressing || fadeDir || playing()) return;
+  keys.left = keys.right = keys.hurry = false;
+  fadeTo(() => {
+    if (to) enterPlace(to[0], to[1]);
+    const s = sizeAt(), half = 470 * s;
+    const lo = Math.max(walkLo(), half), hi = Math.min(walkHi(), worldW - half);
+    picnic = { ...picnicPrefs(), cx: lo < hi ? clamp(leaderX, lo, hi) : worldW / 2, pos: {}, drop: {}, drag: null };
+    PICNIC_FOOD.forEach(f => { if (f.at) picnic.pos[f.id] = [...f.at]; });
+    picnic.pos.basket = [-.72, .08];
+    [...picnic.food, 'basket'].forEach((id, k) => { picnic.drop[id] = reduceMotion ? 1 : -k * .12; });
+    placePartyForPicnic();
+    camX = clamp(picnic.cx - VW / 2, 0, worldW - VW);
+    document.body.classList.add('picnicking');
+    $('picnicPanel').hidden = false;
+    door = null; $('doorBtn').hidden = true; nearbyResident = null; $('talkBtn').hidden = true; caption('');
+    $('placeNum').textContent = 'having a picnic';
+    $('picnicWhere').textContent = PLACES[place].name;
+    $('placard').textContent = 'A Picnic'; placardT = 1.8;
+    syncPicnicButtons();
+    say('Ember: What a perfect spot! Let’s spread out the blanket.');
+    $('picnicFood').querySelector('.pfood')?.focus({ preventScroll: true });
+  });
+}
+function closePicnic() {
+  if (!picnic) return;
+  fadeTo(() => {
+    savePicnicPrefs();
+    leaderX = clamp(picnic.cx, walkLo(), walkHi()); facing = 1;
+    picnic = null;
+    resetTrail(leaderX, 1);
+    party().forEach((wi, slot) => { walkerState[wi].x = leaderX - slot * SPACING * sizeAt(); walkerState[wi].facing = 1; });
+    document.body.classList.remove('picnicking');
+    $('picnicPanel').hidden = true; $('speech').classList.remove('on');
+    const P = PLACES[place];
+    $('placeNum').textContent = P.area || (P.inside !== undefined ? 'in the treehouse' : `${place + 1} of ${OUTDOORS}`);
+  });
+}
+function toggleFood(id) {
+  if (!picnic) return;
+  const f = PICNIC_FOOD.find(x => x.id === id);
+  if (picnic.food.has(id)) { picnic.food.delete(id); say(`${f.label} back in the basket.`); }
+  else { picnic.food.add(id); picnic.drop[id] = reduceMotion ? 1 : 0; say(f.line); }
+  syncPicnicButtons(); savePicnicPrefs();
+}
+function setBlanket(id) { if (!picnic) return; picnic.blanket = id; syncPicnicButtons(); savePicnicPrefs(); say(`Lila-Bella: Ooh, the ${BLANKETS.find(b => b.id === id).label.toLowerCase()} blanket!`); }
+function setBasket(id) { if (!picnic) return; picnic.basket = id; picnic.drop.basket = reduceMotion ? 1 : 0; syncPicnicButtons(); savePicnicPrefs(); }
+function resetPicnicLayout() {
+  if (!picnic) return;
+  PICNIC_FOOD.forEach(f => { if (f.at) picnic.pos[f.id] = [...f.at]; });
+  picnic.pos.basket = [-.72, .08];
+  [...picnic.food, 'basket'].forEach((id, k) => { picnic.drop[id] = reduceMotion ? 1 : -k * .08; });
+  say('Ember: There. Everything back in its place.');
+}
+function syncPicnicButtons() {
+  if (!picnic) return;
+  document.querySelectorAll('#picnicFood .pfood').forEach(b => b.setAttribute('aria-pressed', picnic.food.has(b.dataset.id) ? 'true' : 'false'));
+  document.querySelectorAll('#picnicBlankets .pblanket').forEach(b => b.setAttribute('aria-pressed', b.dataset.id === picnic.blanket ? 'true' : 'false'));
+  document.querySelectorAll('#picnicBaskets .pbasket').forEach(b => b.setAttribute('aria-pressed', b.dataset.id === picnic.basket ? 'true' : 'false'));
+}
+function buildPicnicPanel() {
+  const btn = (cls, id, html, label, onclick) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = cls; b.dataset.id = id; b.innerHTML = html;
+    if (label) b.setAttribute('aria-label', label);
+    if (label) b.title = label;
+    b.addEventListener('click', onclick); return b;
+  };
+  BLANKETS.forEach(B => $('picnicBlankets').appendChild(btn('pblanket', B.id, `<span class="chip" style="--c:${B.color};--k:${B.check}"></span>`, B.label, () => setBlanket(B.id))));
+  PICNIC_BASKETS.forEach(B => $('picnicBaskets').appendChild(btn('pbasket', B.id, `<img src="${B.img}" alt="">`, B.label, () => setBasket(B.id))));
+  PICNIC_FOOD.forEach(F => $('picnicFood').appendChild(btn('pfood', F.id, `<img src="${F.img}" alt=""><span>${F.label}</span>`, '', () => toggleFood(F.id))));
+  $('picnicDone').addEventListener('click', closePicnic);
+  $('picnicShuffle').addEventListener('click', resetPicnicLayout);
+  $('picnicSave').addEventListener('click', () => {
+    ctx.setTransform(K, 0, 0, K, 0, 0); render();
+    canvas.toBlob(blob => {
+      if (!blob) { say('Please try saving your picture again.'); return; }
+      const url = URL.createObjectURL(blob), link = document.createElement('a');
+      link.href = url; link.download = `Ember-picnic-${PLACES[place].name.toLowerCase().replace(/[^a-z]+/g, '-')}.png`;
+      link.click(); setTimeout(() => URL.revokeObjectURL(url), 10000);
+      say('A keepsake of a lovely afternoon!');
+    }, 'image/png');
+  });
+  // drag things about on the blanket
+  const toStage = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX - r.left) * VW / r.width, (e.clientY - r.top) * VH / r.height]; };
+  canvas.addEventListener('pointerdown', e => {
+    if (!picnic || fadeDir) return;
+    const [x, y] = toStage(e);
+    const hit = [...picnicDrawList()].reverse().find(it => it.r && x >= it.r[0] && x <= it.r[0] + it.r[2] && y >= it.r[1] && y <= it.r[1] + it.r[3]);
+    if (!hit || !picnic.pos[hit.key]) return;
+    e.preventDefault(); canvas.setPointerCapture?.(e.pointerId);
+    const G = blanketGeom(), p = onBlanket(G, ...picnic.pos[hit.key]);
+    picnic.drag = { key: hit.key, dx: p.x - x, dy: p.y - y };
+    canvas.style.cursor = 'grabbing';
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!picnic) { canvas.style.cursor = ''; return; }
+    const [x, y] = toStage(e);
+    if (!picnic.drag) {
+      const over = picnicDrawList().some(it => it.r && picnic.pos[it.key] && x >= it.r[0] && x <= it.r[0] + it.r[2] && y >= it.r[1] && y <= it.r[1] + it.r[3]);
+      canvas.style.cursor = over ? 'grab' : ''; return;
+    }
+    const G = blanketGeom(), ax = x + picnic.drag.dx, ay = y + picnic.drag.dy;
+    const v = clamp((ay - G.yb) / (G.yf - G.yb), 0, 1), u = clamp((ax - G.cx) / lerp(G.hb, G.hf, v), -1, 1);
+    picnic.pos[picnic.drag.key] = [u, v];
+  });
+  const drop = () => { if (picnic?.drag) { picnic.drag = null; canvas.style.cursor = 'grab'; } };
+  canvas.addEventListener('pointerup', drop); canvas.addEventListener('pointercancel', drop);
+}
+// everything on the blanket, back to front, each with its picture, home and size
+function picnicDrawList() {
+  if (!picnic) return [];
+  const B = PICNIC_BASKETS.find(b => b.id === picnic.basket);
+  const list = [{ key: 'basket', item: B }];
+  PICNIC_FOOD.forEach(f => { if (f.at && picnic.food.has(f.id)) list.push({ key: f.id, item: f }); });
+  if (picnic.food.has('tea')) PICNIC_SETTINGS.forEach((at, k) => { picnic.pos['tea' + k] = picnic.pos['tea' + k] || [...at]; list.push({ key: 'tea' + k, setting: true, drop: 'tea' }); });
+  list.forEach(it => { it.at = picnic.pos[it.key]; });
+  if (!picnic.drag) list.sort((a, b) => a.at[1] - b.at[1]);
+  else list.sort((a, b) => (a.key === picnic.drag.key) - (b.key === picnic.drag.key) || a.at[1] - b.at[1]);   // the thing in hand is drawn on top
+  if (!(picnic.drawn && picnic.drawn.length === list.length && picnic.drawn.every((d, k) => d.key === list[k].key && d.item === list[k].item))) picnic.drawn = list;
+  else picnic.drawn.forEach((d, k) => { d.at = list[k].at; });
+  return picnic.drawn;
+}
+function updatePicnic(dt) {
+  Object.keys(picnic.drop).forEach(id => { picnic.drop[id] = Math.min(1, picnic.drop[id] + dt / .45); });
+  placePartyForPicnic();
+  camX += (clamp(picnic.cx - VW / 2, 0, worldW - VW) - camX) * Math.min(1, dt * 4);
+}
+function drawBlanket(G) {
+  const B = BLANKETS.find(b => b.id === picnic.blanket);
+  const bl = [G.cx - G.hb, G.yb], br = [G.cx + G.hb, G.yb], fr = [G.cx + G.hf, G.yf], fl = [G.cx - G.hf, G.yf];
+  const quad = (a, b, c, d) => { ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.lineTo(...c); ctx.lineTo(...d); ctx.closePath(); };
+  ctx.save();
+  ctx.fillStyle = 'rgba(30,40,15,.25)';
+  ctx.beginPath(); ctx.ellipse(G.cx, (G.yb + G.yf) / 2 + 6 * G.s, G.hf + 14 * G.s, (G.yf - G.yb) / 2 + 6 * G.s, 0, 0, 7); ctx.fill();
+  quad(bl, br, fr, fl); ctx.fillStyle = B.color; ctx.fill();
+  ctx.clip();
+  // gingham: bands running back to front, crossed by bands running side to side
+  ctx.fillStyle = B.check;
+  const N = 14, at = (u, v) => [G.cx + u * lerp(G.hb, G.hf, v), lerp(G.yb, G.yf, v)];
+  for (let k = 0; k < N; k += 2) { const u0 = -1 + 2 * k / N, u1 = -1 + 2 * (k + 1) / N; quad(at(u0, 0), at(u1, 0), at(u1, 1), at(u0, 1)); ctx.fill(); }
+  const M = 8;
+  for (let k = 0; k < M; k += 2) { const v0 = k / M, v1 = (k + 1) / M; quad(at(-1, v0), at(1, v0), at(1, v1), at(-1, v1)); ctx.fill(); }
+  ctx.restore();
+  ctx.strokeStyle = B.hem; ctx.lineWidth = 2.5 * G.s; quad(bl, br, fr, fl); ctx.stroke();
+  // the hanging front edge
+  ctx.fillStyle = B.hem; ctx.globalAlpha = .55; quad(fl, fr, [fr[0] - 2, fr[1] + 6 * G.s], [fl[0] + 2, fl[1] + 6 * G.s]); ctx.fill(); ctx.globalAlpha = 1;
+}
+function drawPicnicThing(G, it) {
+  const p = onBlanket(G, ...it.at), d = picnic.drop[it.drop || it.key] ?? 1;
+  if (d <= 0) { it.r = null; return; }
+  const e = 1 - (1 - d) * (1 - d), lift = (1 - e) * 46 + (picnic.drag?.key === it.key ? 8 : 0);
+  const pic = (spec, yoff = 0) => {
+    const im = spec.img_; if (!im) return null;
+    const h = spec.h * p.k, w = im.width * h / im.height, x = p.x - w / 2, y = p.y - h - lift - yoff;
+    ctx.drawImage(im, x, y, w, h); return [x, y, w, h];
+  };
+  ctx.globalAlpha = Math.min(1, e * 1.4);
+  ctx.fillStyle = 'rgba(40,30,15,.22)';
+  const sw = (it.setting ? 30 : (it.item.img_ ? it.item.img_.width * it.item.h / it.item.img_.height / 2 : 30) * .85) * p.k;
+  ctx.beginPath(); ctx.ellipse(p.x, p.y - 2 * p.k, sw, 5 * p.k, 0, 0, 7); ctx.fill();
+  if (it.setting) {
+    const a = pic(PICNIC_PLATE), b = pic(PICNIC_CUP, 6 * p.k);
+    it.r = a && b ? [Math.min(a[0], b[0]), b[1], Math.max(a[2], b[2]), a[1] + a[3] - b[1]] : null;
+  } else it.r = pic(it.item);
+  ctx.globalAlpha = 1;
+}
+function drawPicnic() {
+  const order = party();
+  [3, 2, 1, 0].forEach(slot => { if (order[slot] !== undefined) drawWalker(order[slot], slot > 1 ? 1 : 0); });
+  const G = blanketGeom();
+  drawBlanket(G);
+  picnicDrawList().forEach(it => drawPicnicThing(G, it));
 }
 
 // ---- captions ----
@@ -485,6 +726,7 @@ function buildControls() {
   $('gownName').textContent = GOWNS[gown].name;
   $('dressDone').addEventListener('click', closeDressUp);
   $('dressStart').addEventListener('click', openDressUp);
+  buildPicnicPanel();
   $('surpriseGown').addEventListener('click', () => pickGown(gown + 1 + Math.floor(Math.random() * (GOWNS.length - 1))));
   $('saveLook').addEventListener('click', () => {
     // Export a settled scene, even when a gown is still fading in.
@@ -555,7 +797,8 @@ addEventListener('keydown', e => {
   if ($('mapDialog').open) { if ((e.key === 'g' || e.key === 'G') && !e.repeat) $('mapDialog').close(); return; }   // the map takes the keys while open
   if (e.target.closest && e.target.closest('input,button') && (e.key === ' ' || e.key === 'Enter')) return;
   if ((e.key === 'm' || e.key === 'M') && !e.repeat) { setMusic(!musicOn); return; }
-  if ((e.key === 'g' || e.key === 'G') && !e.repeat && !dressing) { e.preventDefault(); openMap(); return; }
+  if ((e.key === 'g' || e.key === 'G') && !e.repeat && !dressing && !picnic) { e.preventDefault(); openMap(); return; }
+  if (picnic) { if (e.key === 'Escape' && !e.repeat) { e.preventDefault(); closePicnic(); } return; }   // the party stays put round the blanket
   if (dressing) {
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') pickGown(gown - 1);
     else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') pickGown(gown + 1);
@@ -606,6 +849,7 @@ function update(dt) {
     sparkles = sparkles.filter(p => p.age < p.life);
     return;
   }
+  if (picnic) { updatePicnic(dt); updateAmbient(dt, PLACES[place].ambient); return; }
 
   const dir = fadeDir === 1 ? 0 : (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
   moving = dir !== 0;
@@ -759,9 +1003,12 @@ function render() {
     ctx.strokeText(resident.name, x, P.ground - height - 9); ctx.fillText(resident.name, x, P.ground - height - 9); ctx.restore();
   }
 
-  // the party: last in line drawn first so the leader is in front
-  const order = together ? party() : [lead];
-  for (let slot = order.length - 1; slot >= 0; slot--) drawWalker(order[slot], slot);
+  if (picnic) drawPicnic();
+  else {
+    // the party: last in line drawn first so the leader is in front
+    const order = together ? party() : [lead];
+    for (let slot = order.length - 1; slot >= 0; slot--) drawWalker(order[slot], slot);
+  }
 
   if (P.ambient !== 'birds') drawAmbient(P.ambient);
 
@@ -790,6 +1037,7 @@ function loadImg(src) { return new Promise((res, rej) => { const i = new Image()
     ...WALKERS.map(async w => { w.img_ = await loadImg(w.img); }),
     ...GOWN_WALKS.slice(1).map(async w => { w.img_ = await loadImg(w.img); }),
     ...[...GOWNS, LILA_FRONT].map(async g => { g.img_ = await loadImg(g.img); }),
+    ...[...PICNIC_BASKETS, ...PICNIC_FOOD, PICNIC_PLATE, PICNIC_CUP].map(async p => { try { p.img_ = await loadImg(p.img); } catch { p.img_ = null; } }),
   ]); } catch (error) {
     $('loadStatus').textContent = `${error.message}. Refresh to try again.`;
     return;

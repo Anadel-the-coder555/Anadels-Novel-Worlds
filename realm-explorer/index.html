@@ -73,6 +73,24 @@
       <p class="dress-keys"><kbd>&larr;</kbd><kbd>&rarr;</kbd> or <kbd>1</kbd>&ndash;<kbd>7</kbd> try on a gown &middot; <kbd>Esc</kbd> done</p>
     </section>
 
+    <!-- picnics happen on the grass in the scene above; this panel picks what's on the blanket -->
+    <section class="dress picnic" id="picnicPanel" hidden aria-labelledby="picnicTitle">
+      <div class="dress-head">
+        <h2 id="picnicTitle">A picnic <span class="now" id="picnicWhere"></span></h2>
+        <div class="dress-actions">
+          <button class="place" id="picnicShuffle" type="button">Tidy the blanket</button>
+          <button class="place" id="picnicSave" type="button">Save a picture</button>
+          <button class="done" id="picnicDone" type="button">Pack up the picnic</button>
+        </div>
+      </div>
+      <div class="picnic-top">
+        <fieldset class="group"><legend>Blanket</legend><div class="pblankets" id="picnicBlankets"></div></fieldset>
+        <fieldset class="group"><legend>Basket</legend><div class="pbaskets" id="picnicBaskets"></div></fieldset>
+      </div>
+      <fieldset class="group"><legend>Food &amp; drink</legend><div class="pfoods" id="picnicFood"></div></fieldset>
+      <p class="dress-keys">Click food to set it out on the blanket or put it back in the basket. Drag anything on the blanket to move it. <kbd>Esc</kbd> pack up</p>
+    </section>
+
     <div class="controls">
       <button class="done" id="dressStart" type="button" disabled>Dress up Ember</button>
       <fieldset class="group">
@@ -114,6 +132,7 @@
       <li>Look for <b>games</b> everywhere: where a gold button appears, <kbd>&uarr;</kbd> to play. Bake, cook and plan a picnic at Evelynn&rsquo;s kitchen table; play by the treehouse in Aspen Meadow; visit the village shops, the stage by the fountain, the Lavender Festival and Annalise&rsquo;s horses; tend the royal gardens, help in the royal kitchens and host an event in the ballroom</li>
       <li>On the map, click Byzantine to visit Cashamir&rsquo;s villa: go boating from the lake, meet the animals on the terrace, dance in the ballroom, and hear him play the library piano</li>
       <li>In Byzantine, <kbd>&uarr;</kbd> at the lakeside steps to climb to the terrace, then step inside: the foyer, the hallways, the library, the ballroom and its balcony, and the dining room</li>
+      <li>Look for a <b>picnic</b> spot in Castle Valley, the Lavender Fields, Aspen Meadow and the Byzantine villa gardens: <kbd>&uarr;</kbd> to spread the blanket right there, then choose the food</li>
       <li>Near Evelynn in the treehouse kitchen or Hendrix in the library, press <kbd>E</kbd> or click Talk. Talk again to hear more.</li>
       <li>hold <kbd>Shift</kbd> to hurry</li>
       <li><kbd>1</kbd>&ndash;<kbd>4</kbd> change who leads</li>
