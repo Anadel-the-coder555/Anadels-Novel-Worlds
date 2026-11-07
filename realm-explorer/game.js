@@ -191,7 +191,18 @@ const PLACES = [
     spots: [[.83, 'Stone urns brim with flowers along the balustrade.'], [.93, 'Cool arcades shade the villa’s lower rooms.'], [.99, 'From the terrace, the whole lake glitters below.']],
     doors: [[.955, 22, .945, 'Go down to the lake', 'The steps lead back down to the lakeside promenade.'],
       [.9, 23, .46, 'Step inside the villa', 'Through the arcade, tall glass doors open into the villa’s golden foyer.'],
-      [.845, 'play', 'villa-animals', 'Visit the villa animals', 'Peacocks, goats, ducklings, a lamb and a bunny roam the villa gardens.']] },
+      [.845, 31, .5, 'Walk round to the villa gardens', 'Behind the villa, a stone path winds between rose beds down to the garden lake.']] },
+  // ---- behind the villa: the rose gardens by the garden lake, then (walking right) the animal garden ----
+  { name: 'Byzantine · Villa Gardens', inside: 'byzantine', area: 'behind the villa', img: 'byzantine-garden.jpg', yoff: -30, ground: 515, scale: .9, ambient: 'butterflies',
+    right: 32,
+    spots: [[.06, 'Carved stone urns overflow with white and pink roses.'], [.25, 'Clipped box hedges line the rose beds.'],
+      [.62, 'An old stone bridge arches over the far end of the garden lake.'], [.86, 'Tall cypresses stand guard over the roses.']],
+    doors: [[.5, 30, .845, 'Back to the villa terrace', 'The stone path leads back up to the villa’s flowered terrace.']] },
+  { name: 'Byzantine · Animal Garden', inside: 'byzantine', area: 'behind the villa', img: 'byzantine-animal-garden.jpg', yoff: -30, ground: 515, scale: .9, ambient: 'butterflies',
+    left: 31,
+    spots: [[.11, 'Bright parrots and a white dove chatter in the domed aviary.'], [.32, 'A white horse and a chestnut mare look out over the stable fence.'],
+      [.5, 'Rose arches lead away down a long garden walk.'], [.64, 'A little waterfall splashes into a duck pond.'], [.86, 'Deer, a white goat and little fawns graze in the glass enclosure.']],
+    doors: [[.78, 'play', 'villa-animals', 'Visit the villa animals', 'Pella the villa keeper is waiting with breakfast for the animals.']] },
 ];
 const VILLA = PLACES.findIndex(p => p.name === 'Byzantine · Lakeside Villa');   // 22; the interior follows it, the terrace is 30
 const OUTDOORS = PLACES.filter(p => p.inside === undefined).length;   // the first three countryside places loop; village is a branch
