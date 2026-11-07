@@ -93,6 +93,10 @@ const cup = new GravityCup();
 let cupPlayer = 'arduan', resultShown = false;
 // the Gravity Thief adventure: who's talking, the purple streak on the street, and the runaway cat
 const adv = new Adventure();
+// The shard adventure is set aside for now: you start in free roam with every door open, and can
+// choose "Play the shard adventure" to switch it on (the choice and the progress are remembered).
+let storyOn = false;
+try { storyOn = localStorage.getItem('gravity-story-on') === '1'; } catch (_) {}
 const VOICE = { Arduan: '#7fd3ff', Lucio: '#9cf29c', Day: '#ffd36b', Lilith: '#ff8fd0', Brayden: '#b48cff', Brennan: '#ffa36b' };
 let talk = null, orb = null, fleeing = false, catchCool = 0;
 
@@ -258,6 +262,17 @@ $('restartBtn').addEventListener('click', () => {
   if (talk) { talk = null; $('talk').hidden = true; }
   pendingTo = 'arduan'; fadeDir = 1; banner('The adventure begins again…');
 });
+$('storyBtn').addEventListener('click', () => {
+  if (!room || cup.active || fadeDir) return;
+  audio(); storyOn = !storyOn;
+  try { localStorage.setItem('gravity-story-on', storyOn ? '1' : '0'); } catch (_) {}
+  if (talk) { talk = null; $('talk').hidden = true; }
+  if (storyOn) {
+    heard.clear(); banner('The shard adventure is on!');
+    if (adv.i === 0) { pendingTo = 'arduan'; fadeDir = 1; return; }   // a fresh story starts in Arduan's room
+  } else banner('Free roam: every door is open');
+  spawnStars(); storyHere();
+});
 function swap() {
   if (!room || cup.active) return;
   const i = (CAST.indexOf(ctrl.arrows) + 1) % CAST.length;
@@ -285,7 +300,7 @@ const inSky = () => !!ROOMS[roomK].sky;
 function goThrough() {
   if (cup.active) return;
   if (!doorNear || fadeDir || talk) return;
-  const locked = adv.lock(roomK, doorNear.to);
+  const locked = storyOn && adv.lock(roomK, doorNear.to);
   if (locked) { banner(locked); tone([220, 196], .2, 'square', .03, .1); return; }
   pendingTo = doorNear.to; fadeDir = 1; tone([330, 440, 660], .3, 'sine', .04, .07);
 }
@@ -299,7 +314,7 @@ function arrive() {
   viewRot = 0; camX = clamp(dx - 120, 0, worldW - VW); camY = Math.max(0, worldH - VH);
   spawnObjects(); spawnStars();
   banner(inSky() ? 'The Sky City · jump, then press ↑ to float up to the city above' : ROOMS[roomK].name);
-  if (adv.step.type === 'go' && adv.step.to === roomK) stepDone(); else storyHere();
+  if (storyOn && adv.step.type === 'go' && adv.step.to === roomK) stepDone(); else storyHere();
 }
 function flip() {
   if (!room || talk) return;
@@ -390,7 +405,7 @@ function drawObject(o) {
 function spawnStars() {
   const W = RX - LX;
   // during the adventure, rooms hold the story's gravity shards instead of stars
-  if (!adv.done) {
+  if (storyOn && !adv.done) {
     stars = (adv.shardsIn(roomK) || []).map(q => ({ x: LX + 110 + (W - 220) * q.fx, y: q.y, ph: q.i, got: false, shard: q.i }));
     syncQuest(); return;
   }
@@ -438,6 +453,7 @@ function starPath(x, y, r, rot) { ctx.beginPath(); for (let i = 0; i < 10; i++) 
 const heard = new Set();
 function storyHere() {
   // play the current step's scene once you're where it happens, then set up the room for it
+  if (!storyOn) { orb = null; fleeing = false; boys.cat.speed = 1; syncQuest(); return; }
   const s = adv.step; if (cup.active) return;
   const here = s.type === 'go' || s.type === 'end' || s.room === roomK;
   if (here && !heard.has(adv.i)) { heard.add(adv.i); startTalk(s.say, s.type === 'end' ? finishAdventure : null); }
@@ -457,7 +473,7 @@ function finishAdventure() {
   tone([523, 659, 784, 1047, 1319, 1568], .7, 'triangle', .05, .1);
 }
 function syncQuest() {
-  const story = !adv.done && !cup.active;
+  const story = storyOn && !adv.done && !cup.active;
   $('goal').hidden = !story;
   if (story) {
     const s = adv.step;
@@ -466,7 +482,9 @@ function syncQuest() {
   } else if (!cup.active) {
     $('starLabel').textContent = 'Stars'; $('stars').textContent = got; $('starTotal').textContent = stars.length;
   }
-  $('restartBtn').hidden = adv.i === 0;
+  $('restartBtn').hidden = !storyOn || adv.i === 0;
+  $('storyBtn').textContent = storyOn ? 'Set the shard adventure aside' : 'Play the shard adventure';
+  $('storyBtn').setAttribute('aria-pressed', storyOn);
 }
 function startTalk(lines, after) {
   if (!lines || !lines.length) { if (after) after(); return; }
@@ -703,7 +721,7 @@ function render() {
     ctx.font = '600 52px Fredoka, sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
     ctx.fillText(cup.paused ? 'Paused' : String(Math.ceil(cup.countdown)), VW / 2, VH / 2);
   }
-  if (doorNear && !fadeDir && !talk) doorSign(doorNear.x * worldW, doorLabel(doorNear), adv.lock(roomK, doorNear.to));
+  if (doorNear && !fadeDir && !talk) doorSign(doorNear.x * worldW, doorLabel(doorNear), storyOn && adv.lock(roomK, doorNear.to));
   if (!cup.active && !talk) offscreenHint();
   if (fade > 0) { ctx.fillStyle = `rgba(240,244,236,${fade})`; ctx.fillRect(0, 0, VW, VH); }
 }
