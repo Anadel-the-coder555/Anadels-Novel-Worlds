@@ -4,17 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Netherlands</title>
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
   <link rel="stylesheet" href="../realm-nav.css">
 </head>
 <body>
   <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
   <main class="world">
     <header><div><p class="eyebrow">A realm of its own</p><h1>Netherlands</h1></div></header>
-    <p class="intro">Walk the autumn wood with Praelia, Dorian, Kaidan and Thalion, along a sunlit path strewn with fallen leaves. Choose who leads the way and the others follow, then chase the carriage down the path.</p>
-    <section class="stage" aria-label="Autumn wood">
-      <canvas id="game" tabindex="0" aria-label="Praelia in her red velvet gown, Dorian in grey and black, Kaidan in light blue and Thalion in deep red velvet, walking a path through an autumn forest"></canvas>
-      <div class="hud"><span>The Autumn Wood · <b id="leaderName">Praelia</b> leads</span><span id="distance">The wood’s edge</span></div>
+    <p class="intro">Walk with Praelia, Dorian, Kaidan and Thalion through the autumn wood, along the village street and up to the gates of Praelia’s estate. Choose who leads the way and the others follow, and chase the carriage down the woodland path.</p>
+    <section class="stage" aria-label="Netherlands">
+      <canvas id="game" tabindex="0" aria-label="Praelia in her red velvet gown, Dorian in grey and black, Kaidan in light blue and Thalion in deep red velvet, walking together through Netherlands"></canvas>
+      <div class="hud"><span><b id="placeName">The Autumn Wood</b> · <span class="lead"><b id="leaderName">Praelia</b> leads</span></span><span id="distance">The wood’s edge</span></div>
+      <button class="door" id="door" hidden><span aria-hidden="true">▲</span> <span id="doorLabel"></span> <kbd aria-hidden="true">↑</kbd></button>
       <p class="caption" id="caption" role="status">Opening the wood…</p>
       <div class="touch"><button id="left" aria-label="Walk left">◀</button><button id="right" aria-label="Walk right">▶</button></div>
     </section>
@@ -25,10 +26,15 @@
         <button class="character" id="pick-kaidan" aria-pressed="false" disabled><img src="kaidan-portrait.png" alt=""><span>Kaidan<small>light blue coat and black cloak</small></span></button>
         <button class="character" id="pick-thalion" aria-pressed="false" disabled><img src="thalion-portrait.png" alt=""><span>Thalion<small>red velvet coat and black cloak</small></span></button>
       </div>
+      <div class="places" role="group" aria-label="Places">
+        <button id="go-wood" aria-pressed="true" disabled>The Autumn Wood</button>
+        <button id="go-village" aria-pressed="false" disabled>The Village</button>
+        <button id="go-estate" aria-pressed="false" disabled>Praelia’s Estate</button>
+      </div>
       <div class="actions"><button id="chase" disabled>Chase the carriage</button><button id="reset" disabled>Back to the wood’s edge</button></div>
     </section>
-    <p class="instructions"><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> walk · <kbd>Shift</kbd> hurry · <kbd>1</kbd>–<kbd>4</kbd> or click a portrait to choose who leads · <kbd>C</kbd> chase the carriage</p>
+    <p class="instructions"><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> walk · <kbd>Shift</kbd> hurry · <kbd>1</kbd>–<kbd>4</kbd> or click a portrait to choose who leads · <kbd>↑</kbd> go through when a way on appears · <kbd>C</kbd> chase the carriage</p>
   </main>
-  <script src="game.js?v=6"></script>
+  <script src="game.js?v=7"></script>
 </body>
 </html>
