@@ -14,7 +14,7 @@ const BRIELLE_OUTFITS = [ACTORS[0],
 ];
 // Grayson, Brielle's older brother, works in the workshop. His sheet is 8 frames facing right; frame 0 is
 // him standing still. He potters between spots along the benches and stops to greet whoever comes close.
-const GRAYSON = { image: 'grayson-walk.webp', fw: 248, fh: 420, ax: 122, height: 220, cycle: 190,
+const GRAYSON = { image: 'grayson-walk.webp', fw: 250, fh: 420, ax: 120, height: 220, cycle: 190,
   speed: 80, spots: [.36, .5, .62, .44, .56, .3], notice: 175 };
 const GRAYSON_LINES = [
   [ // Brielle leads
