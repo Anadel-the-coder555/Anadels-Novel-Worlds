@@ -5,9 +5,10 @@ const $ = id => document.getElementById(id);
 const canvas = $('game'), ctx = canvas.getContext('2d');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-// The lady is a single painting, so her walk is a gentle sway and bob; the painting faces left,
-// so she is mirrored when she walks right.
-const LADY = { image: 'lady.png', height: 270, stride: 90 };
+// She walks with her 8-frame walk sheet (painted facing right, anchored on her head) and stands in her
+// painting when she stops; the standing painting turns left, so it is mirrored when she faces right.
+const LADY = { image: 'lady.png', height: 270,
+  walk: { image: 'lady-walk.png', frames: 8, fw: 205, fh: 420, ax: 107, cycle: 220 } };
 const LANDMARKS = [
   [.05, 'Golden light falls between the tall beech trunks.'],
   [.2, 'A mossy boulder rests beside the path.'],
@@ -17,7 +18,7 @@ const LANDMARKS = [
   [.95, 'The path winds on, deeper into the golden wood.'],
 ];
 const keys = { left: false, right: false, hurry: false };
-let ready = false, background, worldWidth = 1800, x = 140, facing = 1, distance = 0, moving = false, camera = 0, scale = 1, last = 0, sway = 0;
+let ready = false, background, worldWidth = 1800, x = 140, facing = 1, distance = 0, moving = false, camera = 0, scale = 1, last = 0;
 function resize() {
   const width = canvas.getBoundingClientRect().width;
   scale = Math.min(2.5, (width || W) / W * (window.devicePixelRatio || 1));
@@ -27,7 +28,7 @@ new ResizeObserver(resize).observe(canvas);
 function clearKeys() { keys.left = keys.right = keys.hurry = false; }
 function reset() {
   if (!ready) return;
-  clearKeys(); x = 140; facing = 1; distance = 0; camera = 0; sway = 0;
+  clearKeys(); x = 140; facing = 1; distance = 0; camera = 0;
   update(0); render();
 }
 function update(dt) {
@@ -35,8 +36,6 @@ function update(dt) {
   x = clamp(x + dir * (keys.hurry ? 320 : 190) * dt, 40, worldWidth - 40);
   moving = x !== old;
   if (moving) { facing = dir; distance += Math.abs(x - old); }
-  // the sway eases in when she starts walking and settles when she stops
-  sway += ((moving && !reduced ? 1 : 0) - sway) * Math.min(1, dt * 8);
   const target = clamp(x - W / 2 + facing * 65, 0, Math.max(0, worldWidth - W));
   camera += (target - camera) * Math.min(1, dt * (reduced ? 20 : 5));
   const progress = (x - 40) / (worldWidth - 80);
@@ -48,11 +47,18 @@ function update(dt) {
 function render() {
   ctx.setTransform(scale, 0, 0, scale, 0, 0); ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(background, -camera, -35, worldWidth, 600);
-  const img = LADY.img, k = LADY.height / img.height, sx = x - camera, phase = distance / LADY.stride * Math.PI;
+  const sx = x - camera;
   ctx.fillStyle = 'rgba(60,40,15,.26)'; ctx.beginPath(); ctx.ellipse(sx, GROUND, 70, 8, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.save(); ctx.translate(sx, GROUND - Math.abs(Math.sin(phase)) * 4 * sway);
-  ctx.rotate(Math.sin(phase) * .025 * sway); ctx.scale(-facing, 1);
-  ctx.drawImage(img, -img.width * k / 2, -LADY.height, img.width * k, LADY.height);
+  ctx.save(); ctx.translate(sx, GROUND);
+  if (moving) {
+    const wk = LADY.walk, k = LADY.height / (wk.fh - 4), f = Math.floor(distance / (wk.cycle / wk.frames)) % wk.frames;
+    ctx.scale(facing, 1);
+    ctx.drawImage(wk.img, f * wk.fw, 0, wk.fw, wk.fh, -wk.ax * k, -(wk.fh - 4) * k, wk.fw * k, wk.fh * k);
+  } else {
+    const img = LADY.img, k = LADY.height / img.height;
+    ctx.scale(-facing, 1);
+    ctx.drawImage(img, -img.width * k / 2, -LADY.height, img.width * k, LADY.height);
+  }
   ctx.restore();
 }
 function frame(now) {
@@ -84,7 +90,7 @@ function load(src) { return new Promise((resolve, reject) => { const image = new
 (async () => {
   resize();
   try {
-    [background, LADY.img] = await Promise.all([load('forest.jpg'), load(LADY.image)]);
+    [background, LADY.img, LADY.walk.img] = await Promise.all([load('forest.jpg'), load(LADY.image), load(LADY.walk.image)]);
     worldWidth = Math.max(W, background.width * 600 / background.height);
     ready = true; reset(); $('reset').disabled = false;
     requestAnimationFrame(now => { last = now; requestAnimationFrame(frame); });
