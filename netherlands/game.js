@@ -10,14 +10,14 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 // Walk sheets are painted facing right and anchored on the head. Praelia's standing painting turns left,
 // so it is mirrored when she faces right (standFlip); the boys face front and are never mirrored.
 const PARTY = [
-  { id: 'praelia', name: 'Praelia', image: 'praelia.png', height: 270, standFlip: true,
-    walk: { image: 'praelia-walk.png', frames: 8, fw: 205, fh: 420, ax: 107, cycle: 220 } },
-  { id: 'dorian', name: 'Dorian', image: 'dorian.png', height: 292, standFlip: false,
-    walk: { image: 'dorian-walk.png', frames: 8, fw: 241, fh: 420, ax: 116, cycle: 240 } },
-  { id: 'kaidan', name: 'Kaidan', image: 'kaidan.png', height: 286, standFlip: false,
-    walk: { image: 'kaidan-walk.png', frames: 8, fw: 223, fh: 420, ax: 105, cycle: 240 } },
-  { id: 'thalion', name: 'Thalion', image: 'thalion.png', height: 292, standFlip: false,
-    walk: { image: 'thalion-walk.png', frames: 8, fw: 258, fh: 420, ax: 131, cycle: 240 } },
+  { id: 'praelia', name: 'Praelia', image: 'praelia.webp', height: 270, standFlip: true,
+    walk: { image: 'praelia-walk.webp', frames: 8, fw: 205, fh: 420, ax: 107, cycle: 220 } },
+  { id: 'dorian', name: 'Dorian', image: 'dorian.webp', height: 292, standFlip: false,
+    walk: { image: 'dorian-walk.webp', frames: 8, fw: 241, fh: 420, ax: 116, cycle: 240 } },
+  { id: 'kaidan', name: 'Kaidan', image: 'kaidan.webp', height: 286, standFlip: false,
+    walk: { image: 'kaidan-walk.webp', frames: 8, fw: 223, fh: 420, ax: 105, cycle: 240 } },
+  { id: 'thalion', name: 'Thalion', image: 'thalion.webp', height: 292, standFlip: false,
+    walk: { image: 'thalion-walk.webp', frames: 8, fw: 258, fh: 420, ax: 131, cycle: 240 } },
 ];
 const GAP = 140, START = 100 + GAP * (PARTY.length - 1);   // the leader starts far enough in for the others behind
 const LANDMARKS = [
@@ -52,8 +52,8 @@ function reset() {
 function choose(index) {
   if (!ready || index === lead || !PARTY[index]) return;
   lead = index;   // the new leader steps up where they are, and the others fall in behind
-  PARTY.forEach((p, i) => { const b = $(`pick-${p.id}`); b.setAttribute('aria-pressed', String(i === lead)); });
-  $('leaderName').textContent = leader().name;
+  PARTY.forEach((p, i) => $(`pick-${p.id}`)?.setAttribute('aria-pressed', String(i === lead)));
+  if ($('leaderName')) $('leaderName').textContent = leader().name;
   update(0);
 }
 function update(dt) {
@@ -125,18 +125,24 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) clear
   button.addEventListener('pointerdown', event => { if (!ready) return; event.preventDefault(); button.setPointerCapture?.(event.pointerId); keys[direction] = true; button.classList.add('held'); });
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(name => button.addEventListener(name, () => { keys[direction] = false; button.classList.remove('held'); }));
 });
-PARTY.forEach((p, i) => $(`pick-${p.id}`).addEventListener('click', () => { choose(i); canvas.focus({ preventScroll: true }); }));
+// a button can be missing if the browser still has an older copy of the page; the game carries on without it
+PARTY.forEach((p, i) => $(`pick-${p.id}`)?.addEventListener('click', () => { choose(i); canvas.focus({ preventScroll: true }); }));
 $('reset').addEventListener('click', () => { reset(); canvas.focus({ preventScroll: true }); });
 function load(src) { return new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(`Could not load ${src}`)); image.src = src; }); }
 (async () => {
   resize();
   try {
-    const images = await Promise.all([load('forest.jpg'), ...PARTY.flatMap(p => [load(p.image), load(p.walk.image)])]);
+    // count the pictures in as they arrive, so a slow connection shows it is still working
+    const sources = ['forest.jpg', ...PARTY.flatMap(p => [p.image, p.walk.image])];
+    let done = 0;
+    const images = await Promise.all(sources.map(src => load(src).then(image => {
+      $('caption').textContent = `Opening the wood… ${++done} of ${sources.length}`; return image;
+    })));
     background = images[0];
     PARTY.forEach((p, i) => { p.img = images[1 + i * 2]; p.walk.img = images[2 + i * 2]; });
     worldWidth = Math.max(W, background.width * 600 / background.height);
     ready = true; reset(); $('reset').disabled = false;
-    PARTY.forEach(p => { $(`pick-${p.id}`).disabled = false; });
+    PARTY.forEach(p => { const b = $(`pick-${p.id}`); if (b) b.disabled = false; });
     requestAnimationFrame(now => { last = now; requestAnimationFrame(frame); });
   } catch (error) { $('caption').hidden = false; $('caption').textContent = `${error.message}. Refresh to try again.`; }
 })();
