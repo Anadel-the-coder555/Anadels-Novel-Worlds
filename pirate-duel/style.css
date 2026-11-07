@@ -77,3 +77,8 @@ canvas{display:block;width:100%;height:100%}
 kbd{font-family:var(--ui);font-size:13px;font-weight:700;color:var(--sailcloth);background:var(--ink);border:1px solid rgba(243,230,204,.18);border-bottom-width:2px;border-radius:3px;padding:1px 7px;min-width:1.2em;text-align:center}
 @container (max-width:620px){.roster{grid-template-columns:repeat(2,minmax(0,1fr))}.card p{font-size:12px}.card{gap:6px}}
 @media (prefers-reduced-motion:reduce){.learned{transition:none}}
+
+/* the end card: play again, or go back to the Soulmates ship */
+.end-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:.6em}
+.btn.ship-btn{display:inline-block;text-decoration:none;background:var(--sailcloth,#f3e6cc);box-shadow:inset 0 0 0 2px rgba(155,114,48,.45),0 3px 0 var(--brass-deep)}
+.saved-note{margin:.8em 0 0;font-size:max(12px,1.3cqw);opacity:.75}

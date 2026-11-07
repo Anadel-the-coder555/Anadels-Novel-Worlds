@@ -406,64 +406,252 @@ GAMES.wagon = k => {
 };
 
 // ===================== WRECK A WEDDING =====================
+// Four quick, silly gags in a row, cheered on by the crew hiding in the rigging: shake the wet dog over the guests,
+// fling fish into the cake, bowl Goldtooth down the soaped aisle, and swing Cutlass in on a rope. Nobody loses:
+// every gag gets laughs, and the Laugh-o-meter says how thoroughly the wedding is wrecked.
 GAMES.wedding = k => {
-  k.setControls(['left', 'right', 'act'], 'Set up gag');
-  const pop = popups(k);
-  const GAGS = [{ x: 140, name: 'Let the wet dog loose', done: 0 }, { x: 330, name: 'Swap the cake for a fish', done: 0 }, { x: 560, name: 'Soap the wedding carpet', done: 0 }, { x: 740, name: 'Swap the bell for a frying pan', done: 0 }];
-  let x = 60, flip = false, patience = 1, state = 'away', stateT = rand(2.5, 4), caughtT = 0, tomatoes = [], walkPh = 0;
+  const g = k.g, pop = popups(k);
+  const ROUNDS = [
+    { id: 'dog', cap: 20, title: 'Gag 1 · Release the wet dog!', how: 'Mash Space (or tap) to make him shake all over the guests!', ctl: [['act'], 'Shake!'], time: 7 },
+    { id: 'cake', cap: 25, title: 'Gag 2 · A fish for the cake!', how: 'Press Space (or tap) when the power bar is in the gold to fling a fish into the cake', ctl: [['act'], 'Fling!'], time: 10 },
+    { id: 'bowl', cap: 25, title: 'Gag 3 · Soap the aisle!', how: 'Goldtooth can’t stop sliding! Steer him into the guests with ↑ ↓ (or hold above / below him)', ctl: [['up', 'down'], ''], time: 9 },
+    { id: 'swing', cap: 30, title: 'Finale · Cutlass swings in!', how: 'Press Space (or tap) to let go of the rope. Aim for Goldtooth!', ctl: [['act'], 'Let go!'], time: 8 },
+  ];
+  const LOOKS = [{ coat: '#6b4a8a', hair: '#3a2416', hat: null }, { coat: '#2f5d6b' }, { coat: '#a8455a', hair: '#e2c27a', hat: null },
+    { coat: '#4f6b3a', hat: '#5a3b1e' }, { coat: '#c08a3e', hair: '#1c1410', hat: null }, { coat: '#3b3f6e', hat: '#1c1c28', skin: '#c58c5c' }];
+  const OUCH = ['My hat!', 'EW!', 'Is that… dog?', 'My good coat!', 'OI!', 'How rude!', 'I’ll never be dry again!'];
+  const CAKE = 620, ALTAR = 800, RUBY = 905, FLOOR = 345;
+  const PIVOT = { x: 300, y: -130 }, ROPE = 270, SWING = 1.05, SPEED = 2.3, HANG = 160;
+  let ri = 0, phase = 'title', pt = 0, rt = 0, laughs = 0, roundLaughs = 0, laughT = 0, cakeSplat = 0, parts = [], toms = [], guests = [], s = {}, line = '', over = false;
+  const clem = { x: ALTAR, y: FLOOR, rot: 0, wet: 0, frost: 0, wob: 0, fly: null };
+
+  const emo = (ch, x, y, size, rot = 0, alpha = 1) => {
+    g.save(); g.globalAlpha = alpha; g.translate(x, y); if (rot) g.rotate(rot);
+    g.font = `${size}px serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#000'; g.fillText(ch, 0, 0); g.restore();
+  };
+  const seat = (x0 = 100, n = 5) => { guests = LOOKS.slice(0, n).map((l, i) => ({ ...l, x: x0 + i * 100, y: 300, h: 92, rot: 0, wet: 0 })); };
+  const scatter = () => { guests = []; for (let i = 0; i < 10; i++) guests.push({ ...LOOKS[i % 6], x: 130 + i * 64 + rand(-10, 10), y: [265, 315, 365][i % 3], h: 86, rot: 0, wet: 0 }); };
+  // the crew in the rigging answer a good gag with a volley of tomatoes and fish at Goldtooth
+  function volley(n = 3) {
+    for (let i = 0; i < n; i++) toms.push({ x: rand(60, 900), y: 40, tx: clem.x + rand(-30, 30), ty: clem.y - rand(90, 160), t: -i * .12, d: rand(.45, .7), ch: pick(['🍅', '🍅', '🐟', '💐']) });
+  }
+  // each gag can earn up to its `cap` of the Laugh-o-meter (the caps add up to 100)
+  function laugh(n, x, y, text, color = '#fff8ea') {
+    const add = Math.max(0, Math.min(n, ROUNDS[ri].cap - roundLaughs)); roundLaughs += add;
+    laughs = Math.min(100, laughs + add); laughT = 1;
+    if (text) pop.add(text, x, y, color, n >= 8 ? 28 : 22);
+    if (n >= 6) volley();
+  }
+  const burst = (x, y, n, colors, speed = 380) => {
+    for (let i = 0; i < n; i++) { const a = rand(-Math.PI, 0), v = rand(speed * .4, speed); parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: rand(.6, 1.1), color: pick(colors), r: rand(3, 7) }); }
+  };
+
+  function start(i) {
+    ri = i; phase = 'title'; pt = 2.4; rt = ROUNDS[i].time; s = {}; roundLaughs = 0;
+    k.setControls(...ROUNDS[i].ctl);
+    Object.assign(clem, { x: ALTAR, y: FLOOR, rot: 0, fly: null });
+    const id = ROUNDS[i].id;
+    if (id === 'bowl') { scatter(); clem.x = 880; clem.y = 315; s = { vx: -440, hits: 0 }; } else if (id === 'cake') seat(240, 4); else seat();
+    if (id === 'dog') s = { shakes: 0, sh: 0 };
+    if (id === 'cake') s = { pt: 0, power: 0, fish: null, throws: 0, hits: 0 };
+    if (id === 'swing') { s = { ph: 0, held: true, rot: 0 }; swingPos(); }
+  }
+  function endRound(text) { phase = 'after'; pt = 2; line = text; }
+  function finish() {
+    if (over) return; over = true;
+    const text = laughs >= 75 ? 'The crew in the rigging are crying with laughter. This wedding is wrecked beyond repair.'
+      : laughs >= 45 ? 'The guests are soaked, the cake is fishy, and both crews are howling.'
+      : 'Not the most elegant chaos, but the wedding is thoroughly ruined.';
+    k.end({ won: true, score: Math.round(laughs / 10), text });
+  }
+
+  // ---- the gags ----
+  const ROUND = {
+    dog(dt, press) {
+      if (press) {
+        s.shakes++; s.sh = 1;
+        burst(480, 300, 8, ['#9fd3ff', '#c9ecff', '#7fb8e6'], 560);
+        const gs = pick(guests); gs.wet = 1;
+        if (s.shakes % 3 === 0) laugh(2, gs.x, 190, pick(OUCH)); else laugh(.6);
+        if (s.shakes === 12) { clem.wet = 1; laugh(8, clem.x - 40, 110, 'Goldtooth’s wig is soaked!', '#ffd27a'); }
+        if (s.shakes === 24) laugh(8, 480, 150, 'The dog is dry. Nobody else is.', '#c8f5a0');
+      }
+      s.sh = Math.max(0, s.sh - dt * 3);
+      if (rt <= 0) endRound(s.shakes >= 20 ? 'Absolutely drenched!' : s.shakes >= 10 ? 'Soggy guests everywhere!' : 'A little damp, and very offended.');
+    },
+    cake(dt, press) {
+      s.pt += dt; s.power = (1 - Math.cos(s.pt * 2.4)) / 2;
+      if (press && !s.fish) { s.throws++; s.fish = { t: 0, d: .8, x0: 150, y0: 270, x1: 230 + s.power * 720, y1: 320, rot: 0 }; }
+      if (s.fish) {
+        const f = s.fish; f.t += dt; f.rot += dt * 14;
+        if (f.t >= f.d) {
+          s.fish = null; const x = f.x1;
+          if (Math.abs(x - CAKE) < 70) {
+            cakeSplat++; s.hits++; k.shake = .5;
+            burst(CAKE, 260, 26, ['#fff8ea', '#f7c6d4', '#ffe7a8', '#ffffff'], 520);
+            laugh(cakeSplat === 1 ? 14 : 6, CAKE, 140, cakeSplat === 1 ? 'FISH CAKE!' : pick(['Extra fishy!', 'Seconds, anyone?', 'Now with more fish!']), '#ffd27a');
+          } else if (Math.abs(x - ALTAR) < 45) {
+            clem.frost = 1; clem.wob = 1; laugh(12, ALTAR, 110, 'Right in the gold tooth!', '#ffd27a');
+          } else if (x > RUBY - 40) {
+            laugh(3, RUBY, 120, 'Ruby catches it. She is not amused.');
+          } else {
+            const gs = guests.slice().sort((a, b) => Math.abs(a.x - x) - Math.abs(b.x - x))[0];
+            gs.wet = 1; burst(gs.x, 230, 8, ['#c0d6e0', '#9ab'], 260); laugh(4, gs.x, 190, pick(['Slapped by a fish!', 'OI!', 'It’s still wriggling!', 'My good coat!']));
+          }
+        }
+      }
+      if (rt <= 0 && !s.fish) endRound(s.hits >= 3 ? 'The cake is now mostly fish.' : s.hits ? 'A fishy cake. Delicious.' : 'The guests got all the fish instead!');
+    },
+    bowl(dt) {
+      const p = k.pointer, up = k.keys.up || (p.down && p.y < clem.y - 40), dn = k.keys.down || (p.down && p.y > clem.y + 10);
+      clem.y = clamp(clem.y + ((dn ? 1 : 0) - (up ? 1 : 0)) * 280 * dt, 255, 375);
+      clem.x += s.vx * dt;
+      if ((clem.x < 70 && s.vx < 0) || (clem.x > 890 && s.vx > 0)) { s.vx = -s.vx; k.shake = .35; laugh(2, clem.x, clem.y - 120, 'BONK!'); }
+      if (Math.random() < dt * 25) parts.push({ x: clem.x - Math.sign(s.vx) * 70, y: clem.y - rand(4, 30), vx: rand(-30, 30), vy: rand(-70, -20), grav: -30, t: 0, life: .9, color: 'rgba(255,255,255,.85)', r: rand(4, 9), ring: true });
+      guests.forEach(gs => {
+        if (gs.fly || Math.abs(gs.x - clem.x) > 62 || Math.abs(gs.y - clem.y) > 36) return;
+        gs.fly = { vx: Math.sign(s.vx) * rand(120, 280) + rand(-80, 80), vy: -rand(520, 720), vr: rand(-12, 12) };
+        s.hits++; laugh(4, gs.x, gs.y - 120, pick(['WHEEE!', 'STRIKE!', 'My best shoes!', 'I’ll sue!', 'Not again!', 'Lovely wedding!']));
+      });
+      if (!s.strike && guests.every(gs => gs.fly)) { s.strike = true; laugh(10, 480, 140, 'STRIKE! Every guest bowled over!', '#ffd27a'); rt = Math.min(rt, 1.2); }
+      if (rt <= 0) endRound(s.hits >= 10 ? 'A perfect strike!' : s.hits >= 5 ? 'Guests in the rigging, guests in the sea…' : 'Goldtooth is very, very slippery now.');
+    },
+    swing(dt, press) {
+      if (s.held) {
+        s.ph += dt * SPEED; swingPos();
+        if (press || rt <= 0) {
+          const th = SWING * Math.sin(s.ph), d = SWING * SPEED * Math.cos(s.ph);
+          s.held = false; s.vx = ROPE * d * Math.cos(th); s.vy = -ROPE * d * Math.sin(th);
+          pop.add(rt <= 0 ? 'His arms got tired!' : 'AAAAAAH!', s.x, 120, '#fff8ea', 26);
+        }
+      } else if (!s.landed) {
+        s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 900 * dt; s.rot += Math.sign(s.vx || 1) * 7 * dt;
+        if (s.y + HANG >= FLOOR) land();
+      } else if ((s.landT -= dt) <= 0) endRound(s.text);
+    },
+  };
+  function swingPos() { const th = SWING * Math.sin(s.ph); s.x = PIVOT.x + ROPE * Math.sin(th); s.y = PIVOT.y + ROPE * Math.cos(th); s.rot = -th * .35; }
+  function land() {
+    s.landed = true; s.landT = 2.2; s.y = FLOOR - HANG; s.x = clamp(s.x, 30, 930); s.rot = 0; k.shake = .7;
+    const x = s.x;
+    if (Math.abs(x - ALTAR) < 75) {
+      clem.fly = { vx: 520, vy: -650, vr: 9 }; s.text = 'Goldtooth goes over the side. SPLASH!';
+      laugh(30, ALTAR, 110, 'BULLSEYE!', '#ffd27a');
+    } else if (Math.abs(x - CAKE) < 60) {
+      cakeSplat++; burst(CAKE, 280, 34, ['#fff8ea', '#f7c6d4', '#ffe7a8'], 600); s.text = 'Straight into the fish-cake. He meant to do that.';
+      laugh(20, CAKE, 130, 'SPLOOSH!', '#ffd27a');
+    } else if (x < 60) {
+      s.text = 'Wrong way! He lands in a heap of bunting.'; laugh(10, 120, 140, 'Wrong way!');
+    } else {
+      const gs = guests.slice().sort((a, b) => Math.abs(a.x - x) - Math.abs(b.x - x))[0]; gs.flat = 1;
+      s.text = 'Cutlass lands on a guest. A very soft landing.'; laugh(12, gs.x, 160, 'OOF!');
+    }
+  }
+
+  start(0);
   return {
     update(dt) {
-      pop.update(dt);
-      stateT -= dt;
-      if (stateT <= 0) {
-        if (state === 'away') { state = 'turning'; stateT = .8; }
-        else if (state === 'turning') { state = 'watching'; stateT = rand(1.4, 2.4); }
-        else { state = 'away'; stateT = rand(2.2, 4); }
-      }
-      if (caughtT > 0) caughtT -= dt;
-      const dx = (k.keys.right ? 1 : 0) - (k.keys.left ? 1 : 0) || (k.pointer.down && !near() ? Math.sign(k.pointer.x - x) * (Math.abs(k.pointer.x - x) > 10) : 0);
-      if (caughtT <= 0) { x = clamp(x + dx * 230 * dt, 40, 820); if (dx) { flip = dx < 0; walkPh += dt; } }
-      const gag = near();
-      const working = caughtT <= 0 && gag && !gag.finished && (k.keys.act || (k.pointer.down && Math.abs(k.pointer.x - gag.x) < 70));
-      if (working) gag.done = Math.min(1, gag.done + dt / 1.4);
-      if (gag && gag.done >= 1 && !gag.finished) { gag.finished = true; patience = Math.min(1, patience + .25); pop.add('The crew giggles!', gag.x, 150, '#c8f5a0'); }
-      if (state === 'watching' && caughtT <= 0 && (working || dx)) {
-        caughtT = 1.2; patience -= .22; k.shake = .5;
-        if (gag && !gag.finished) gag.done = Math.max(0, gag.done - .5);
-        pop.add('Goldtooth sees you! “Boring!”', x, 120, '#ff9c8a');
-        for (let i = 0; i < 4; i++) tomatoes.push({ x: rand(0, W), y: -20, tx: x + rand(-20, 20), ty: 250 + rand(-20, 20), t: 0, d: rand(.5, .8), fish: Math.random() < .4 });
-      }
-      patience -= .035 * dt;
-      tomatoes.forEach(t => t.t += dt); tomatoes = tomatoes.filter(t => t.t < t.d + .6);
-      const all = GAGS.every(g => g.finished);
-      if (all) k.end({ won: true, score: Math.round(patience * 5) + 3, text: 'Every gag is set. The wedding is about to fall apart in the funniest way possible.' });
-      else if (patience <= 0) k.end({ won: false, score: 0, text: 'Not funny enough! Tomatoes and fish rain down from the rigging.' });
-      function near() { return GAGS.find(g => Math.abs(g.x - x) < 55); }
+      pop.update(dt); laughT = Math.max(0, laughT - dt * 1.5);
+      parts.forEach(p => { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += (p.grav ?? 700) * dt; });
+      parts = parts.filter(p => p.t < p.life);
+      toms.forEach(t => { t.t += dt; if (!t.hit && t.t >= t.d) { t.hit = true; clem.wob = 1; burst(t.tx, t.ty, 5, t.ch === '🍅' ? ['#e0402a', '#ff6a5a'] : ['#c0d6e0', '#f7c6d4'], 200); } });
+      toms = toms.filter(t => t.t < t.d + .1);
+      guests.forEach(gs => { if (gs.fly) { gs.x += gs.fly.vx * dt; gs.y += gs.fly.vy * dt; gs.fly.vy += 900 * dt; gs.rot += gs.fly.vr * dt; } gs.wet = Math.max(0, gs.wet - dt * .25); });
+      if (clem.fly) { clem.x += clem.fly.vx * dt; clem.y += clem.fly.vy * dt; clem.fly.vy += 900 * dt; clem.rot += clem.fly.vr * dt; }
+      clem.wob = Math.max(0, clem.wob - dt * 2);
+      if (over) return;
+      const press = k.hit('act') || k.clicked();
+      if (phase === 'title') { pt -= dt; if (pt <= 0 || (press && pt < 1.8)) phase = 'play'; return; }
+      if (phase === 'after') { pt -= dt; if (pt <= 0) { if (ri < ROUNDS.length - 1) start(ri + 1); else finish(); } return; }
+      rt -= dt;
+      ROUND[ROUNDS[ri].id](dt, press);
     },
     draw() {
-      const g = k.g; k.backdrop('goldtooth');
-      g.fillStyle = '#b8323a'; g.fillRect(200, 300, 620, 30); // carpet
-      g.fillStyle = 'rgba(80,50,30,.25)'; for (let i = 0; i < 6; i++) { k.rr(60 + i * 140, 250, 100, 40, 10); g.fill(); }
-      // rigging with the crew peeking down
-      g.strokeStyle = 'rgba(90,60,30,.6)'; g.lineWidth = 3; for (let i = 0; i < 9; i++) { g.beginPath(); g.moveTo(i * 120, 0); g.lineTo(i * 120 + 60, 70); g.stroke(); }
-      ['bones', 'hazel', 'odessa', 'tempest', 'crispin', 'jade'].forEach((key, i) => k.face(key, 90 + i * 150, 46 + Math.sin(k.t * 2 + i) * 3, 20));
-      GAGS.forEach(gg => {
-        g.fillStyle = gg.finished ? 'rgba(140,220,120,.9)' : 'rgba(255,240,200,.85)'; k.rr(gg.x - 58, 336, 116, 40, 8); g.fill();
-        k.text(gg.finished ? '✓ done' : gg.name, gg.x, 356, { size: 12, color: '#3a2816', stroke: null });
-        if (!gg.finished && gg.done > 0) k.bar(gg.x - 50, 316, 100, 14, gg.done, '#ffd27a');
-        g.font = '34px serif'; g.textAlign = 'center'; g.fillText(['🐕', '🎂', '🧼', '🔔'][GAGS.indexOf(gg)], gg.x, 290);
+      const id = ROUNDS[ri].id;
+      k.backdrop('goldtooth');
+      g.fillStyle = 'rgba(255,248,234,.12)'; g.fillRect(0, 0, W, H);
+      // bunting, and the crew peeking out of the rigging above it
+      for (let i = 0; i < 24; i++) {
+        const x = i * 42, y = 92 + Math.sin(i / 23 * Math.PI) * 16;
+        g.fillStyle = ['#ffd27a', '#f29bb2', '#fff8ea', '#9fd3ff'][i % 4];
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x + 40, y); g.lineTo(x + 20, y + 24); g.closePath(); g.fill();
+      }
+      ['hazel', 'odessa', 'tempest', 'crispin', 'jade', 'monsoon'].forEach((key, i) => {
+        const jig = laughT > 0 ? Math.sin(k.t * 30 + i) * 6 * laughT : 0;
+        k.face(key, 110 + i * 150, 66 + Math.sin(k.t * 2 + i) * 3 + jig, 20);
+        if (laughT > .3 && i % 2 === (Math.floor(k.t * 3) % 2)) k.text('HA!', 140 + i * 150, 48, { size: 16, color: '#ffd27a' });
       });
-      k.sprite('ruby', 880, 330, 190, true);
-      const facing = state === 'watching';
-      k.sprite('clement', 920, 335, 205, facing, 1, state === 'turning' ? Math.sin(k.t * 20) * .03 : 0);
-      if (state === 'turning') k.text('!', 900, 110, { size: 48, color: '#ffd27a' });
-      if (facing) { g.fillStyle = 'rgba(255,80,60,.12)'; g.beginPath(); g.moveTo(900, 180); g.lineTo(0, 120); g.lineTo(0, 380); g.closePath(); g.fill(); k.text('👁', 900, 105, { size: 36, stroke: null }); }
-      k.sprite('cutlass', x, 330, 170, flip, 1, caughtT > 0 ? Math.sin(k.t * 25) * .05 : Math.sin(walkPh * 12) * .02);
-      tomatoes.forEach(t => { const p = Math.min(1, t.t / t.d), tx = t.x + (t.tx - t.x) * p, ty = t.y + (t.ty - t.y) * p - Math.sin(p * Math.PI) * 120;
-        if (p < 1) { g.font = '26px serif'; g.fillText(t.fish ? '🐟' : '🍅', tx, ty); } else k.text('SPLAT', t.tx, t.ty, { size: 18, color: '#ff6a5a' }); });
-      k.bar(20, 90, 220, 22, patience, patience > .4 ? '#7fc97f' : '#e0705a', 'Crew’s patience');
-      k.text('Set up the gags while Goldtooth isn’t looking', 20, 26, { align: 'left', size: 22, font: 'display' });
-      k.text('Hold Space at a gag. Freeze when he turns around!', W / 2, H - 14, { size: 15 });
+      // the aisle and the flower arch
+      g.fillStyle = '#b8323a'; g.fillRect(0, 322, W, 26);
+      if (id === 'bowl') { g.fillStyle = 'rgba(255,255,255,.35)'; for (let x = 20; x < W; x += 46) { g.beginPath(); g.ellipse(x, 335, 14, 5, 0, 0, 7); g.fill(); } }
+      g.strokeStyle = '#f3e6cc'; g.lineWidth = 6; g.beginPath(); g.arc(850, 340, 110, Math.PI, 0); g.stroke();
+      for (let a = 0; a <= 8; a++) emo(a % 2 ? '🌸' : '🌼', 850 + Math.cos(Math.PI + a * Math.PI / 8) * 110, 340 + Math.sin(Math.PI + a * Math.PI / 8) * 110, 22);
+      // the cake, or what's left of it
+      if (!cakeSplat) {
+        g.fillStyle = '#fff8ea'; [[90, 50], [66, 40], [42, 34]].reduce((y, [w, h]) => { k.rr(CAKE - w / 2, y - h, w, h, 6); g.fill(); g.fillStyle = '#f7c6d4'; g.fillRect(CAKE - w / 2, y - 10, w, 5); g.fillStyle = '#fff8ea'; return y - h; }, FLOOR);
+        emo('💍', CAKE, FLOOR - 136, 22);
+      } else {
+        g.fillStyle = '#fff8ea'; g.beginPath(); g.ellipse(CAKE, FLOOR - 16, 70 + cakeSplat * 6, 24, 0, 0, 7); g.fill();
+        g.fillStyle = '#f7c6d4'; g.beginPath(); g.ellipse(CAKE - 20, FLOOR - 24, 26, 10, 0, 0, 7); g.fill();
+        for (let i = 0; i < Math.min(cakeSplat, 5); i++) emo('🐟', CAKE - 40 + i * 20, FLOOR - 40 - (i % 2) * 10, 28, -.6 + i * .3);
+      }
+      // everyone on deck, back to front
+      const actors = guests.map(gs => ({ y: gs.y, draw: () => {
+        g.save(); g.translate(gs.x, gs.y); g.rotate(gs.rot); if (gs.flat) g.scale(1.3, .45);
+        k.figure(0, 0, gs.h, { coat: gs.coat, hat: gs.hat === undefined ? '#2a1c14' : gs.hat, hair: gs.hair || null, skin: gs.skin || '#e0b48a', squash: gs.wet ? Math.sin(k.t * 30) * .04 * gs.wet : 0 });
+        g.restore();
+        if (gs.wet > .2 && !gs.fly) emo('💦', gs.x + 14, gs.y - gs.h - 6, 20, 0, gs.wet);
+      } }));
+      actors.push({ y: FLOOR + 1, draw: () => k.sprite('ruby', RUBY, FLOOR, 185, true, 1, laughT > .5 ? Math.sin(k.t * 20) * .02 : 0) });
+      actors.push({ y: clem.y + .5, draw: () => {
+        if (id === 'bowl' && !clem.fly) {   // lying flat and sliding head first
+          const dir = Math.sign(s.vx) || -1;
+          k.sprite('clement', clem.x - dir * 80, clem.y - 18, 160, dir > 0, 1, dir * Math.PI / 2 + Math.sin(k.t * 18) * .04);
+          emo('🧼', clem.x + dir * 70, clem.y - 4, 26);
+        } else k.sprite('clement', clem.x, clem.y, 200, true, 1, clem.rot + Math.sin(k.t * 30) * .05 * clem.wob);
+        if (!clem.fly && id !== 'bowl') {
+          if (clem.wet) emo('💦', clem.x + 26, clem.y - 206, 24);
+          if (clem.frost) { g.fillStyle = 'rgba(255,248,234,.95)'; g.beginPath(); g.ellipse(clem.x - 6, clem.y - 168, 24, 14, 0, 0, 7); g.fill(); emo('🐟', clem.x - 4, clem.y - 170, 22, .5); }
+        }
+      } });
+      if (id === 'dog') actors.push({ y: 362, draw: () => emo('🐕', 480 + Math.sin(k.t * 50) * 12 * s.sh, 330, 88, Math.sin(k.t * 40) * .35 * s.sh) });
+      else actors.push({ y: 380, draw: () => emo('🐕', 60, 360, 48, Math.sin(k.t * 8) * .1) });
+      if (id === 'cake') actors.push({ y: FLOOR, draw: () => {
+        k.sprite('bones', 70, FLOOR, 150);
+        g.strokeStyle = '#7a5230'; g.lineWidth = 8; g.beginPath(); g.moveTo(110, 320); g.lineTo(160, 280 - (s.fish ? 30 : 0)); g.stroke();
+        g.fillStyle = '#7a5230'; k.rr(100, 316, 40, 26, 5); g.fill();
+        if (!s.fish) emo('🐟', 160, 268, 30, -.4);
+      } });
+      if (id === 'swing') actors.push({ y: 999, draw: () => {
+        if (s.held) { g.strokeStyle = '#a7764a'; g.lineWidth = 4; g.beginPath(); g.moveTo(PIVOT.x, 0); g.lineTo(s.x, s.y); g.stroke(); }
+        k.sprite('cutlass', s.x, s.y + HANG, HANG + 10, s.landed ? false : (s.vx || 1) < 0, 1, s.rot);
+      } });
+      actors.sort((a, b) => a.y - b.y).forEach(a => a.draw());
+      if (s.fish) { const f = s.fish, p = f.t / f.d; emo('🐟', f.x0 + (f.x1 - f.x0) * p, f.y0 + (f.y1 - f.y0) * p - Math.sin(p * Math.PI) * 240, 36, f.rot); }
+      toms.forEach(t => { if (t.t < 0) return; const p = Math.min(1, t.t / t.d); emo(t.ch, t.x + (t.tx - t.x) * p, t.y + (t.ty - t.y) * p - Math.sin(p * Math.PI) * 90, 26, p * 6); });
+      parts.forEach(p => {
+        g.globalAlpha = clamp(1.3 - p.t / p.life, 0, 1);
+        if (p.ring) { g.strokeStyle = p.color; g.lineWidth = 1.5; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.stroke(); }
+        else { g.fillStyle = p.color; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill(); }
+        g.globalAlpha = 1;
+      });
+      // HUD
+      k.bar(20, 14, 260, 24, laughs / 100, laughs >= 75 ? '#ffd27a' : '#7fc97f', `Laugh-o-meter ${Math.round(laughs)}`);
+      k.text(`${ri + 1} / ${ROUNDS.length}`, W / 2, 26, { size: 18 });
+      if (phase === 'play' && id !== 'swing') timerText(k, rt);
+      if (id === 'cake' && phase === 'play') {
+        k.bar(20, 150, 180, 20, s.power, '#ffc25a');
+        g.strokeStyle = '#ffd27a'; g.lineWidth = 3; const lo = (CAKE - 70 - 230) / 720, hi = (CAKE + 70 - 230) / 720;
+        g.strokeRect(22 + lo * 176, 148, (hi - lo) * 176, 24); k.text('Power', 110, 136, { size: 14 });
+      }
+      if (phase === 'play') k.text(ROUNDS[ri].how, W / 2, H - 14, { size: 15 });
+      if (phase === 'title') {
+        g.fillStyle = 'rgba(15,26,34,.55)'; g.fillRect(0, 140, W, 150);
+        k.text(ROUNDS[ri].title, W / 2, 190, { size: 42, font: 'display', color: '#ffd27a' });
+        k.text(ROUNDS[ri].how, W / 2, 240, { size: 18 });
+        k.text('Get ready…', W / 2, 270, { size: 14, color: '#f3e6cc' });
+      }
+      if (phase === 'after') k.text(line, W / 2, 200, { size: 34, font: 'display', color: '#fff8ea' });
       pop.draw();
     },
   };

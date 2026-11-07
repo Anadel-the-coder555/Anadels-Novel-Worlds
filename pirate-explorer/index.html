@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pirata+One&family=IM+Fell+English:ital@0;1&family=Alegreya+Sans:wght@400;500;700&display=swap">
+  <link rel="preload" as="image" href="loading.jpg">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="../realm-nav.css">
 </head>
@@ -20,12 +21,7 @@
 
     <div class="adventure-bar"><b id="modeLabel" role="status">Preparing the ship…</b><button id="skipIntro" type="button" hidden>Skip the intro</button><button id="replayIntro" type="button" hidden>Replay the intro</button></div>
     <section class="adventure-panel" id="storyPanel" hidden aria-labelledby="storyTitle">
-      <h2 id="storyTitle"></h2><p id="storyText" aria-live="polite"></p><p id="storyDialogue" class="story-dialogue"></p><p id="storyGoal"></p><p class="story-help">Walk with the arrow keys or WASD, or use the touch controls. Choose an action below or press Space to continue.</p>
-      <div id="storyActions"></div>
-      <div class="game-pad" id="gamePad" hidden>
-        <div class="gp-dirs"><button type="button" data-k="left" aria-label="Left">◀</button><button type="button" data-k="up" aria-label="Up">▲</button><button type="button" data-k="down" aria-label="Down">▼</button><button type="button" data-k="right" aria-label="Right">▶</button></div>
-        <button type="button" class="gp-act" data-k="act">Action</button>
-      </div>
+      <h2 id="storyTitle"></h2><p id="storyText" aria-live="polite"></p><p id="storyDialogue" class="story-dialogue"></p><p id="storyGoal"></p><p class="story-help">Walk with the arrow keys or WASD, or use the touch controls. Choose an action on the stage or press Space to continue.</p>
     </section>
     <section class="adventure-panel" id="freePanel" hidden aria-label="Tours and games">
       <h2>Make yourself at home</h2><p id="tourText" aria-live="polite">Explore at your own pace, or let Ruby show you around.</p>
@@ -36,10 +32,15 @@
       <canvas id="game" aria-label="Soulmates ship exploration"></canvas>
       <canvas class="stage-game" id="stageGame" hidden aria-label="Mini-game"></canvas>
 
+      <!-- shown while the ship's pictures load -->
+      <div class="loading" id="loading" role="status" aria-live="polite">
+        <div class="loading-card"><span id="loadingText">Preparing the ship…</span><span class="loading-bar"><i id="loadingBar"></i></span></div>
+      </div>
+
       <div class="hud">
         <div class="pill"><b id="placeName">The Ship’s Deck</b></div>
         <div class="hud-right">
-          <div class="pill" id="crewPill" aria-live="polite">Crew aboard <b id="crewCount">0</b> / <span id="crewTotal">9</span></div>
+          <button class="pill log-btn" id="logBtn" type="button" hidden aria-expanded="false" aria-controls="questPanel" title="The ship’s log"><span aria-hidden="true">📜</span><span class="visually-hidden">The ship’s log</span></button>
           <div class="pill treasure-pill" id="treasurePill" hidden>Treasures <span class="slots" id="treasureSlots" aria-hidden="true"></span><span class="visually-hidden"><span id="treasureCount">0</span> of 3 found</span></div>
         </div>
       </div>
@@ -47,6 +48,42 @@
       <div class="story-speech" id="storySpeech" hidden>
         <div class="speech-content" aria-live="polite" aria-atomic="true"><b id="speechSpeaker"></b><small id="speechLocation"></small><p id="speechText"></p></div>
         <button id="speechNext" type="button">Next line →</button>
+      </div>
+
+      <button class="talk-to" id="talkTo" type="button" hidden><span></span> <kbd>Space</kbd></button>
+
+      <!-- a crewmate's idea or news, on the stage beside them -->
+      <div class="quest-hook" id="questHook" hidden role="dialog" aria-labelledby="hookTitle" aria-describedby="hookText">
+        <span class="face hook-face" id="hookFace" hidden></span>
+        <div class="hook-body">
+          <small id="hookKind"></small>
+          <b id="hookTitle"></b>
+          <p id="hookText"></p>
+          <div class="hook-actions"><button id="hookGo" type="button" class="primary">Let’s do it!</button><button id="hookLater" type="button">Maybe later</button></div>
+        </div>
+      </div>
+
+      <!-- the ship's log: opened from the 📜 button in the corner -->
+      <section class="adventure-panel quest-panel log-card" id="questPanel" hidden aria-labelledby="questTitle">
+        <button class="log-close" id="logClose" type="button" aria-label="Close the ship’s log">✕</button>
+        <h2 id="questTitle">The ship’s log</h2>
+        <p class="quest-log" id="questLog" aria-live="polite"></p>
+        <div class="quest-actions"><button id="questNow" type="button">Look for trouble</button><button id="questReset" type="button" class="quiet">Start the hunt over</button></div>
+        <h3 id="clueTitle">Clues</h3>
+        <p id="clueEmpty" class="muted">Nothing yet. Keep your ears open: the crew hear things, and every adventure turns something up.</p>
+        <ol class="clue-list" id="clueList"></ol>
+        <h3>Treasures found</h3>
+        <p id="treasureEmpty" class="muted">None yet. There are three out there somewhere.</p>
+        <ul class="treasure-list" id="treasureList"></ul>
+      </section>
+
+      <!-- choices and game buttons sit on the stage, in the strip under the game -->
+      <div class="stage-actions">
+        <div id="storyActions"></div>
+        <div class="game-pad" id="gamePad" hidden>
+          <div class="gp-dirs"><button type="button" data-k="left" aria-label="Left">◀</button><button type="button" data-k="up" aria-label="Up">▲</button><button type="button" data-k="down" aria-label="Down">▼</button><button type="button" data-k="right" aria-label="Right">▶</button></div>
+          <button type="button" class="gp-act" data-k="act">Action</button>
+        </div>
       </div>
 
       <div id="duelHud" class="duel-hud" hidden aria-live="polite"><span>Ruby <b id="rubyHealth">5</b> / 5</span><span><span id="rivalLabel">Cutlass</span> <b id="cutlassHealth">6</b> / 6</span></div>
@@ -59,7 +96,7 @@
           <button class="tbtn right" id="tRight" type="button" aria-label="Walk right">&#9654;</button>
           <button class="tbtn down" id="tDown" type="button" aria-label="Walk toward the front">&#9660;</button>
         </div>
-        <button class="tbtn invite" id="tInvite" type="button">Invite</button>
+        <button class="tbtn invite" id="tInvite" type="button">Talk</button>
       </div>
     </div>
 
@@ -75,14 +112,6 @@
       </fieldset>
     </div>
 
-    <section class="adventure-panel quest-panel" id="questPanel" hidden aria-labelledby="questTitle">
-      <h2 id="questTitle">The ship’s log</h2>
-      <p class="quest-log" id="questLog" aria-live="polite"></p>
-      <div class="quest-actions"><button id="questNow" type="button">Look for trouble</button><button id="questReset" type="button" class="quiet">Start the hunt over</button></div>
-      <h3>Treasures found</h3>
-      <p id="treasureEmpty" class="muted">None yet. There are three out there somewhere.</p>
-      <ul class="treasure-list" id="treasureList"></ul>
-    </section>
 
     <section class="adventure-panel games-panel" aria-labelledby="gamesTitle">
       <h2 id="gamesTitle">Mini-games</h2>
@@ -100,21 +129,12 @@
     <ul class="legend">
       <li><kbd>&larr;</kbd><kbd>&rarr;</kbd> walk along the deck</li>
       <li><kbd>&uarr;</kbd><kbd>&darr;</kbd> walk toward the rail or the front</li>
-      <li><kbd>Space</kbd> invite a crewmate, or go through a door</li>
+      <li><kbd>Space</kbd> talk to a crewmate, or go through a door</li>
       <li>hold <kbd>Shift</kbd> to hurry</li>
       <li><kbd>1</kbd> <kbd>2</kbd> change which captain leads</li>
     </ul>
   </div>
 
-  <div class="quest-hook" id="questHook" hidden role="dialog" aria-labelledby="hookTitle" aria-describedby="hookText">
-    <span class="face hook-face" id="hookFace" hidden></span>
-    <div class="hook-body">
-      <small id="hookKind"></small>
-      <b id="hookTitle"></b>
-      <p id="hookText"></p>
-      <div class="hook-actions"><button id="hookGo" type="button" class="primary">Let’s do it!</button><button id="hookLater" type="button">Maybe later</button></div>
-    </div>
-  </div>
 
   <script src="chapter.js"></script>
   <script src="quest.js"></script>

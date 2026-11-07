@@ -56,7 +56,39 @@ const PIRATES = {
 const CAPTAINS = ['ruby', 'cutlass'];
 const CREW = ['bones', 'absalom', 'scarlett', 'crispin', 'jade', 'monsoon', 'stormcaller', 'marietta', 'oro', 'tempest', 'arabella', 'odessa', 'hazel'];
 const VILLAINS = ['clement'];
-const JOIN_LINES = ['Aye aye, Captain!', 'Right behind you, Captain!', 'Ready to sail, Captain!', 'At your command!'];
+// where the crew wander off to when nobody's looking (the island and the treasure hunt's places are only for episodes)
+const WANDER_ROOMS = ['deck', 'upper', 'below', 'hall', 'hallLeft', 'dining', 'bedroom', 'study'];
+// What each crewmate might say when you stop to talk (when they've no game idea or news to bring up, or the dice say chat):
+// their job aboard (their greeting from PIRATES counts as one), something they love doing, or something daft.
+const CHAT = {
+  bones: { job: ['If you need a lookout for anything sneaky, I’m small and I’m quiet.'], likes: ['Best thing about the crow’s nest? Spitting cherry stones at the gulls.'],
+    funny: ['Cutlass hums when he thinks nobody’s listening. Don’t tell him I told you.', 'I tried to teach the dog to climb the rigging. The dog won.'] },
+  absalom: { job: ['Need anything fetched from shore? I know every shortcut in the harbour.'], likes: ['Give me a horse, a cart and an open road, and I’m happy.'],
+    funny: ['I could drive a wagon through a market with my eyes shut. Probably.', 'I put salt in Monsoon’s tea. He hasn’t noticed yet. That worries me.'] },
+  scarlett: { job: ['Tempest and I have mopped this deck so many times it squeaks.'], likes: ['I’ve been practising a new dance. Fancy a challenge later?'],
+    funny: ['Jade tried to waltz with a mop. The mop led.'] },
+  tempest: { job: ['Arabella says she saw sails on the horizon. Could be nothing.'], likes: ['There’s nothing like a storm at sea. Loud, wild, wonderful.'],
+    funny: ['If you ever need a disguise, I’ve a trunk full of lace. Don’t ask why.'] },
+  crispin: { job: ['Should anything go missing aboard, Captain, I am at your service. Deduction is my gift.'], likes: ['I have taken the liberty of reorganising the library. Alphabetically, obviously.'],
+    funny: ['Someone has been using my good teacup to bail out the dinghy. I have suspects.'] },
+  jade: { job: ['I’ve been reading the charts. There’s an island out there nobody’s named yet.'], likes: ['Flowers, poetry, moonlight. I’m a simple man, Captain.'],
+    funny: ['Need someone charming for a job? I’m right here. Hello.', 'I wrote Scarlett a poem. She used it to light the stove.'] },
+  monsoon: { job: ['I sharpened the cutlasses too. All of them. Twice.'], likes: ['Want me to teach the new ones how to aim? Just say the word.'],
+    funny: ['I lost an arm-wrestle to Hazel. We don’t talk about it.'] },
+  stormcaller: { job: ['The wind’s turning east. Something’s coming, Captain, I can smell it.'], likes: ['I’ve a new shanty half-written. Needs a chorus.'],
+    funny: ['I predicted rain yesterday. It was sunny. I’m calling it a very dry rain.'] },
+  marietta: { job: ['Barrels counted. Rope coiled. What next, Captain?'], likes: ['The crew could put on a play, you know. I’ve already written the first act.'],
+    funny: ['I cast Bones as the dragon. He’s been roaring at the gulls all morning.'] },
+  oro: { job: ['The eastern seas are no joke. When we go, I’m steering.'], likes: ['Point me at something to fight, big sister.'],
+    funny: ['Cutlass challenged me to a staring contest. I blinked first, but only because a gull landed on his head.'] },
+  arabella: { job: ['I’ll shout the moment anything moves on the horizon.'], likes: ['From up top I can see a cove with a sandy beach. Just saying.'],
+    funny: ['A seagull stole my biscuit, then came back for the crumbs. The cheek.'] },
+  odessa: { job: ['If you’re hungry, the pot’s always on.'], likes: ['I’m planning a feast. Taste-testers are always welcome.'],
+    funny: ['Somebody keeps eating the pie crusts and leaving the filling. I know it’s Bones.'] },
+  hazel: { job: ['I drew a map of the whole ship! Want to see where everybody hides?'], likes: ['Climbing, mostly. And the bit where you get to the top.'],
+    funny: ['Bones says there’s treasure under the hull. I checked. It was a crab.'] },
+};
+let lastLine = '';   // the last thing anyone said in chat, so the next person never repeats it
 // Places on the ship. Each has its own floor depth (yBack..yFront), things to notice (spots, by fraction of
 // the width), doors you step through with Space (x fraction -> room `to`, arriving at fraction `at`), and
 // optionally an edge you can walk off (`right`/`left`) into a neighbouring room. `scale` sizes people to the
@@ -181,7 +213,6 @@ let SCENES = CHAPTER;
 const intro = () => SCENES === CHAPTER;
 let ep = null;   // the episode being played: { score, stage, reply, gameResult, … }
 
-const joined = [];                         // crew keys, in the order they came aboard
 const st = {};                             // per pirate: x, y, phase, moving, lean, say, sayT
 let trail = [];
 let near = null, captionText = '', gulls = [];
@@ -192,7 +223,7 @@ const gap = () => SPACING * roomScale();      // followers keep a bigger gap whe
 function party() {
   if (mode === 'story') return SCENES[storyStep].party || (!intro() ? ['ruby'] : storyStep < 3 ? ['ruby', 'marietta'] : ['ruby']);
   if (ROOMS[room]?.couple || ROOMS[pending?.to]?.couple) return [lead, ...CAPTAINS.filter(k => k !== lead)];   // just the two of them
-  return [lead, ...CAPTAINS.filter(k => k !== lead && st[k]?.room !== 'hidden'), ...joined]; }
+  return [lead, ...CAPTAINS.filter(k => k !== lead && st[k]?.room !== 'hidden')]; }   // the crew go about their own business
 
 // ---- trail the followers walk along ----
 function pushTrail(x, y) {
@@ -228,10 +259,7 @@ function buildControls() {
 }
 function updateControls() {
   document.querySelectorAll('.leader').forEach(b => b.setAttribute('aria-pressed', b.dataset.key === lead ? 'true' : 'false'));
-  CREW.forEach(k => { $('roster-' + k).classList.toggle('aboard', joined.includes(k)); $('roster-' + k).hidden = locked(k); });
-  $('crewCount').textContent = joined.length;
-  $('crewTotal').textContent = crewHere().length;
-  $('crewPill').classList.toggle('full', joined.length === crewHere().length);
+  CREW.forEach(k => { $('roster-' + k).classList.add('aboard'); $('roster-' + k).hidden = locked(k); });
 }
 function setLead(key) {
   if (!mode || mode === 'story' || key === lead) return;
@@ -246,13 +274,17 @@ function action() {
   if (swordDuel) { if (!duelFinished) swordDuel.act('parry'); else if (duelWon) enterStoryStep(storyStep + 1); return; }
   if (mode === 'story') {
     if (dialogueIndex < storyLines().length - 1) { dialogueIndex++; showStory(); return; }
-    if (!intro()) { $('storyActions').querySelector('button.primary')?.click(); return; }
+    if (!intro()) {
+      const next = $('storyActions').querySelector('button.primary');
+      if (next) next.click(); else if (ep && (ep.stage === 'talk' || ep.stage === 'reply')) epNext();   // the speech bubble's own Continue
+      return;
+    }
     const scene = CHAPTER[storyStep];
     if (scene.button && (storyReady || scene.walk === undefined)) enterStoryStep(storyStep + 1);
     else if (storyStep === CHAPTER.length - 1) finishIntro();
     return;
   }
-  if (near) return invite();
+  if (near) return talk();
   if (doorNear) travel(doorNear.to, doorNear.at);
 }
 function travel(to, at) {
@@ -269,20 +301,30 @@ function arrive({ to, at }) {
   camX = clamp(x - VW / 2, 0, worldW - VW);
   $('placeName').textContent = R.name; caption('');
 }
-function invite() {
+// walking up to someone: a villain answers back; a crewmate tells you their idea, mentions a clue, or just chats
+function talk() {
   if (!near) return;
-  if (PIRATES[near].villain) {               // he answers, but never joins
-    const v = PIRATES[near], s = st[near];
-    s.taunt = ((s.taunt ?? 0) + 1) % v.taunts.length; s.say = v.taunts[s.taunt]; s.sayT = 2.6;
-    return;
-  }
-  const key = near; near = null;
-  joined.push(key);
-  const s = st[key];
-  s.say = JOIN_LINES[(joined.length - 1) % JOIN_LINES.length].replace('Captain!', `Captain ${PIRATES[lead].name.replace('Captain ', '')}!`);
-  s.sayT = 2;
-  updateControls();
-  if (joined.length === crewHere().length) caption('All hands on deck! The whole crew is aboard.', 5);
+  const k = near, s = st[k], v = PIRATES[k];
+  s.target = null; s.stroll = false; s.facing = Math.sign(st[lead].x - s.x) || 1;
+  if (v.villain) { s.taunt = ((s.taunt ?? 0) + 1) % v.taunts.length; s.say = v.taunts[s.taunt]; s.sayT = 2.6; return; }
+  const t = quest.topics(k);
+  if (t.remind) { s.say = t.remind; s.sayT = 4; return; }
+  // what they bring up is down to chance: their game idea, a clue, a pointer to someone else, or plain chat.
+  // Never the same kind of thing twice running for one person.
+  const c = CHAT[k] || {}, pool = [];
+  if (t.idea) pool.push(['idea', 3]);
+  if (t.clue) pool.push(['clue', 2]);
+  if (t.pointer) pool.push(['pointer', 1]);
+  pool.push(['job', 2], ['likes', 2], ['funny', 2]);
+  const kinds = pool.filter(([kind]) => kind !== s.topic), total = kinds.reduce((n, [, w]) => n + w, 0);
+  let r = Math.random() * total, kind = kinds[0][0];
+  for (const [kd, w] of kinds) if ((r -= w) < 0) { kind = kd; break; }
+  s.topic = kind;
+  if (kind === 'idea' || kind === 'clue') { quest.offer(t[kind], k); return; }   // the episode's card opens
+  const lines = kind === 'pointer' ? [t.pointer] : kind === 'job' ? [v.greet, ...(c.job || [])] : c[kind] || [v.greet];
+  const fresh = lines.filter(l => l !== lastLine && l !== s.say);
+  s.say = lastLine = (fresh.length ? fresh : lines)[Math.floor(Math.random() * (fresh.length || lines.length))];
+  s.sayT = 4;
 }
 
 let captionHold = 0;
@@ -321,6 +363,7 @@ function hold(id, k) {
 }
 hold('tLeft', 'left'); hold('tRight', 'right'); hold('tUp', 'up'); hold('tDown', 'down');
 $('tInvite').addEventListener('click', action);
+$('talkTo').addEventListener('click', e => { talk(); e.currentTarget.blur(); });
 
 // ---- update ----
 function update(dt) {
@@ -365,12 +408,33 @@ function update(dt) {
   });
 
   Object.values(st).forEach(s => { if (s.sayT > 0) s.sayT -= dt; });
-  // a crewmate walking up to the captain with an idea
+  // the crew go about their day: strolling about the room they're in, and (out of sight) moving on to other parts of the ship
   if (mode === 'free') CREW.forEach(k => {
-    const s = st[k]; if (s.target == null || s.room !== room || joined.includes(k)) return;
-    const d = s.target - s.x, step = Math.min(Math.abs(d), WALK * 1.2 * roomScale() * dt);
+    const s = st[k];
+    if (s.room === 'hidden' || s.target != null || k === near || s.sayT > 0) return;
+    if ((s.idle = (s.idle ?? 2 + Math.random() * 4) - dt) > 0) return;
+    s.idle = 3 + Math.random() * 6;
+    if (s.room !== room) {
+      if (Math.random() < .4) {
+        const rm = WANDER_ROOMS.filter(r => r !== room)[Math.floor(Math.random() * (WANDER_ROOMS.length - 1))], R = ROOMS[rm];
+        Object.assign(s, { room: rm, x: (.1 + Math.random() * .8) * R.w, y: R.yBack + Math.random() * (R.yFront - R.yBack) }); keepOnFloor(R, s);
+      }
+      return;
+    }
+    s.target = clamp(s.x + (Math.random() * 2 - 1) * 280, 70, worldW - 70); s.stroll = true;
+  });
+  // a crewmate walking up to the captain (with an idea or a clue), or strolling
+  if (mode === 'free') CREW.forEach(k => {
+    const s = st[k]; if (s.target == null || s.room !== room) return;
+    if (s.stroll && k === near) { s.target = null; s.stroll = false; s.moving = false; return; }   // they stop when you come over
+    const d = s.target - s.x, step = Math.min(Math.abs(d), WALK * (s.stroll ? .5 : 1.2) * roomScale() * dt);
     s.moving = step > .5; s.x += Math.sign(d) * step; s.phase = (s.phase || 0) + step; if (d) s.facing = Math.sign(d);
-    if (!s.moving) { s.target = null; s.moving = false; s.facing = Math.sign(st[lead].x - s.x) || 1; if (s.sayLater) { s.say = s.sayLater; s.sayT = 7; s.sayLater = null; } }
+    if (!s.moving) {
+      s.target = null; s.moving = false;
+      if (!s.stroll) s.facing = Math.sign(st[lead].x - s.x) || 1;
+      s.stroll = false;
+      if (s.sayLater) { s.say = s.sayLater; s.sayT = 7; s.sayLater = null; }
+    }
   });
 
   const target = clamp(L.x - VW / 2, 0, worldW - VW);
@@ -379,7 +443,7 @@ function update(dt) {
   // who's nearby
   near = null; let best = 1e9;
   (mode === 'story' ? [] : [...CREW, ...VILLAINS]).forEach(k => {
-    if (joined.includes(k) || st[k].room !== room) return;
+    if (st[k].room !== room) return;
     const s = st[k], ddx = Math.abs(s.x - L.x), ddy = Math.abs(s.y - L.y);
     if (ddx < 120 * roomScale() && ddy < 70 && ddx + ddy < best) { best = ddx + ddy; near = k; }   // reach grows with how big people are drawn
   });
@@ -401,7 +465,7 @@ function update(dt) {
   // in the story, place notes only while walking somewhere; otherwise they'd sit over the scene being played
   if (mode === 'story' && (SCENES[storyStep].walk === undefined || storyReady)) spot = '';
   caption(near || doorNear || fadeDir ? '' : spot);
-  $('tInvite').textContent = mode === 'story' ? (!intro() ? 'Next' : CHAPTER[storyStep].button ? (storyReady || CHAPTER[storyStep].walk === undefined ? 'Continue' : 'Explore') : 'Set sail') : near ? (PIRATES[near].villain ? 'Talk' : 'Invite') : doorNear ? 'Go in' : 'Invite';
+  $('tInvite').textContent = mode === 'story' ? (!intro() ? 'Next' : CHAPTER[storyStep].button ? (storyReady || CHAPTER[storyStep].walk === undefined ? 'Continue' : 'Explore') : 'Set sail') : doorNear && !near ? 'Go in' : 'Talk';
 
   // gulls wheeling over the water
   if (!reduceMotion && RM.outside) {
@@ -544,10 +608,12 @@ function render() {
   }
 
   // speech
-  if (near && !(st[near].sayT > 0)) {
-    const v = PIRATES[near], touch = matchMedia('(pointer: coarse)').matches;
-    if (v.villain) bubble(st[near].x - camX, st[near].headY, [v.taunts[st[near].taunt ?? 0]], v.name, touch ? 'Tap Talk to answer him' : 'Press Space to talk back');
-    else bubble(st[near].x - camX, st[near].headY, [v.greet], v.name, touch ? 'Tap Invite to bring them aboard' : 'Press Space to invite aboard');
+  // nobody calls out on their own: a "Talk to …" button floats over whoever's beside the captain
+  const tb = $('talkTo'), showTalk = mode === 'free' && near && !(st[near].sayT > 0) && !fadeDir;
+  tb.hidden = !showTalk;
+  if (showTalk) {
+    if (tb.dataset.k !== near) { tb.dataset.k = near; tb.querySelector('span').textContent = `Talk to ${PIRATES[near].name}`; }
+    tb.style.left = `${clamp((st[near].x - camX) / VW, .08, .92) * 100}%`; tb.style.top = `${Math.max(60, st[near].headY - 6) / VH * 100}%`;
   }
   everyone.forEach(k => { const s = st[k]; if (s.sayT > 0) bubble(s.x - camX, s.headY, [s.say], PIRATES[k].name); });
   if (doorNear && !near && !fadeDir) doorSign(doorNear.x * worldW - camX, doorNear.label);
@@ -564,7 +630,7 @@ const introDone = () => { try { return localStorage.getItem(INTRO_KEY) === '1'; 
 function finishIntro() {
   try { localStorage.setItem(INTRO_KEY, '1'); } catch (e) {}
   resetAdventure('free');
-  caption('Cutlass and his boys are part of the crew now. Explore the ship, invite everyone aboard, or try a mini-game.', 6);
+  caption('Cutlass and his boys are part of the crew now. Explore the ship, chat with whoever you bump into, or try a mini-game.', 6);
 }
 $('skipIntro').addEventListener('click', finishIntro);
 $('replayIntro').addEventListener('click', () => resetAdventure('story'));
@@ -572,7 +638,7 @@ function resetAdventure(nextMode, startAt = 0) {
   if (nextMode === 'story') { endStageGame(); ep = null; SCENES = CHAPTER; }
   swordDuel = null; duelFinished = false; $('duelHud').hidden = true; $('touch').hidden = false;
   sceneT = storyTilt = shakeT = 0;
-  mode = nextMode; lead = 'ruby'; joined.length = 0; storyStep = 0; storyReady = false; dialogueIndex = 0;
+  mode = nextMode; lead = 'ruby'; storyStep = 0; storyReady = false; dialogueIndex = 0;
   tourStop = -1; fade = fadeDir = 0; pending = near = doorNear = null; captionHold = 0;
   Object.keys(keys).forEach(k => keys[k] = false);
   CAPTAINS.forEach(k => { st[k].room = 'deck'; st[k].sayT = 0; });
@@ -587,13 +653,11 @@ function resetAdventure(nextMode, startAt = 0) {
   if (mode === 'story') {
     st.cutlass.room = 'hidden';
     [...CREW, ...VILLAINS].filter(k => !STORY_CREW.includes(k)).forEach(k => st[k].room = 'hidden');
-    joined.push(...STORY_CREW);
     st.arabella.room = 'hidden';   // up in the crow’s nest until the crew gathers to board
   }
   arrive({ to: mode === 'story' ? 'upper' : 'deck', at: .36 });
   if (mode === 'story') {
     st.marietta.x = st.ruby.x + 100; keepOnFloor(ROOMS.upper, st.marietta);
-    joined.splice(0, joined.length, ...STORY_CREW);
   }
   updateControls();
   document.querySelector('[data-key="cutlass"]').disabled = mode === 'story';
@@ -759,7 +823,7 @@ function showStory() {
   $('storyGoal').textContent = scene.goal || '';
   $('storyActions').replaceChildren();
   if (dialogueIndex < lines.length - 1) {
-    storyButton('Next line →', action);
+    if (!line) storyButton('Next line →', action);   // a speech bubble has its own button
   } else if (scene.button && (storyReady || scene.walk === undefined)) {
     storyButton(scene.button, action);
   }
@@ -821,9 +885,8 @@ function showEpisodeScene() {
   $('gamePad').hidden = !stageGameOn;
   document.querySelector('.story-help').hidden = stageGameOn || ep.stage === 'game';
   if (ep.stage === 'talk' || ep.stage === 'reply') {
-    if (!last) storyButton('Next line →', epNext, 'primary');
-    else if (scene.actions && !scene.choices && !scene.game) scene.actions.forEach((a, i) => storyButton(a.label, a.fn, i ? '' : 'primary'));
-    else storyButton('Continue →', epNext, 'primary');
+    if (scene.actions && !scene.choices && !scene.game && last) scene.actions.forEach((a, i) => storyButton(a.label, a.fn, i ? '' : 'primary'));
+    else if (!line) storyButton(last ? 'Continue →' : 'Next line →', epNext, 'primary');   // a speech bubble has its own button
   } else if (ep.stage === 'choose') {
     scene.choices.forEach((c, i) => storyButton(`${i + 1}. ${c.label}`, () => epChoose(c), 'choice'));
   } else if (ep.stage === 'game') {
@@ -862,12 +925,11 @@ function endStageGame() {
 // start an episode on the stage; opts.onEnd(score) may return closing scenes; opts.onClose({ completed }) when it's over
 function playScenes(list, opts = {}) {
   endStageGame();
-  const savedJoined = ep ? ep.savedJoined : joined.slice();
-  ep = { score: 0, stage: 'talk', reply: null, gameResult: null, onEnd: opts.onEnd, onClose: opts.onClose, savedJoined };
+  ep = { score: 0, stage: 'talk', reply: null, gameResult: null, onEnd: opts.onEnd, onClose: opts.onClose };
   SCENES = list; mode = 'story'; storyStep = 0; dialogueIndex = 0; storyReady = false;
   fade = fadeDir = 0; pending = near = doorNear = null; captionHold = 0; caption('');
   Object.keys(keys).forEach(k => keys[k] = false);
-  lead = 'ruby'; joined.length = 0; tourStop = -1;
+  lead = 'ruby'; tourStop = -1;
   ['cutlass', ...CREW, ...VILLAINS].forEach(k => Object.assign(st[k], { room: 'hidden', sayT: 0, target: null, moving: false }));
   quest.setActive(false);
   document.querySelector('.controls').hidden = true; document.querySelector('.legend').hidden = true;
@@ -883,10 +945,6 @@ function closeScenes(result) {
   endStageGame();
   ep = null; SCENES = CHAPTER;
   resetAdventure('free');
-  // whoever was following Ruby before the episode falls back in behind her
-  joined.push(...done.savedJoined.filter(k => !locked(k)));
-  if (joined.length) arrive({ to: 'deck', at: .36 });
-  updateControls();
   done.onClose?.(result);
 }
 
@@ -913,7 +971,7 @@ const questApi = {
   roomImg: key => ROOMS[key]?.img || '',
   pause(on) { questPaused = on; Object.keys(keys).forEach(k => keys[k] = false); if (!on) last = performance.now(); },
   unlock(key) {
-    // they appear at their usual spot, ready to be invited
+    // they appear at their usual spot, and wander off from there
     const [fx, y, rm = 'deck'] = PIRATES[key].station;
     Object.assign(st[key], { room: rm, x: fx * ROOMS[rm].w, y, sayT: 0, moving: false });
     updateControls();
@@ -924,12 +982,20 @@ const questApi = {
   approach(key, line) {
     const s = st[key], L = st[lead];
     if (!s || mode !== 'free') return;
-    if (!joined.includes(key) && s.room !== room) {
+    if (s.room !== room) {
       const fromRight = L.x < worldW / 2;
       Object.assign(s, { room, x: clamp(fromRight ? camX + VW + 40 : camX - 40, 40, worldW - 40), y: L.y, moving: false });
     }
-    s.target = joined.includes(key) ? null : L.x + (s.x > L.x ? 110 : -110) * roomScale();
-    s.say = line; s.sayT = s.target === null ? 7 : 0; s.sayLater = line;
+    const spot = L.x + (s.x > L.x ? 110 : -110) * roomScale();
+    s.stroll = false;
+    if (Math.abs(spot - s.x) < 30) { s.target = null; s.facing = Math.sign(L.x - s.x) || 1; s.say = line; s.sayT = 7; s.sayLater = null; return; }   // already beside her
+    s.target = spot; s.say = line; s.sayT = 0; s.sayLater = line;
+  },
+  // who brings news of the plot: someone in the same room if possible
+  messenger() {
+    const crew = crewHere().filter(k => st[k].room !== 'hidden'), here = crew.filter(k => st[k].room === room);
+    const list = here.length ? here : crew;
+    return list[Math.floor(Math.random() * list.length)] || null;
   },
 };
 
@@ -940,7 +1006,9 @@ function frame(now) {
   update(dt); render();
   requestAnimationFrame(frame);
 }
-function loadImg(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Could not load ' + src)); i.src = src; }); }
+// the loading screen's bar: pictures loaded out of pictures asked for so far (never moves backwards)
+let asked = 0, got = 0, shown = 0;
+function loadImg(src) { asked++; return new Promise((res, rej) => { const i = new Image(); i.onload = () => { got++; shown = Math.max(shown, got / asked); const b = $('loadingBar'); if (b) b.style.width = Math.round(shown * 100) + '%'; res(i); }; i.onerror = () => rej(new Error('Could not load ' + src)); i.src = src; }); }
 
 (async () => {
   resize();
@@ -957,8 +1025,11 @@ function loadImg(src) { return new Promise((res, rej) => { const i = new Image()
   const testLink = /[?&](episode|game)=/.test(location.search);   // test links skip the intro (and don't mark it done)
   resetAdventure(introDone() || testLink ? 'free' : 'story');
   requestAnimationFrame(now => { last = now; requestAnimationFrame(frame); });
+  $('loadingBar').style.width = '100%'; $('loadingText').textContent = 'All aboard!';
+  setTimeout(() => { $('loading').classList.add('done'); setTimeout(() => { $('loading').hidden = true; }, 700); }, 350);
 })().catch(error => {
   $('modeLabel').textContent = 'The ship could not load. Please reload to try again.';
+  $('loadingText').textContent = 'The ship could not load. Please reload to try again.';
   console.error(error);
 });
 })();

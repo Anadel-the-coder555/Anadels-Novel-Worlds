@@ -5,8 +5,9 @@
 'use strict';
 const Q = window.SOULMATES_QUEST;
 const SAVE_KEY = 'soulmates-quest-v1';
-const FIRST_WAIT = 25, GAP = [40, 60], LATER = 30;   // seconds of exploring before the first event, between events, after "later"
+const FIRST_WAIT = 25, GAP = 40, LATER = 30;   // seconds of exploring before the first event, between events, after "later"
 const $ = id => document.getElementById(id);
+const VILLAIN = ['Goldtooth', 'Evangeline', 'the Pirate King'];   // whose trail the clues in each level follow
 const byId = Object.fromEntries(Q.events.map(e => [e.id, e]));
 
 window.createSoulmatesQuest = api => {
@@ -27,6 +28,7 @@ window.createSoulmatesQuest = api => {
   function eligible(e) {
     if (e.level !== level() || done(e.id)) return false;
     if (!(e.requires || []).every(done)) return false;
+    if (e.after && Q.events.filter(x => x.level === e.level && x !== e && done(x.id)).length < e.after) return false;   // happens later on
     if (e.from && isLocked(e.from)) return false;
     if (e.final && Q.events.some(x => x.level === e.level && x !== e && !done(x.id))) return false;
     return true;
@@ -56,19 +58,20 @@ window.createSoulmatesQuest = api => {
   }
 
   // ---- the invitation card on the stage ----
-  function showHook(e) {
+  // Every event arrives through the crew: a crewmate walks up with their idea, or someone brings a clue about the plot.
+  function showHook(e, teller) {
     hook = e;
     const card = $('questHook'), face = $('hookFace');
-    const who = e.kind === 'crew' ? e.from : null;
+    const who = e.kind === 'crew' ? e.from : teller || api.messenger();
     face.hidden = !who;
     if (who) face.setAttribute('style', api.face(who, 52));
-    $('hookKind').textContent = e.kind === 'crew' ? `${api.name(who)} has an idea` : e.kind === 'heart' ? 'Someone new' : 'The plot thickens';
+    $('hookKind').textContent = e.kind === 'crew' ? `${api.name(who)} has an idea` : who ? `${api.name(who)} heard something` : e.kind === 'heart' ? 'Someone new' : 'The plot thickens';
     $('hookTitle').textContent = e.title;
     $('hookText').textContent = e.hook;
     $('hookGo').textContent = e.accept || (e.kind === 'crew' ? 'Let’s do it!' : 'Find out');
     card.dataset.kind = e.kind;
     card.hidden = false;
-    if (who) api.approach(who, e.hook);
+    if (who) api.approach(who, e.kind === 'crew' ? e.hook : e.clue || e.hook);
     $('hookGo').focus({ preventScroll: true });
     updateLog();
   }
@@ -143,7 +146,8 @@ window.createSoulmatesQuest = api => {
       { label: 'Skip the game, back to the ship', fn: () => { finish(e); api.closeScenes({ completed: true }); } }] }];
     finish(e);
     const tr = e.item !== undefined ? Q.treasures[e.item] : null;
-    return [{ title: tr ? `Treasure found: ${tr.icon} ${tr.name}` : e.title, text: tr ? `${end} ${tr.text}` : end,
+    const found = e.lead ? ` 🔎 A clue for the ship’s log: ${e.lead}` : '';
+    return [{ title: tr ? `Treasure found: ${tr.icon} ${tr.name}` : e.title, text: (tr ? `${end} ${tr.text}` : end) + found,
       actions: [{ label: e.id === 'finale' ? 'Sail on' : 'Back to exploring', fn: () => api.closeScenes({ completed: true }) }] }];
   }
   function finish(e, playing) {
@@ -153,8 +157,9 @@ window.createSoulmatesQuest = api => {
     if (playing) save.pending = e.id;
     save.lastKind = e.kind === 'crew' ? 'crew' : 'plot';
     persist();
-    nextAt = clock + GAP[0] + Math.random() * (GAP[1] - GAP[0]);
+    nextAt = clock + GAP;
     if (e.item !== undefined) nextAt = clock + 20;   // the next villain's rumour arrives soon after
+    if (e.lead) $('logBtn').classList.add('news');
     updateHud();
   }
   function close(e, completed) {
@@ -162,7 +167,8 @@ window.createSoulmatesQuest = api => {
     ep = null;
     if (!completed) { later[e.id] = clock; nextAt = clock + LATER; }
     else if (debug) api.caption('That was a test run (?episode=…), so nothing was saved.', 5);
-    else if (e.unlock) api.caption(`${api.name(e.unlock)} has joined the ship! Find them and invite them to walk with you.`, 6);
+    else if (e.unlock) api.caption(`${api.name(e.unlock)} has joined the ship! You’ll bump into them somewhere aboard.${e.lead ? ' 🔎 New clue in the ship’s log.' : ''}`, 7);
+    else if (e.lead) api.caption(`🔎 New clue in the ship’s log: ${e.lead}`, 9);
     else if (e.item !== undefined && level() < 3) api.caption(`${Q.treasures[e.item].name} is safe aboard. ${Q.rumours[level()]}`, 8);
     updateLog();
   }
@@ -186,7 +192,17 @@ window.createSoulmatesQuest = api => {
       li.append(b, ' ', tr.text); list.appendChild(li);
     });
     $('treasureEmpty').hidden = save.items.length > 0;
+    updateClues();
     updateLog();
+  }
+  // the clues found so far on the current villain's trail, oldest first
+  function updateClues() {
+    const lv = Math.min(level(), VILLAIN.length - 1), all = done('finale');
+    const found = save.done.map(id => byId[id]).filter(e => e && e.lead && e.level === lv);
+    $('clueTitle').textContent = all ? 'Clues' : `Clues: on ${VILLAIN[lv]}’s trail`;
+    const list = $('clueList'); list.replaceChildren();
+    found.forEach((e, i) => { const li = document.createElement('li'); li.textContent = e.lead; if (i === found.length - 1) li.className = 'fresh'; list.appendChild(li); });
+    $('clueEmpty').hidden = found.length > 0 || all;
   }
   function updateLog() {
     let text;
@@ -199,6 +215,15 @@ window.createSoulmatesQuest = api => {
     $('questNow').disabled = !!hook || done('finale');
   }
 
+  // the ship's log opens over the stage from the 📜 button in the corner
+  function showLog(open) {
+    $('questPanel').hidden = !open; $('logBtn').setAttribute('aria-expanded', String(open));
+    if (open) { $('logBtn').classList.remove('news'); $('logClose').focus({ preventScroll: true }); }
+  }
+  $('logBtn').addEventListener('click', () => showLog($('questPanel').hidden));
+  $('logClose').addEventListener('click', () => { showLog(false); $('logBtn').focus({ preventScroll: true }); });
+  $('questPanel').addEventListener('keydown', ev => { if (ev.key === 'Escape') { ev.stopPropagation(); showLog(false); $('logBtn').focus({ preventScroll: true }); } });
+  $('questNow').addEventListener('click', () => showLog(false));
   $('hookGo').addEventListener('click', acceptHook);
   $('hookLater').addEventListener('click', postpone);
   $('questNow').addEventListener('click', lookForTrouble);
@@ -213,18 +238,30 @@ window.createSoulmatesQuest = api => {
   function welcomeBack() {
     if (!save.pending) return;
     const e = byId[save.pending]; save.pending = null; persist();
-    if (e?.back) api.caption(e.back, 7);
+    if (e?.back) api.caption(e.back + (e.lead ? ' 🔎 New clue in the ship’s log.' : ''), 8);
     nextAt = Math.min(nextAt, clock + 20);
   }
 
   updateHud();
   return {
     tick, isLocked, lookForTrouble,
+    // what a crewmate could bring up when the captain stops to talk (game.js picks one at random):
+    // their own game idea, a clue to the next plot event, or a nudge toward whoever has an idea
+    topics(key) {
+      if (!active || ep || hook) return {};
+      if (heading) return { remind: heading.gotoHint || `Weren’t we heading to ${api.roomName(heading.goto)}?` };
+      const idea = Q.events.find(e => e.kind === 'crew' && e.from === key && eligible(e)) || null;
+      const next = pickNext();
+      const other = Q.events.find(e => e.kind === 'crew' && e.from !== key && eligible(e));
+      return { idea, clue: next && next.kind !== 'crew' ? next : null,
+        pointer: other ? `${api.name(other.from)} has been muttering about some idea. Might be worth asking.` : null };
+    },
+    offer(e, key) { if (!hook && !ep) showHook(e, key); },
     busy: () => !!ep,
     // the hunt runs only while exploring freely (not during the intro)
     setActive(on) {
       active = on;
-      $('treasurePill').hidden = !on; $('questPanel').hidden = !on;
+      $('treasurePill').hidden = $('logBtn').hidden = !on; if (!on) showLog(false);
       if (!on) { hook = heading = null; $('questHook').hidden = true; }
       if (on) { welcomeBack(); updateLog(); }
       // for testing: index.html?episode=wagon opens that episode once, without saving anything
