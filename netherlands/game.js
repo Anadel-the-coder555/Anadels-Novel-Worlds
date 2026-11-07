@@ -38,14 +38,15 @@ const PLACES = [
       [.8, 'Through the trees, you glimpse rooftops ahead.'],
     ],
     doors: [{ at: .985, label: 'Walk on to the village', to: 'village', arrive: .09, facing: 1 }] },
-  { id: 'village', name: 'The Village', tiles: ['village-1.jpg', 'village-2.jpg'],
+  { id: 'village', name: 'The Village', tiles: ['village.jpg'],
     yoff: -42, ground: 512, scale: .58, walk: [0, 1], start: .05,
     landmarks: [
       [.15, 'A little shop under a cream awning, its shelves full of jars and cheeses.'],
       [.29, 'A tall dark house with a curling gable and white window boxes.'],
       [.41, 'A market stall piled high with apples and pumpkins.'],
-      [.55, 'A wooden bench waits beneath the window boxes.'],
-      [.65, 'The old tree drops golden leaves across the cobbles.'],
+      [.5, 'The old tree drops golden leaves across the cobbles.'],
+      [.6, 'A wooden bench waits beneath the window boxes.'],
+      [.66, 'Another little shop, its baskets heaped with apples.'],
     ],
     doors: [
       { at: .015, label: 'Back to the wood', to: 'wood', arrive: .94, facing: -1 },

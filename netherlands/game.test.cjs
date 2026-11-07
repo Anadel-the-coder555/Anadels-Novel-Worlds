@@ -10,7 +10,7 @@ function get(id) {
     getBoundingClientRect: () => ({ width: 960 }), getContext: () => context, setPointerCapture() {} });
   return elements.get(id);
 }
-const sizes = { 'forest.jpg': [2172, 724], 'village-1.jpg': [2172, 724], 'village-2.jpg': [2172, 724], 'estate.jpg': [2172, 724],
+const sizes = { 'forest.jpg': [2172, 724], 'village.jpg': [3072, 512], 'estate.jpg': [2172, 724],
   'praelia.webp': [472, 720], 'praelia-walk.webp': [1640, 420], 'dorian.webp': [438, 720], 'dorian-walk.webp': [1928, 420],
   'kaidan.webp': [414, 720], 'kaidan-walk.webp': [1784, 420], 'thalion.webp': [383, 720], 'thalion-walk.webp': [2064, 420],
   'carriage.webp': [3352, 720] };
@@ -37,7 +37,7 @@ setImmediate(async () => {
 
   // loading: the wood first, then the village and estate quietly behind
   assert.equal(get('reset').disabled, false, 'loaded'); assert.equal(W(), 1800 * 3, 'the wood is three forests long');
-  assert.equal(get('go-village').disabled, false); assert(['village-1.jpg', 'village-2.jpg', 'estate.jpg'].every(s => requested.includes(s)), 'the other places load in the background');
+  assert.equal(get('go-village').disabled, false); assert(['village.jpg', 'estate.jpg'].every(s => requested.includes(s)), 'the other places load in the background');
   assert.equal(get('chase').disabled, false); assert.equal(g.state().chase, null, 'no carriage until you ask'); assert.equal(get('pick-dorian').disabled, false);
   assert.equal(get('placeName').textContent, 'The Autumn Wood');
 
@@ -81,7 +81,7 @@ setImmediate(async () => {
   assert.equal(get('door').hidden, false); assert.equal(get('doorLabel').textContent, 'Walk on to the village');
   key('ArrowUp'); await settle();
   assert.equal(g.state().place, 'village'); assert.equal(get('placeName').textContent, 'The Village'); assert.equal(g.state().chase, null, 'the carriage stays in the wood');
-  assert.equal(W(), 1800 * 2, 'two village streets end to end'); assert.equal(get('go-village')['aria-pressed'], 'true');
+  assert.equal(W(), 3600, 'one long village street'); assert.equal(get('go-village')['aria-pressed'], 'true');
   assert.equal(kaidan.facing, 1); assert(praelia.x < kaidan.x && thalion.x < kaidan.x, 'the others arrive behind the leader');
   draws.length = 0; g.render(); const k = draws.at(-1); assert(Math.abs(k[4] - 286 * .58) < 1, 'in the village the party is drawn smaller, to fit the houses');
   const vx = kaidan.x; walk('right', 1); assert(kaidan.x - vx < 190 && kaidan.x - vx > 100, 'and walks a shorter step');
