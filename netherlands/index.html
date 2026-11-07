@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Netherlands</title>
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
   <link rel="stylesheet" href="../realm-nav.css">
 </head>
 <body>
   <nav class="realm-home-nav" aria-label="Home"><a href="../index.html">← All realms</a></nav>
   <main class="world">
     <header><div><p class="eyebrow">A realm of its own</p><h1>Netherlands</h1></div></header>
-    <p class="intro">Walk the autumn wood with Praelia, Dorian, Kaidan and Thalion, along a sunlit path strewn with fallen leaves. Choose who leads the way and the others follow.</p>
+    <p class="intro">Walk the autumn wood with Praelia, Dorian, Kaidan and Thalion, along a sunlit path strewn with fallen leaves. Choose who leads the way and the others follow, then chase the carriage down the path.</p>
     <section class="stage" aria-label="Autumn wood">
       <canvas id="game" tabindex="0" aria-label="Praelia in her red velvet gown, Dorian in grey and black, Kaidan in light blue and Thalion in deep red velvet, walking a path through an autumn forest"></canvas>
       <div class="hud"><span>The Autumn Wood · <b id="leaderName">Praelia</b> leads</span><span id="distance">The wood’s edge</span></div>
@@ -25,10 +25,10 @@
         <button class="character" id="pick-kaidan" aria-pressed="false" disabled><img src="kaidan-portrait.png" alt=""><span>Kaidan<small>light blue coat and black cloak</small></span></button>
         <button class="character" id="pick-thalion" aria-pressed="false" disabled><img src="thalion-portrait.png" alt=""><span>Thalion<small>red velvet coat and black cloak</small></span></button>
       </div>
-      <button id="reset" disabled>Back to the wood’s edge</button>
+      <div class="actions"><button id="chase" disabled>Chase the carriage</button><button id="reset" disabled>Back to the wood’s edge</button></div>
     </section>
-    <p class="instructions"><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> walk · <kbd>Shift</kbd> hurry · <kbd>1</kbd>–<kbd>4</kbd> or click a portrait to choose who leads</p>
+    <p class="instructions"><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> walk · <kbd>Shift</kbd> hurry · <kbd>1</kbd>–<kbd>4</kbd> or click a portrait to choose who leads · <kbd>C</kbd> chase the carriage</p>
   </main>
-  <script src="game.js?v=5"></script>
+  <script src="game.js?v=6"></script>
 </body>
 </html>

@@ -28,3 +28,4 @@ select{font:inherit;color:#2c3f22;background:#f9fcf5;border:1px solid #c3d1c3;bo
 body{background:radial-gradient(ellipse at top right,#f3dfc0,transparent 65%),#f7f1e6}
 .stage{background:#e9d7b8}
 .hud b{font-weight:600}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
