@@ -5,10 +5,10 @@ const $ = id => document.getElementById(id);
 const canvas = $('game'), ctx = canvas.getContext('2d');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-// The three walk the wood together. Whoever leads is steered with the keys; the other two follow a step
+// The four walk the wood together. Whoever leads is steered with the keys; the others follow a step
 // behind (GAP each), walking on their own walk sheets and standing in their paintings when they stop.
 // Walk sheets are painted facing right and anchored on the head. Praelia's standing painting turns left,
-// so it is mirrored when she faces right (standFlip); the boys' face front and are never mirrored.
+// so it is mirrored when she faces right (standFlip); the boys face front and are never mirrored.
 const PARTY = [
   { id: 'praelia', name: 'Praelia', image: 'praelia.png', height: 270, standFlip: true,
     walk: { image: 'praelia-walk.png', frames: 8, fw: 205, fh: 420, ax: 107, cycle: 220 } },
@@ -16,8 +16,10 @@ const PARTY = [
     walk: { image: 'dorian-walk.png', frames: 8, fw: 241, fh: 420, ax: 116, cycle: 240 } },
   { id: 'kaidan', name: 'Kaidan', image: 'kaidan.png', height: 286, standFlip: false,
     walk: { image: 'kaidan-walk.png', frames: 8, fw: 223, fh: 420, ax: 105, cycle: 240 } },
+  { id: 'thalion', name: 'Thalion', image: 'thalion.png', height: 292, standFlip: false,
+    walk: { image: 'thalion-walk.png', frames: 8, fw: 258, fh: 420, ax: 131, cycle: 240 } },
 ];
-const GAP = 140, START = 100 + GAP * 2;   // the leader starts far enough in for the other two behind
+const GAP = 140, START = 100 + GAP * (PARTY.length - 1);   // the leader starts far enough in for the others behind
 const LANDMARKS = [
   [.05, 'Golden light falls between the tall beech trunks.'],
   [.2, 'A mossy boulder rests beside the path.'],
@@ -66,7 +68,8 @@ function update(dt) {
     if (p.moving) { p.x += Math.sign(d) * step; p.distance += step; p.facing = Math.sign(d); }
     else if (Math.abs(L.x - p.x) > 1) p.facing = Math.sign(L.x - p.x);
   });
-  const target = clamp(L.x - W / 2 + L.facing * 65, 0, Math.max(0, worldWidth - W));
+  // the camera keeps the whole line in view: the leader a little ahead of centre, the last follower well inside
+  const target = clamp(L.x - W / 2 - L.facing * (GAP * (PARTY.length - 1) / 2 - 65), 0, Math.max(0, worldWidth - W));
   camera += (target - camera) * Math.min(1, dt * (reduced ? 20 : 5));
   const progress = Math.max(0, (L.x - START) / (worldWidth - 40 - START));
   $('distance').textContent = progress < .07 ? 'The wood’s edge' : progress > .95 ? 'Deep in the wood' : `${Math.round(progress * 100)}% into the wood`;
@@ -106,7 +109,7 @@ addEventListener('keydown', event => {
   if (['ArrowLeft', 'a', 'A'].includes(event.key)) keys.left = true;
   else if (['ArrowRight', 'd', 'D'].includes(event.key)) keys.right = true;
   else if (event.key === 'Shift') keys.hurry = true;
-  else if (['1', '2', '3'].includes(event.key)) choose(Number(event.key) - 1);
+  else if (['1', '2', '3', '4'].includes(event.key)) choose(Number(event.key) - 1);
   else return;
   event.preventDefault();
 });
