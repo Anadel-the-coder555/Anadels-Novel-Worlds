@@ -15,7 +15,11 @@
     <section class="stage" aria-label="Birch forest">
       <canvas id="game" tabindex="0" aria-label="A boy in a red hoodie with a satchel walking through a sunlit birch forest"></canvas>
       <div class="hud"><span>The Birch Forest</span><span id="distance">Forest edge</span></div>
-      <p class="loading" id="loading" role="status">Opening the forest…</p>
+      <div class="title-screen" id="title" aria-label="Fern and Talent Bones">
+        <img src="title.jpg" alt="Fern and Talent Bones: Fern with long red curls and the boy in his red hoodie in an autumn birch forest">
+        <p class="loading" id="loading" role="status">Opening the forest…</p>
+        <button id="begin" hidden>Walk into the forest</button>
+      </div>
       <p class="caption" id="caption" role="status" hidden></p>
       <div class="touch"><button id="left" aria-label="Walk left">◀</button><button id="hello" aria-label="Say hello" hidden>👋</button><button id="right" aria-label="Walk right">▶</button></div>
     </section>

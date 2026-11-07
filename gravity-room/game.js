@@ -3,8 +3,9 @@
 // ---- stage constants (logical 960x540) ----
 const VW = 960, VH = 540;
 // The room is a box drawn over the painting: floor, right wall, ceiling, left wall.
-const FY = 522, CY = 20, LX = 16;            // RX is set once the painting's width is known
-let RX = 1600, worldW = 1620;
+// FY is set per place: most places are one stage tall, the Sky City is several stages tall and the camera follows you up.
+const CY = 20, LX = 16;                      // RX and FY are set once the painting's size is known
+let RX = 1600, worldW = 1620, FY = 522, worldH = 540;
 const H = 252;                               // drawn height of everyone (a grown teen against the room)
 const WALK = 190, JUMP = 600, G = 900, ZERO_PUSH = 360, OBJ_G = 700;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -40,6 +41,8 @@ const QUIPS = {
   ceil: ['I live up here now.', 'Hey, the lamps are upside down.', 'Look, no hands!', 'My hair’s doing a thing.'],
   wall: ['Wall walking!', 'This is totally normal.', 'Sideways is my new favourite way.'],
   star: ['Got one!', 'Shiny!', 'Mine!'],
+  float: ['I’m floating up!', 'Bye, ground!', 'Going up!', 'The sky is pulling me!'],
+  mirror: ['Wait… I’m upside down? It looks totally normal.', 'The city up here is the right way up. Or am I?', 'Look down. That’s the sky. Weird.', 'Everyone down there is on the ceiling!'],
 };
 
 const canvas = document.getElementById('game');
@@ -59,7 +62,7 @@ const dot = (a, b) => a[0] * b[0] + a[1] * b[1];
 function angTo(a, b, k) { let d = ((b - a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; return a + d * k; }
 
 // ---- state ----
-let room, t = 0, camX = 0, shake = 0, tilt = 0;
+let room, t = 0, camX = 0, camY = 0, shake = 0, tilt = 0;
 // Places and the doors between them. Each door: x (fraction of the picture) and the place it leads to.
 // Arriving, everyone appears at the door in the new place that leads back where they came from.
 const ROOMS = {
@@ -69,7 +72,11 @@ const ROOMS = {
   living: { name: 'The Living Room', img: 'room-living.jpg',
             doors: [{ x: .04, to: 'arduan' }, { x: .3, to: 'lucio' }, { x: .55, to: 'street', label: 'Out the front door' }, { x: .94, to: 'day' }] },
   street: { name: 'The Villa Street', img: 'street.jpg',
-            doors: [{ x: .44, to: 'living', label: 'Home' }, { x: .95, to: 'school', label: 'Up the road to the Academy' }] },
+            doors: [{ x: .16, to: 'sky', label: 'Up the hill to the Sky City' }, { x: .44, to: 'living', label: 'Home' }, { x: .95, to: 'school', label: 'Up the road to the Academy' }] },
+  // The Spire City below, open sky, and a second city hanging upside down above. `unit` is the
+  // height of one stage in the picture, so the place is drawn at the same scale as the street.
+  sky:    { name: 'The Sky City', img: 'sky-city.jpg', unit: 724, sky: true,
+            doors: [{ x: .5, to: 'street', label: 'Back down the hill to the villa street' }] },
   school: { name: 'The Academy Hall', img: 'academy-hall.jpg',
             doors: [{ x: .13, to: 'street', label: 'Out to the street' }, { x: .52, to: 'atrium', label: 'Through to the atrium' }] },
   atrium: { name: 'The Academy Atrium', img: 'academy-atrium.jpg', doors: [{ x: .9, to: 'school', label: 'Back to the main hall' }] },
@@ -129,6 +136,7 @@ function land(b, surf) {
   b.p[0] = clamp(b.p[0], LX + 1, RX - 1); b.p[1] = clamp(b.p[1], CY + 1, FY - 1);
   if (surf === 'floor') b.p[1] = FY; if (surf === 'ceil') b.p[1] = CY; if (surf === 'left') b.p[0] = LX; if (surf === 'right') b.p[0] = RX;
   tone([180], .12, 'sine', .06);
+  if (inSky() && surf === 'ceil') { say(b, QUIPS.mirror, b.k === ctrl.arrows ? 1 : .3); if (b.k === ctrl.arrows) { banner('You landed on the upside-down city'); b.seen.ceil = 1; } }
   if (!b.seen[surf] && surf !== 'floor') { b.seen[surf] = 1; say(b, surf === 'ceil' ? QUIPS.ceil : QUIPS.wall); }
 }
 const characterHeight = b => BOYS[b.k].h || H;
@@ -165,13 +173,17 @@ function updateBoy(b, k, pressed, dt) {
     if (pressed && any) {                            // pick which way to fall
       const d = Math.abs(k[0]) >= Math.abs(k[1]) ? [Math.sign(k[0]), 0] : [0, Math.sign(k[1])];
       b.g = surfFor(d); whoosh(d[1] < 0);
+      if (inSky() && b.g === 'ceil' && b.k === ctrl.arrows) say(b, QUIPS.float, .6);
       if (b.k === cupPlayer) cup.skill('redirect');
     }
-    const gd = SURF[b.g].down;
-    b.v[0] += gd[0] * G * dt; b.v[1] += gd[1] * G * dt;
+    // in the Sky City gravity is gentle: you drift up (or down) through the clouds rather than drop
+    const gd = SURF[b.g].down, g = inSky() ? G * .4 : G;
+    b.v[0] += gd[0] * g * dt; b.v[1] += gd[1] * g * dt;
     b.ang = angTo(b.ang, SURF[b.g].ang, Math.min(1, dt * 6));
   }
-  const sp = Math.hypot(b.v[0], b.v[1]); if (sp > 900) { b.v[0] *= 900 / sp; b.v[1] *= 900 / sp; }
+  const cap = inSky() && !zeroG ? 520 : 900;
+  const sp = Math.hypot(b.v[0], b.v[1]); if (sp > cap) { b.v[0] *= cap / sp; b.v[1] *= cap / sp; }
+  if (inSky() && !zeroG && b.g === 'ceil' && Math.random() < dt * 30) { const c = bodyCenter(b); sparkles.push({ x: c[0] + (Math.random() - .5) * 50, y: c[1] + 60, col: '#ffffff', vx: (Math.random() - .5) * 30, vy: 60 + Math.random() * 60, life: 0 }); }
   b.p[0] += b.v[0] * dt; b.p[1] += b.v[1] * dt;
   // touch a surface
   const m = zeroG ? 60 : 0;
@@ -264,8 +276,10 @@ function selectCharacter(character) {
 
 function setRoom(k) {
   roomK = k; const R = ROOMS[k]; room = R.img_;
-  worldW = room.width * VH / room.height; RX = worldW - 16;
+  const s = VH / (R.unit || room.height);
+  worldW = room.width * s; worldH = room.height * s; RX = worldW - 16; FY = worldH - 18; camY = Math.max(0, worldH - VH);
 }
+const inSky = () => !!ROOMS[roomK].sky;
 function goThrough() {
   if (cup.active) return;
   if (!doorNear || fadeDir || talk) return;
@@ -280,9 +294,9 @@ function arrive() {
   CAST.forEach((k, i) => {
     const b = boys[k]; Object.assign(b, { mode: 'surf', surf: 'floor', p: [clamp(dx + dir * (140 + i * 170), LX + 40, RX - 40), FY], v: [0, 0], g: 'floor', ang: 0, moving: false, facing: dir });
   });
-  viewRot = 0; camX = clamp(dx - 120, 0, worldW - VW);
+  viewRot = 0; camX = clamp(dx - 120, 0, worldW - VW); camY = Math.max(0, worldH - VH);
   spawnObjects(); spawnStars();
-  banner(ROOMS[roomK].name);
+  banner(inSky() ? 'The Sky City · jump, then press ↑ to float up to the city above' : ROOMS[roomK].name);
   if (adv.step.type === 'go' && adv.step.to === roomK) stepDone(); else storyHere();
 }
 function flip() {
@@ -377,6 +391,11 @@ function spawnStars() {
   if (!adv.done) {
     stars = (adv.shardsIn(roomK) || []).map(q => ({ x: LX + 110 + (W - 220) * q.fx, y: q.y, ph: q.i, got: false, shard: q.i }));
     syncQuest(); return;
+  }
+  if (inSky()) {
+    // a trail of stars up through the clouds to the upside-down city
+    stars = [.12, .3, .5, .7, .88, .2, .62, .8, .4, .55].map((fx, i) => ({ x: LX + W * fx, y: FY - 160 - i * (FY - CY - 300) / 9, ph: i, got: false }));
+    got = 0; $('stars').textContent = 0; $('starTotal').textContent = stars.length; return;
   }
   stars = [
     [LX + W * .2, CY + 120], [LX + W * .5, CY + 120], [LX + W * .78, CY + 120],      // ceiling
@@ -572,8 +591,15 @@ function update(dt) {
   const a = boys[ctrl.arrows], b = boys[ctrl.wasd];
   const focus = !cup.active && Math.abs(a.p[0] - b.p[0]) < 700 && b.idle < 6 ? (a.p[0] + b.p[0]) / 2 : a.p[0];
   camX += (clamp(focus - VW / 2, 0, worldW - VW) - camX) * Math.min(1, dt * (reduceMotion ? 20 : 4));
+  camY += (clamp(bodyCenter(a)[1] - VH / 2, 0, worldH - VH) - camY) * Math.min(1, dt * (reduceMotion ? 20 : 4));
   // turn the room over when the boy the arrows move is on (or falling to) the ceiling
-  const upside = a.mode === 'surf' ? a.surf === 'ceil' : (!zeroG && a.g === 'ceil');
+  // in the Sky City you see the upside-down city hanging overhead as you float, and the world turns over
+  // only as you come in to land on it: you're standing on its "ceiling", but it looks the right way up
+  const flipped = Math.abs(viewRot) > Math.PI / 2;
+  const upside = a.mode === 'surf' ? a.surf === 'ceil'
+    : zeroG ? false
+    : inSky() ? (a.g === 'ceil' ? a.p[1] < CY + 520 : flipped && a.p[1] < CY + 260)
+    : a.g === 'ceil';
   const target = cup.active ? 0 : zeroG ? (Math.abs(viewRot) > Math.PI / 2 ? Math.PI : 0) : (upside ? Math.PI : 0);
   const before = Math.abs(viewRot) > Math.PI / 2;
   viewRot = reduceMotion ? target : angTo(viewRot, target, Math.min(1, dt * 3.2));
@@ -582,7 +608,7 @@ function update(dt) {
 }
 function toScreen(wx, wy) {
   const ac = Math.abs(Math.cos(viewRot)), an = Math.abs(Math.sin(viewRot)), z = Math.max((VW * ac + VH * an) / VW, (VW * an + VH * ac) / VH);
-  const dx = (wx - camX - VW / 2) * z, dy = (wy - VH / 2) * z, c = Math.cos(viewRot), s = Math.sin(viewRot);
+  const dx = (wx - camX - VW / 2) * z, dy = (wy - camY - VH / 2) * z, c = Math.cos(viewRot), s = Math.sin(viewRot);
   return [dx * c - dy * s + VW / 2, dx * s + dy * c + VH / 2];
 }
 
@@ -649,9 +675,10 @@ function render() {
     const z = Math.max((VW * c + VH * n) / VW, (VW * n + VH * c) / VH);
     ctx.translate(VW / 2, VH / 2); ctx.rotate(viewRot); ctx.scale(z, z); ctx.translate(-VW / 2, -VH / 2);
   }
-  ctx.drawImage(room, -camX, 0, worldW, VH);
+  ctx.translate(0, -camY);                      // tall places scroll up and down
+  ctx.drawImage(room, -camX, 0, worldW, worldH);
   if (cup.active) drawMatchTarget();
-  if (zeroG) { ctx.fillStyle = `rgba(170,200,255,${.08 + .04 * Math.sin(t * 2)})`; ctx.fillRect(0, 0, VW, VH); }
+  if (zeroG) { ctx.fillStyle = `rgba(170,200,255,${.08 + .04 * Math.sin(t * 2)})`; ctx.fillRect(0, camY, VW, VH); }
 
   (cup.active ? [] : stars).forEach(s => {
     if (s.got) return; const x = s.x - camX, y = s.y + Math.sin(t * 2 + s.ph) * 6; if (x < -40 || x > VW + 40) return;

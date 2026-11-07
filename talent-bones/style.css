@@ -10,7 +10,10 @@ canvas{width:100%;height:100%;display:block;touch-action:none}
 .hud{position:absolute;top:16px;left:16px;right:16px;display:flex;justify-content:space-between;gap:10px;pointer-events:none;font-size:clamp(10px,1.3vw,14px)}
 .hud span{background:#f7fcf0e8;padding:8px 12px;border:1px solid #ffffffb0;border-radius:30px;backdrop-filter:blur(8px)}
 .caption{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:max-content;max-width:75%;padding:10px 18px;border-radius:12px;background:#f6faf0ed;color:#355448;text-align:center;font-size:clamp(12px,1.4vw,16px);margin:0;pointer-events:none}
-.loading{position:absolute;inset:0;display:grid;place-items:center;background:#eef2e4e8;margin:0;padding:24px;text-align:center}
+.title-screen{position:absolute;inset:0;z-index:2;background:#2c3f22}.title-screen img{width:100%;height:100%;object-fit:cover;display:block}
+.loading,#begin{position:absolute;bottom:7%;left:50%;transform:translateX(-50%);margin:0;white-space:nowrap}
+.loading{padding:10px 20px;border-radius:30px;background:#f7fcf0e0;color:#355448;font-size:clamp(12px,1.5vw,16px)}
+#begin{font-size:clamp(14px,1.8vw,19px);padding:12px 26px;border-radius:30px;background:#f7fcf0;border-color:#ffffffc0;box-shadow:0 10px 30px -10px #1d2b14a0;font-weight:600}#begin:hover{background:#fff}
 .controls{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px;margin-top:22px}.characters{display:flex;flex-wrap:wrap;gap:12px}
 button{font:inherit;color:inherit;cursor:pointer;border:1px solid #c3d1c3;background:#f9fcf5;border-radius:12px;padding:11px 16px;min-height:44px}
 button:hover{background:#e1ebdc}button:disabled{opacity:.5;cursor:wait}button:focus-visible,a:focus-visible,input:focus-visible,canvas:focus-visible{outline:3px solid #65866b;outline-offset:4px}

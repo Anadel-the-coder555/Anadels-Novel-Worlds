@@ -32,6 +32,8 @@ function resize() {
   canvas.width = Math.round(W * scale); canvas.height = Math.round(H * scale);
 }
 new ResizeObserver(resize).observe(canvas);
+// the title card stays up once the forest has loaded, until you click Begin or press a key
+function begin() { if (!ready || $('title').hidden) return; $('title').hidden = true; canvas.focus({ preventScroll: true }); }
 function clearKeys() { keys.left = keys.right = keys.hurry = false; }
 const fernX = () => fx;
 const nearFern = () => Math.abs(x - fernX()) < 150;
@@ -111,6 +113,8 @@ function frame(now) {
 }
 addEventListener('keydown', event => {
   if (!ready || event.target.closest?.('input,button,a,select')) return;
+  if (!$('title').hidden && ['Enter', ' '].includes(event.key)) { event.preventDefault(); begin(); return; }
+  if (!$('title').hidden) begin();
   if (['ArrowLeft', 'a', 'A'].includes(event.key)) keys.left = true;
   else if (['ArrowRight', 'd', 'D'].includes(event.key)) keys.right = true;
   else if (event.key === 'Shift') keys.hurry = true;
@@ -130,6 +134,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) clear
   button.addEventListener('pointerdown', event => { if (!ready) return; event.preventDefault(); button.setPointerCapture?.(event.pointerId); keys[direction] = true; button.classList.add('held'); });
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(name => button.addEventListener(name, () => { keys[direction] = false; button.classList.remove('held'); }));
 });
+$('begin').addEventListener('click', begin);
 $('hello').addEventListener('click', () => { sayHello(); canvas.focus({ preventScroll: true }); });
 $('reset').addEventListener('click', () => { reset(); canvas.focus({ preventScroll: true }); });
 $('fernCard').dataset.met = 'false';
@@ -139,7 +144,7 @@ function load(src) { return new Promise((resolve, reject) => { const image = new
   try {
     [background, BOY.img, FERN.img, FERN.walk.img] = await Promise.all([load('forest.jpg'), load(BOY.image), load(FERN.image), load(FERN.walk.image)]);
     worldWidth = Math.max(W, background.width * 600 / background.height);
-    ready = true; reset(); $('loading').hidden = true; $('reset').disabled = false;
+    ready = true; reset(); $('loading').hidden = true; $('begin').hidden = false; $('reset').disabled = false;
     requestAnimationFrame(now => { last = now; requestAnimationFrame(frame); });
   } catch (error) { $('loading').textContent = `${error.message}. Refresh to try again.`; }
 })();
