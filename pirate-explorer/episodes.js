@@ -17,7 +17,7 @@ window.createSoulmatesQuest = api => {
 
   function load() {
     try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && Array.isArray(s.done)) return { done: s.done, items: s.items || [], pending: s.pending || null, lastKind: s.lastKind || 'plot' }; } catch (e) {}
-    return { done: [], items: [], pending: null, lastKind: 'plot' };
+    return { done: [], items: [], pending: null, lastKind: 'crew' };   // a new hunt opens with the story (Goldtooth's visit), not a ship game
   }
   function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
   const done = id => save.done.includes(id);
@@ -28,9 +28,11 @@ window.createSoulmatesQuest = api => {
   function eligible(e) {
     if (e.level !== level() || done(e.id)) return false;
     if (!(e.requires || []).every(done)) return false;
-    if (e.after && Q.events.filter(x => x.level === e.level && x !== e && done(x.id)).length < e.after) return false;   // happens later on
+    // happens later on: `after` counts the story so far (the crew's games on the ship don't count)
+    if (e.after && Q.events.filter(x => x.level === e.level && x !== e && x.kind !== 'crew' && done(x.id)).length < e.after) return false;
     if (e.from && isLocked(e.from)) return false;
-    if (e.final && Q.events.some(x => x.level === e.level && x !== e && !done(x.id))) return false;
+    // the level's treasure waits for the rest of its story, but never for the games on the ship (those are just for fun)
+    if (e.final && Q.events.some(x => x.level === e.level && x !== e && x.kind !== 'crew' && !done(x.id))) return false;
     return true;
   }
   function pickNext() {
@@ -58,20 +60,22 @@ window.createSoulmatesQuest = api => {
   }
 
   // ---- the invitation card on the stage ----
-  // Every event arrives through the crew: a crewmate walks up with their idea, or someone brings a clue about the plot.
+  // Events arrive through the crew (a crewmate walks up with their idea, or someone brings a clue about the plot),
+  // or in person: a `visitor` (Goldtooth, Evangeline, the Pirate King) comes aboard, walks right up to Ruby and says it.
   function showHook(e, teller) {
     hook = e;
     const card = $('questHook'), face = $('hookFace');
-    const who = e.kind === 'crew' ? e.from : teller || api.messenger();
+    const who = e.visitor || (e.kind === 'crew' ? e.from : teller || api.messenger());
     face.hidden = !who;
     if (who) face.setAttribute('style', api.face(who, 52));
-    $('hookKind').textContent = e.kind === 'crew' ? `${api.name(who)} has an idea` : who ? `${api.name(who)} heard something` : e.kind === 'heart' ? 'Someone new' : 'The plot thickens';
+    $('hookKind').textContent = e.visitor ? `${api.name(who)} has come aboard!` : e.kind === 'crew' ? `${api.name(who)} has an idea · just for fun` : who ? `${api.name(who)} heard something` : e.kind === 'heart' ? 'Someone new' : 'The plot thickens';
+    card.classList.toggle('visit', !!e.visitor);
     $('hookTitle').textContent = e.title;
     $('hookText').textContent = e.hook;
     $('hookGo').textContent = e.accept || (e.kind === 'crew' ? 'Let’s do it!' : 'Find out');
     card.dataset.kind = e.kind;
     card.hidden = false;
-    if (who) api.approach(who, e.kind === 'crew' ? e.hook : e.clue || e.hook);
+    if (who) api.approach(who, e.visitor ? e.greet || e.hook : e.kind === 'crew' ? e.hook : e.clue || e.hook);
     $('hookGo').focus({ preventScroll: true });
     updateLog();
   }
@@ -88,6 +92,7 @@ window.createSoulmatesQuest = api => {
     const e = hook; if (!e) return;
     hook = null; $('questHook').hidden = true;
     later[e.id] = clock; nextAt = clock + LATER;
+    if (e.visitor) api.leave(e.visitor, e.storm || 'You’ll regret that, Captain!');
     if (e.kind === 'crew') { save.lastKind = 'crew'; persist(); }   // give the plot a turn
     updateLog();
   }
@@ -101,6 +106,7 @@ window.createSoulmatesQuest = api => {
     town: ['town'], chapel: ['goldtooth'], study: ['study'], rival: ['evangeline'],
     sea: ['deck'], river: ['island', 'The Jungle River'], temple: ['island', 'The Old Master’s Hill'],
     eastern: ['deck', 'Facing the Pirate King’s Fleet'], night: ['study', 'The Captain’s Study, at Night'],
+    bedroom: ['bedroom'], bedroomNight: ['bedroom', 'Ruby’s Bedchamber, Late at Night'],
   };
   function layout(keys, fixed = {}, party) {
     const rest = keys.filter(k => !party.includes(k) && fixed[k] === undefined && api.keys().includes(k));
@@ -110,19 +116,28 @@ window.createSoulmatesQuest = api => {
     return cast;
   }
   function buildScenes(e) {
-    const [room0, label0] = STAGE[e.room || e.bg] || ['deck'];
+    // bg 'here': a visitor's episode starts right where Ruby is standing, with the visitor beside her
+    const here = e.bg === 'here' ? api.here() : null;
+    const [room0, label0] = here ? [here.room] : STAGE[e.room || e.bg] || ['deck'];
     const party = ['ruby', ...((e.cast || []).includes('cutlass') ? ['cutlass'] : [])];
     let shown = [];
     return e.beats.map((b, i) => {
-      const sc = { title: e.title, text: b.text || '', dialogue: (b.lines || []).join('\n'), choices: b.choices, game: b.game, how: b.how, mustWin: b.mustWin, party };
-      if (i === 0 || b.room) { sc.room = b.room || room0; sc.at = b.at ?? .16; sc.label = b.label || e.label || label0; }
+      const sc = { title: e.title, text: b.text || '', dialogue: (b.lines || []).join('\n'), choices: b.choices, game: b.game, how: b.how, mustWin: b.mustWin, opts: b.opts, party };
+      if (i === 0 || b.room) { sc.room = b.room || room0; sc.at = b.at ?? (here && !b.room ? here.at : .16); sc.label = b.label || e.label || label0; }
       const list = b.cast || (i === 0 ? e.cast || [] : null);
-      if (list || b.place) {
-        const cast = layout(list || shown, b.place || {}, party);
+      let place = b.place;
+      if (here && i === 0 && !place) {   // everyone else lines up beside Ruby, the visitor nearest
+        const side = here.at > .6 ? -1 : 1, others = (list || []).filter(k => !party.includes(k));
+        if (e.visitor) others.sort((a, c) => (c === e.visitor) - (a === e.visitor));
+        place = Object.fromEntries(others.map((k, j) => [k, Math.max(.03, Math.min(.97, here.at + side * (230 + j * 120) / here.w))]));
+      }
+      if (list || place) {
+        const cast = layout(list || shown, place || {}, party);
         shown.filter(k => !cast[k] && !party.includes(k)).forEach(k => { cast[k] = null; });   // leave the scene
         shown = Object.keys(cast).filter(k => cast[k]);
         sc.cast = cast;
       }
+      if (b.gone) { sc.cast = sc.cast || {}; b.gone.forEach(k => { sc.cast[k] = null; }); shown = shown.filter(k => !b.gone.includes(k)); }   // someone is carried off
       if (b.approach) {
         const target = sc.cast?.[b.approach]?.[0] ?? .62;
         sc.walk = target - .09; sc.goal = b.goal || `Walk over to ${api.name(b.approach)}.`;
@@ -229,7 +244,7 @@ window.createSoulmatesQuest = api => {
   $('questNow').addEventListener('click', lookForTrouble);
   $('questReset').addEventListener('click', () => {
     if (!confirm('Start the treasure hunt over from the beginning? Treasures and new crewmates will be lost.')) return;
-    save = { done: [], items: [], pending: null, lastKind: 'plot' }; persist();
+    save = { done: [], items: [], pending: null, lastKind: 'crew' }; persist();
     hook = heading = null; $('questHook').hidden = true; clock = 0; nextAt = FIRST_WAIT;
     api.restart();
   });
@@ -257,6 +272,8 @@ window.createSoulmatesQuest = api => {
         pointer: other ? `${api.name(other.from)} has been muttering about some idea. Might be worth asking.` : null };
     },
     offer(e, key) { if (!hook && !ep) showHook(e, key); },
+    // a villain who is aboard right now with something to say: talking to them brings their card back to the front
+    visiting(key) { if (hook?.visitor !== key) return false; $('hookGo').focus({ preventScroll: true }); return true; },
     busy: () => !!ep,
     // the hunt runs only while exploring freely (not during the intro)
     setActive(on) {

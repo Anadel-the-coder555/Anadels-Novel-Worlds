@@ -113,6 +113,10 @@ dialog button b{display:block;font:400 27px var(--display);margin-bottom:6px}dia
   animation:hookIn .4s ease-out}
 .quest-hook[data-kind="plot"]{background:rgba(42,30,18,.96);color:var(--sailcloth);box-shadow:0 14px 34px -12px rgba(0,0,0,.8),inset 0 0 0 2px var(--brass)}
 .quest-hook[data-kind="heart"]{box-shadow:0 14px 34px -12px rgba(20,12,6,.8),inset 0 0 0 2px #c0576b}
+/* a villain has come aboard in person */
+.quest-hook.visit{background:rgba(48,14,14,.96);color:var(--sailcloth);box-shadow:0 14px 34px -12px rgba(0,0,0,.85),inset 0 0 0 2px #c0392b}
+.quest-hook.visit small{color:#ff9c8a}
+.quest-hook.visit .hook-actions button.primary{background:#c0392b;color:#fff8ea;border-color:#c0392b}
 .hook-face{width:52px;height:52px}
 .hook-body{flex:1;min-width:0}
 .hook-body small{display:block;font:700 11px var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--brass-deep)}

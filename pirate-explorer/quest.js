@@ -9,9 +9,10 @@
 //   'plot'  (◇ in the notebook)  triggered by the story. Plot events in a level happen in the order listed here.
 //           The one marked `final` wins that level's treasure, and it waits until everything else in the level is done.
 //   'crew'  (no ◇)               a crewmate (`from`) comes up with an idea at some point while you explore, one at a time.
+//           These are the fun and games on the ship. They never turn up clues and the treasure never waits for them.
 //   'heart' (♡)                  a new edition of characters: someone new joins (`unlock` = their crew key, if they have art).
 // Other fields:
-//   requires: event ids that must be done first. after: how many other events in the level must be done first.
+//   requires: event ids that must be done first. after: how many other story events (not crew games) in the level must be done first.
 //   clue: what a crewmate says when they bring news of a plot or heart event.
 //   goto: a room on the ship the player must walk to before the episode opens.
 //   bg: a room key (its painting is the backdrop) or a theme: ballroom, town, jungle, river, sea, night, rival, chapel, eastern, temple.
@@ -21,6 +22,10 @@
 //   play: { href, label } opens one of the existing mini-games after the scene. back: the caption shown on returning to the ship.
 //   item: the index of the treasure this event wins.
 //   lead: a clue toward the level's villain, found by doing this event. It goes into the ship's log under “Clues”.
+//         Clues come from taking on the villain and their gang, never from the crew's games.
+//   visitor: a villain who comes aboard in person. They walk up to Ruby wherever she is and say `greet`; with bg 'here' the
+//         episode starts on that very spot. Saying “later” sends them off the ship in a huff (`storm`).
+//   beats can also have: gone: [keys] (carried off or leaving the scene), opts: { … } (settings for the beat's game).
 window.SOULMATES_QUEST = {
   // PLACEHOLDER NAMES: rename these freely
   treasures: [
@@ -30,14 +35,38 @@ window.SOULMATES_QUEST = {
   ],
   // what the ship's log says while you hunt (one per hidden level; never names the level)
   rumours: [
-    'Word on the docks: Goldtooth has something around his neck that doesn’t belong to him.',
-    'Word on the waves: a captain named Evangeline wants the treasures, and her girls never miss.',
+    'Word on the docks: Goldtooth has something around his neck that doesn’t belong to him. Keep a lookout: he likes to drop in.',
+    'Word on the waves: a captain named Evangeline wants the treasures, and her girls never miss. She pays calls, too.',
     'Word from the east: a Pirate King rules the far seas, and nobody who sails against him comes home.',
     'All three treasures are aboard. Whatever they unlock, the two captains will find it together.',
   ],
   events: [
     // ================= LEVEL 0 · GOLDTOOTH =================
-    { id: 'crispin', lead: 'Crispin was only on the dock because he’d been invited to a society wedding. The groom is a pirate called Goldtooth, and nobody knows who the bride is.', clue: 'Captain, there’s thumping below decks again. The boys say it’s barrels. Barrels don’t knock.', level: 0, kind: 'heart', title: 'A Lord Below Decks', unlock: 'crispin', after: 5, goto: 'hall', bg: 'hall',
+    { id: 'gtboard', level: 0, kind: 'plot', visitor: 'clement', title: 'Goldtooth Comes Aboard', bg: 'here', cast: ['ruby', 'cutlass', 'clement', 'bones', 'monsoon'],
+      clue: 'Captain, a gold-trimmed rowboat is tying up alongside. The fellow in it has one very shiny tooth.',
+      greet: 'Captain Ruby! What a charming little ship. I’ll take it. And you, while I’m at it.',
+      hook: 'Clement “Goldtooth” has strolled aboard as if he owns the place, a brass compass glinting at his neck. His gang waits in the boats below.',
+      accept: 'Face him', storm: 'Hmph. I’ll be back, Captain. With friends.',
+      lead: 'Goldtooth wears a brass compass on a chain and kept stroking it every time he looked at Ruby. His gang called it “the boss’s wedding present.”',
+      beats: [
+        { text: 'Goldtooth plants himself in front of Ruby, rocking on his heels. His gold tooth catches the light every time he grins, which is constantly.',
+          lines: ['Goldtooth: “Captain Ruby. I’ve heard SO much about you. Mostly from me.”', 'Cutlass: “Get off this ship.”', 'Goldtooth: “Cutlass! Still following her around like a lost puppy?”', 'Ruby: “What do you want, Goldtooth?”', 'Goldtooth: “Everything, darling. Starting with this ship.”'],
+          choices: [
+            { label: 'Show him where the plank is', score: 2, reply: ['Ruby: “The plank’s that way. Do help yourself.”', 'Goldtooth: “Ha! Feisty. I like that in a bride.”', 'Ruby: “In a WHAT?”'] },
+            { label: 'Ask about the compass on his neck', score: 2, reply: ['Goldtooth tucks it into his shirt, fast.', 'Goldtooth: “Never you mind. It’s a… wedding present. To myself.”'] },
+            { label: 'Let Cutlass handle it', score: 1, reply: ['Cutlass steps right up to his nose.', 'Goldtooth: “Oh, I’m SO scared.” He is a little bit scared.'] },
+          ] },
+        { text: 'Goldtooth puts two fingers in his mouth and whistles. Grappling hooks clang onto the rail all along the ship.',
+          lines: ['Goldtooth: “Boys! Take the ship. Gently, mind. I want the captain in one piece.”', 'Ruby: “Crew! Repel boarders!”', 'Bones: “I’ve got a mop and I’m not afraid to use it!”'] },
+        { game: 'repel', mustWin: true, how: 'Goldtooth’s gang is climbing up the side! Run along the deck with ← → and knock them back into the sea with Space (or tap one). Get there while the hook is still clanking and you cut the rope before they climb. Four aboard and they win. When the gang is gone, Goldtooth climbs up himself: knock him off three times.',
+          opts: { hero: 'ruby', foe: 'goons', boss: 'clement', bossName: 'Goldtooth', count: 10, crew: ['monsoon', 'bones', 'cutlass'], title: 'Repel Goldtooth’s gang!',
+                  win: 'Goldtooth hits the water with a tremendous SPLASH and comes up wearing a jellyfish as a hat.' } },
+        { text: 'Goldtooth is hauled into his rowboat, dripping. As his gang rows him away, he shakes his fist.', gone: ['clement'],
+          lines: ['Goldtooth (from the boat): “You haven’t seen the last of me, Captain! You’ll see me at the ALTAR!”', 'Cutlass: “…The what?”'] },
+      ],
+      ends: [[0, 'Goldtooth’s gang is back in their boats, soaked to the skin. But they left something behind: a lot of questions.']] },
+
+    { id: 'crispin', lead: 'Crispin was only on the dock because he’d been invited to a society wedding. The groom is a pirate called Goldtooth, and nobody knows who the bride is.', clue: 'Captain, there’s thumping below decks again. The boys say it’s barrels. Barrels don’t knock.', level: 0, kind: 'heart', title: 'A Lord Below Decks', unlock: 'crispin', after: 1, goto: 'hall', bg: 'hall',
       hook: 'Thump. Thump. Something below decks keeps knocking, and Cutlass’s boys keep saying it’s “just the barrels.”',
       gotoHint: 'Follow the thumping down to the Cabin Hall below decks.',
       cast: ['ruby', 'cutlass', 'absalom'],
@@ -68,22 +97,23 @@ window.SOULMATES_QUEST = {
       ],
       ends: [[0, 'Lord Crispin is aboard. He hates everything about sailing and pirates. But well… he’ll change his mind soon enough.']] },
 
-    { id: 'ball', lead: 'Goldtooth slipped out of the ball muttering about the compass around his neck. He says it points to whatever he’s lost, and tonight it pointed at Ruby.', clue: 'A letter came for you, sealed in gold wax. It smells of perfume and trouble.', level: 0, kind: 'plot', title: 'Ball Chaos', bg: 'ballroom', cast: ['ruby', 'cutlass', 'jade', 'hazel'],
-      hook: 'A letter sealed in gold wax: Captain Ruby is to host the royal ball. Every royal guest is whispering one name. Goldtooth.',
+    { id: 'ball', level: 0, kind: 'crew', from: 'arabella', title: 'A Ball Aboard', goto: 'dining', bg: 'dining', cast: ['ruby', 'cutlass', 'arabella', 'jade', 'hazel'],
+      hook: 'Captain! Let’s throw a ball, right here on the ship. Candles, music, the good tablecloth. And then a little chaos.',
+      gotoHint: 'Arabella is setting up the ball in the dining salon, through the captain’s quarters.', accept: 'Let’s dance',
       beats: [
-        { text: 'The rumour says Goldtooth carries the first of three treasures, and that he’ll slip in among the guests tonight.',
-          lines: ['Ruby: “If Goldtooth shows his face, I want him so busy he forgets his own name.”', 'Cutlass: “So… chaos?”', 'Ruby: “Elegant chaos.”'],
+        { text: 'Arabella has strung lanterns across the dining salon. Odessa has made tiny cakes. Jade is wearing a cravat.',
+          lines: ['Arabella: “Everybody dresses up, everybody dances, and somebody is in charge of chaos.”', 'Cutlass: “I volunteer.”', 'Ruby: “Of course you do.”'],
           choices: [
             { label: 'Hand Cutlass the to-do list', score: 1, reply: ['Cutlass: “Every item on this ruins the ball. I love it.”'] },
             { label: 'Put Jade in charge of the punch bowl', score: 1, reply: ['Jade: “What goes in the punch?”', 'Ruby: “Nothing you’re thinking of.”'] },
-            { label: 'Ask Hazel to keep watch for a gold tooth', score: 1, reply: ['Hazel: “I’ll look at everybody’s teeth! Very politely.”'] },
+            { label: 'Ask Hazel to judge the best dancer', score: 1, reply: ['Hazel: “It’s going to be the dog. I’m telling you now.”'] },
           ] },
       ],
       ends: [[0, 'The music starts. Work through the to-do list, and don’t let Ruby catch you.']],
       play: { href: '../pirate-ball/index.html', label: 'Play Ballroom chaos' },
-      back: 'In the chaos of the ball, Hazel spotted a gold tooth glinting by the door. Goldtooth slipped away, muttering about “the compass.”' },
+      back: 'The ball is over. There is cake on the ceiling, and nobody will say how it got there.' },
 
-    { id: 'island', lead: 'Sailing back for Ruby and Cutlass, the crew passed a cove full of bunting. Goldtooth’s ship, decorated like a wedding cake.', level: 0, kind: 'crew', from: 'bones', title: 'The Island', requires: ['crispin'], after: 7, bg: 'island', cast: ['ruby', 'cutlass'],
+    { id: 'island', level: 0, kind: 'crew', from: 'bones', title: 'The Island', requires: ['crispin'], after: 3, bg: 'island', cast: ['ruby', 'cutlass'],
       hook: 'Captain Ruby, Captain Cutlass: there’s something on that island you really need to look at. Just the two of you. Nothing suspicious.',
       accept: 'Row ashore',
       beats: [
@@ -99,7 +129,7 @@ window.SOULMATES_QUEST = {
       ends: [[0, 'Two weeks later the ship comes back. The crews line the rail, grinning. Ruby has a great many chores to hand out.'],
              [6, 'Two weeks later the ship comes back. Ruby and Cutlass are sitting very close by the fire, and pretend they weren’t. Both crews cheer.']] },
 
-    { id: 'cooking', lead: 'Odessa’s fishmonger is sold out. Goldtooth bought every fish in the harbour “for a cake.” A fish cake? For what?', level: 0, kind: 'crew', from: 'odessa', title: 'Odessa’s Cooking Show', goto: 'dining', bg: 'galley', cast: ['ruby', 'odessa', 'cutlass'],
+    { id: 'cooking', level: 0, kind: 'crew', from: 'odessa', title: 'Odessa’s Cooking Show', goto: 'dining', bg: 'galley', cast: ['ruby', 'odessa', 'cutlass'],
       hook: 'Captain! I’m doing a cooking show in the dining salon, and I need a helper who can stir AND be charming.',
       gotoHint: 'Odessa is waiting in the dining salon, through the captain’s quarters.', accept: 'I’ll help',
       beats: [
@@ -115,21 +145,21 @@ window.SOULMATES_QUEST = {
       ],
       ends: [[0, 'The show was a mess, but every bowl came back empty.'], [5, 'A triumph! Odessa’s Galley is the talk of the ship, and Crispin asks, very quietly, for the recipe.']] },
 
-    { id: 'charm', lead: 'Scarlett heard it from the dressmaker: Goldtooth’s bosun ordered a lace wedding gown. In Ruby’s size.', level: 0, kind: 'crew', from: 'jade', title: 'Charm a Lady', bg: 'deck', cast: ['jade', 'cutlass', 'scarlett'],
+    { id: 'charm', level: 0, kind: 'crew', from: 'jade', title: 'Charm a Lady', bg: 'deck', cast: ['jade', 'cutlass', 'scarlett'],
       hook: 'Cap’n, the boys have decided to woo your crew. We need… moral support. And maybe a bucket for when it goes wrong.',
       beats: [{ text: 'Cutlass’s boys line up on deck in their cleanest shirts. Ruby’s crew has a mop, a bucket, and very little patience.',
                 lines: ['Jade: “Five rounds to win her heart. How hard can it be?”', 'Scarlett: “Very.”'] }],
       ends: [[0, 'Pick what to say, what to give her, and what to ask.']],
       play: { href: '../pirate-charm/index.html', label: 'Play Charm a lady' }, back: 'The boys are back from their wooing. Some of them are still damp.' },
 
-    { id: 'insults', lead: 'Dripping on the dock, Goldtooth’s old crewmate blurted it out: Goldtooth only takes off his compass for one thing. His wedding day.', level: 0, kind: 'crew', from: 'monsoon', title: 'Insults', bg: 'deck', cast: ['monsoon', 'cutlass'],
-      hook: 'Captain, one of Goldtooth’s old crew is on the dock calling us bilge rats. Swords are for show. Let’s duel him with words.',
-      beats: [{ text: 'Goldtooth’s former crewmate struts up and down the dock. He used to sail with Cutlass, and he has a mouth on him.',
+    { id: 'insults', level: 0, kind: 'crew', from: 'monsoon', title: 'Insults', bg: 'deck', cast: ['monsoon', 'cutlass'],
+      hook: 'Captain, the boys say your crew can’t take a joke. Swords are for show. Let’s have an insult duel on deck: loser peels the potatoes.',
+      beats: [{ text: 'The whole ship gathers round. Monsoon cracks his knuckles and squares up to Ruby’s crew.',
                 lines: ['Monsoon: “The real weapon is a sharp tongue.”', 'Cutlass: “Then you’d better sharpen yours.”'] }],
-      ends: [[0, 'Win with the perfect comeback and send your rival over the side.']],
-      play: { href: '../pirate-duel/index.html', label: 'Play Insult duel' }, back: 'Goldtooth’s old crewmate is still dripping wet on the dock, and he’s finally stopped talking.' },
+      ends: [[0, 'Win with the perfect comeback and send your rival into the water barrel.']],
+      play: { href: '../pirate-duel/index.html', label: 'Play Insult duel' }, back: 'Monsoon is peeling potatoes, still muttering comebacks he thought of too late.' },
 
-    { id: 'pranks', lead: 'In the middle of the pranks, a pigeon landed on a barrel with a note for Goldtooth’s men: “Bells ordered. Cake ordered. Bride: pending.”', level: 0, kind: 'crew', from: 'absalom', title: 'Prank Wars', bg: 'deck', cast: ['absalom', 'cutlass'],
+    { id: 'pranks', level: 0, kind: 'crew', from: 'absalom', title: 'Prank Wars', bg: 'deck', cast: ['absalom', 'cutlass'],
       hook: 'Captain Ruby. Captain Cutlass has no sense of humour. I have five pranks. Are you in?',
       beats: [{ text: 'Cutlass is patrolling his own deck, suspicious of everyone.',
                 lines: ['Absalom: “Five pranks, no getting caught, and then we sit back and enjoy the show.”', 'Ruby: “I didn’t hear any of this.”'] }],
@@ -153,19 +183,63 @@ window.SOULMATES_QUEST = {
       ],
       ends: [[0, 'The dog is very proud of himself. Goldtooth is planning a wedding, and Ruby did not say yes.'], [5, 'What a chase! The dog is now an honorary crewmate. Goldtooth is planning a wedding, and Ruby did not say yes.']] },
 
-    { id: 'dance', lead: 'The fiddler let it slip between tunes: he’s booked to play on Goldtooth’s ship next week. “Some wedding,” he said, and winked at Ruby.', level: 0, kind: 'crew', from: 'scarlett', title: 'Dance Competition', bg: 'deck', cast: ['scarlett', 'cutlass', 'bones'],
+    { id: 'broadside', level: 0, kind: 'plot', title: 'Broadsides', bg: 'deck', cast: ['ruby', 'cutlass', 'monsoon', 'arabella'],
+      clue: 'Sails off the bow, Captain! White and gold, with bunting all over them.',
+      hook: 'Goldtooth’s ship is bearing down on you with its guns run out, decorated like a wedding cake.',
+      accept: 'Man the cannons',
+      lead: 'One of Goldtooth’s cannonballs wasn’t a cannonball. It was a rolled-up banner saying “CLEMENT ♥ RUBY”, with a list pinned to it: “Cake. Bells. Chapel on the ship. Bride: catch her.”',
+      beats: [
+        { text: 'From the crow’s nest, Arabella shouts down. Goldtooth’s ship is coming round to fire, and it’s covered in pink bunting.',
+          lines: ['Arabella: “Is that… a wedding bell on his mast?”', 'Monsoon: “Cannons are loaded, Captain. Say the word.”', 'Cutlass: “Say the word. Please say the word.”'],
+          choices: [
+            { label: '“Fire at will!”', score: 2, reply: ['Monsoon: “Who’s Will?”', 'Ruby: “FIRE, Monsoon.”'] },
+            { label: 'Let Cutlass give the order', score: 2, reply: ['Cutlass: “FIRE!” He has been waiting his whole life to say that.'] },
+            { label: 'Wave a white flag, just to confuse him', score: 1, reply: ['Goldtooth waves back, delighted. Then his ship fires anyway.'] },
+          ] },
+        { game: 'cannons', mustWin: true, how: 'Goldtooth’s ship sails to and fro on the horizon. Aim with ← → and fire with Space. The ball takes a moment to fly, so aim where the ship is going! When his gunners fire back, duck behind the rail with ↓.',
+          opts: { foe: 'Goldtooth’s ship', sails: '#f6ecd2', flag: '#d6a92a', banner: 'bunting', need: 6, hull: 5, gunner: 'monsoon', title: 'Broadsides with Goldtooth!',
+                  win: 'Goldtooth’s mainsail tears in two and his ship limps off, trailing bunting. Then one last cannonball thumps onto the deck and unrolls.' } },
+      ],
+      ends: [[0, 'Goldtooth limps away for repairs. The “cannonball” he fired last is spread out on the deck: a banner, and a wedding list. Ruby is not amused.']] },
+
+    { id: 'dance', level: 0, kind: 'crew', from: 'scarlett', title: 'Dance Competition', bg: 'deck', cast: ['scarlett', 'cutlass', 'bones'],
       hook: 'Captain! Cutlass’s boys say they can out-dance us. Us! Shall we show them how it’s done?',
       beats: [{ text: 'One deck, one fiddle, and absolutely no dignity.', lines: ['Scarlett: “Ruby’s crew against Cutlass’s boys. Winner doesn’t swab the deck for a week.”', 'Bones: “I’ve been practising!”'] }],
       ends: [[0, 'Hit the moves to out-dance the other crew.']],
       play: { href: '../pirate-dance/index.html', label: 'Play Dancing wars' }, back: 'The fiddle has finally stopped. Somebody’s boot is stuck in the rigging.' },
 
-    { id: 'wedding', clue: 'Goldtooth’s ship is anchored nearby, all bunting and bells. Something’s going on over there.', level: 0, kind: 'plot', final: true, item: 0, title: 'Wreck a Wedding', bg: 'chapel',
+    { id: 'kidnap', level: 0, kind: 'plot', visitor: 'clement', title: 'Kidnapped!', bg: 'here', cast: ['ruby', 'clement'],
+      clue: 'Captain, the watch heard oars under the stern. Probably nothing. Probably.',
+      greet: 'Shhh, darling. Not a sound. Tomorrow is our wedding day.',
+      hook: 'While half the crew naps below decks, Goldtooth has crept aboard with a sack, a length of rope and two of his biggest goons.',
+      accept: 'Fight him off', storm: 'Fine. I’ll come back when you’re sleepier, darling.',
+      lead: 'As the last goon went over the side, he yelled it out: the wedding is on Goldtooth’s ship, tomorrow at sunset, and the boss has already bought the cake.',
+      beats: [
+        { text: 'Goldtooth stands between Ruby and the rest of her crew, twirling a length of rope, and two enormous goons loom behind him.',
+          lines: ['Goldtooth: “Don’t make this difficult, darling. You’ll love being Mrs Goldtooth.”', 'Ruby: “Darling?! I’ll give you darling.”'],
+          choices: [
+            { label: 'Grab a lantern and swing', score: 1, reply: ['CLONG. Goldtooth staggers, but a goon grabs Ruby from behind.'] },
+            { label: 'Shout for Cutlass', score: 1, reply: ['Ruby: “CUTLASS!”', 'A goon claps a big hand over her mouth. Somewhere below decks, a door bangs open.'] },
+            { label: 'Kick him in the shins', score: 1, reply: ['Goldtooth: “OW! My good shins!” But his goons are already on her.'] },
+          ] },
+        { text: 'A sack comes down over Ruby’s head. She kicks, she wriggles, she says some very unladylike words. The goons carry her to the rail and lower her into a rowboat.', gone: ['ruby'],
+          lines: ['Goldtooth: “See you at the altar, darling!”', 'Goldtooth (climbing down after her): “Row, you fools, ROW!”'] },
+        { room: 'deck', at: .3, gone: ['ruby', 'clement'], cast: ['cutlass', 'monsoon', 'bones'], place: { cutlass: .36, monsoon: .45, bones: .53 },
+          text: 'Cutlass bursts onto the deck a heartbeat too late. The rowboat is already pulling away, and Ruby’s hat is lying by the rail.',
+          lines: ['Cutlass: “RUBY!”', 'Monsoon: “Captain! Goldtooth left half his gang on the rail to slow us down!”', 'Cutlass: “Then we go through them.”', 'Bones: “I brought the mop.”'] },
+        { game: 'repel', mustWin: true, how: 'It’s Cutlass now! Goldtooth’s gang is swarming up the rail to hold him back. Run along the deck with ← → and knock them into the sea with Space (or tap one). Four aboard and the trail goes cold.',
+          opts: { hero: 'cutlass', foe: 'goons', count: 12, crew: ['monsoon', 'bones'], title: 'Get through Goldtooth’s gang!',
+                  win: 'The last goon goes over the side. As he hits the water, he blurts out exactly where the boss has taken her.', lose: 'The goons hold the rail long enough for the rowboat to vanish into the dark. Cutlass will not give up. Try again.' } },
+      ],
+      ends: [[0, 'Cutlass stands at the rail, staring at the lights of Goldtooth’s ship. “Hoist every sail. We’re going to a wedding.”']] },
+
+    { id: 'wedding', clue: 'Goldtooth’s ship is anchored nearby, all bunting and bells. They’ve got the captain over there!', level: 0, kind: 'plot', final: true, item: 0, title: 'Wreck a Wedding', bg: 'chapel',
       cast: ['ruby', 'clement', 'cutlass', 'bones', 'hazel', 'odessa', 'crispin', 'tempest'],
-      hook: 'Ruby wakes up in a lace gown on Goldtooth’s ship. Goldtooth has kidnapped her for the wedding!',
+      hook: 'Cutlass and the crew have caught up with Goldtooth’s ship. The bells are ringing, and Ruby is at the altar in a lace gown, with Goldtooth holding her hand very tightly.',
       accept: 'Wreck it',
       beats: [
-        { place: { clement: .86 }, text: 'Barrels for pews. A cake taller than Hazel. Goldtooth in a powdered wig, the Sun Compass glinting around his neck. The crew hides in the rigging with baskets of tomatoes and fish. If the rescue isn’t funny enough, they will throw them.',
-          lines: ['Goldtooth: “Dearly beloved, we are gathered here because I said so.”', 'Bones (in a fake beard, whispering): “Psst, Cutlass. We brought the wet dog, a barrel of fish, a bar of soap and a very long rope.”', 'Cutlass: “Perfect. Nobody touch the rope. The rope is mine.”'] },
+        { place: { clement: .86 }, text: 'Barrels for pews. A cake taller than Hazel. Goldtooth in a powdered wig, the Sun Compass glinting around his neck, and Ruby beside him in a lace gown, looking murderous. The crew sneaks into the rigging with baskets of tomatoes and fish. If the rescue isn’t funny enough, they will throw them.',
+          lines: ['Goldtooth: “Dearly beloved, we are gathered here because I said so.”', 'Ruby (through her teeth): “Any minute now, Cutlass.”', 'Bones (in a fake beard, whispering): “Psst, Cutlass. We brought the wet dog, a barrel of fish, a bar of soap and a very long rope.”', 'Cutlass: “Perfect. Nobody touch the rope. The rope is mine.”'] },
         { game: 'wedding', how: 'Four gags, one after another, and the crew in the rigging are keeping score with the Laugh-o-meter: shake the wet dog over the guests, fling fish into the cake, bowl Goldtooth down the soapy aisle, and swing Cutlass in on a rope. The sillier, the better.' },
         { text: 'The guests are soaked and smell of dog. The cake is mostly fish. Half the congregation is in the rigging, and Cutlass is picking frosting out of his hair. Both crews are howling with laughter.' },
         { text: 'Goldtooth lunges for Ruby, the Sun Compass swinging from his neck.',
@@ -179,7 +253,7 @@ window.SOULMATES_QUEST = {
       ends: [[0, 'The wedding is wrecked beyond repair. Ruby holds up the Sun Compass, and both crews cheer from the rigging, throwing tomatoes at Goldtooth instead.']] },
 
     // ================= LEVEL 1 · EVANGELINE =================
-    { id: 'mystery', clue: 'Someone’s been in the captain’s study. The window latch is open, and it smells of rosewater.', level: 1, kind: 'plot', title: 'Crispinlock Holmes', goto: 'study', bg: 'study', pass: 3, cast: ['crispin', 'monsoon', 'jade', 'ruby'],
+    { id: 'mystery', lead: 'Coral, the “new deckhand”, was a spy for Captain Evangeline. She stole Ruby’s chart, the only one that shows where the second treasure lies.', clue: 'Someone’s been in the captain’s study. The window latch is open, and it smells of rosewater.', level: 1, kind: 'plot', title: 'Crispinlock Holmes', goto: 'study', bg: 'study', pass: 3, cast: ['crispin', 'monsoon', 'jade', 'ruby'],
       hook: 'Ruby’s chart, the only one showing where the second treasure lies, has vanished from the study. Crispin has put on a deerstalker hat.',
       gotoHint: 'Meet Crispin in the captain’s study, past the dining salon.', accept: 'Investigate',
       beats: [
@@ -206,12 +280,36 @@ window.SOULMATES_QUEST = {
       failText: 'Crispin shakes his head. “The evidence says otherwise.” Look at the clues again: rosewater, small bare wet footprints, a latch opened from inside.',
       ends: [[0, 'The mystery is solved! Coral sails for Evangeline, captain of the girl pirates, and Ruby’s chart is already on Evangeline’s ship. Crispin keeps the hat.']] },
 
-    { id: 'disguise', level: 1, kind: 'crew', from: 'tempest', title: 'Dress Up as a Lady', bg: 'ballroom', room: 'gallery', cast: ['tempest', 'cutlass', 'jade', 'monsoon'],
-      hook: 'Captain, I’ve got gowns, wigs and rouge, and five boys who need to pass as ladies. Tonight.',
-      beats: [{ text: 'There’s a royal ball ashore, and the guests are whispering about pirates. Cutlass’s boys would be recognised anywhere. So tonight, they go as ladies. Ridiculous ladies.',
+    { id: 'disguise', level: 1, kind: 'crew', from: 'tempest', title: 'Dress Up as a Lady', bg: 'bedroom', cast: ['tempest', 'cutlass', 'jade', 'monsoon'],
+      hook: 'Captain, I’ve got a trunk of gowns, wigs and rouge, and five boys who swear they could pass as ladies. Shall we find out?',
+      beats: [{ text: 'Tempest has turned the bedchamber into a dressing room. Cutlass’s boys bet they could fool anyone at a royal ball. Tonight they practise. Ridiculous ladies, every one.',
                 lines: ['Tempest: “Hold still.”', 'Cutlass: “I refuse.”', 'Tempest: “Hold. Still.”'] }],
       ends: [[0, 'Eavesdrop on the guests, and when someone speaks to you, act like a lady, fast.']],
       play: { href: '../pirate-disguise/index.html', label: 'Play Ladies in disguise' }, back: 'The boys are back aboard, still wearing their wigs. Jade says his is “growing on him.”' },
+
+    { id: 'evboard', level: 1, kind: 'plot', visitor: 'evangeline', title: 'Evangeline Pays a Call', bg: 'here', requires: ['mystery'], cast: ['ruby', 'cutlass', 'evangeline', 'scarlett', 'tempest'],
+      clue: 'There’s a pink rowboat alongside, Captain, under a white flag. Somebody wants a parley.',
+      greet: 'Captain Ruby. I come under a flag of truce. Do put the kettle on.',
+      hook: 'Captain Evangeline has rowed over under a white flag, all pink silk and perfect manners. Her girls wait in the boats below, smiling far too sweetly.',
+      accept: 'Hear her out', storm: 'Suit yourself, Captain. My girls will be in touch.',
+      lead: 'Evangeline let it slip while she was bragging: she keeps the Siren’s Pearl in an iron chest in her cabin, and she’d sink it before she let Ruby touch it.',
+      beats: [
+        { text: 'Evangeline looks the ship over the way a cat looks at a mouse.',
+          lines: ['Evangeline: “Thank you SO much for the chart. Coral says your handwriting is adorable.”', 'Ruby: “Give it back.”', 'Evangeline: “Oh, I couldn’t. I collect treasures, you see. Pearls, compasses, captains…”', 'Cutlass: “Get off our ship.”', 'Evangeline: “OUR ship? How sweet.”'],
+          choices: [
+            { label: 'Offer her tea, very politely', score: 2, reply: ['Ruby: “Milk, sugar, or seawater?”', 'Evangeline: “Ha! Oh, I do like you. It’s such a shame.”'] },
+            { label: 'Ask what she wants the treasures for', score: 2, reply: ['Evangeline: “The Siren’s Pearl is MINE. It sits in my cabin and it stays there. I’d throw it in the sea before I let you have it.”', 'She covers her mouth. She has said too much.'] },
+            { label: 'Point at the rail', score: 1, reply: ['Evangeline: “Rude.”'] },
+          ] },
+        { text: 'Evangeline snaps her fingers. Grappling hooks clatter over the rail, tied with pink ribbons.',
+          lines: ['Evangeline: “Girls! Fetch me anything shiny.”', 'Scarlett: “Not on my clean deck you don’t!”', 'Ruby: “Repel boarders!”'] },
+        { game: 'repel', mustWin: true, how: 'Evangeline’s girls are climbing up the side! Run along the deck with ← → and knock them back into the sea with Space (or tap one). Cut the ropes while the hooks are still clanking. Four aboard and they win. Then Evangeline climbs up herself: knock her off three times.',
+          opts: { hero: 'ruby', foe: 'girls', boss: 'evangeline', bossName: 'Evangeline', count: 12, crew: ['scarlett', 'tempest', 'cutlass'], title: 'Repel Evangeline’s girls!',
+                  win: 'Evangeline lands in the sea with a very unladylike SPLOSH. Her girls fish her out, ribbons and all.' } },
+        { text: 'Evangeline is hauled into her rowboat, soaked pink silk and all, and rows away with her nose in the air.', gone: ['evangeline'],
+          lines: ['Evangeline (from the boat): “This dress was FRENCH!”', 'Tempest: “It’s French seaweed now.”'] },
+      ],
+      ends: [[0, 'Evangeline is gone, dripping. But now Ruby knows exactly where the Siren’s Pearl is: in a chest in Evangeline’s cabin.']] },
 
     { id: 'sisters', clue: 'Two girls rowed up asking for Cutlass by name. They look an awful lot like him.', level: 1, kind: 'heart', title: 'Cutlass’s Sisters', requires: ['mystery'], bg: 'deck', cast: ['cutlass', 'ruby', 'bones'],
       hook: 'A rowboat bumps against the hull. Two young women climb aboard, soaking wet and grinning. Cutlass has gone pale.',
@@ -229,7 +327,7 @@ window.SOULMATES_QUEST = {
       ],
       ends: [[0, 'Cutlass’s sisters join the ship. Cutlass is mortified. Everyone else is delighted.']] },
 
-    { id: 'havoc', clue: 'Evangeline’s ship is in the next cove. I’d bet my boots our stolen chart is aboard.', level: 1, kind: 'plot', title: 'Charm an Enemy, Cause Havoc', requires: ['mystery'], bg: 'rival', cast: ['ruby', 'jade', 'absalom', 'stormcaller'],
+    { id: 'havoc', lead: 'On Evangeline’s desk Ruby saw her orders, in pink ink: “If Ruby comes for the Pearl, throw the chest into the bay. Only a mermaid could reach it there.”', clue: 'Evangeline’s ship is in the next cove. I’d bet my boots our stolen chart is aboard.', level: 1, kind: 'plot', title: 'Charm an Enemy, Cause Havoc', requires: ['mystery'], bg: 'rival', cast: ['ruby', 'jade', 'absalom', 'stormcaller'],
       hook: 'Evangeline’s ship is anchored in the next cove, Ruby’s stolen chart aboard. Her girls are having a party on deck.',
       accept: 'Sneak aboard',
       beats: [
@@ -265,12 +363,12 @@ window.SOULMATES_QUEST = {
       ends: [[0, 'The play was a disaster from start to finish. It was the best night the ship has ever had.'], [4, 'The play was a disaster, right until the two captains finished it themselves. Marietta is already writing a sequel.']] },
 
     { id: 'shanty', level: 1, kind: 'crew', from: 'stormcaller', title: 'Sea Shanties', bg: 'deck', cast: ['stormcaller', 'cutlass', 'ruby'],
-      hook: 'Captain, Evangeline’s girls are singing a shanty about us across the water. It is not flattering. Shall we sing back?',
-      beats: [{ text: 'Across the cove, Evangeline’s crew is roasting Ruby’s ship in song.', lines: ['Stormcaller: “Two crews, one shanty, zero mercy.”', 'Cutlass: “I’ll take the low notes.”'] }],
-      ends: [[0, 'Hit the notes to roast the other captain in song.']],
-      play: { href: '../pirate-shanty/index.html', label: 'Play Sea shanties' }, back: 'The singing has stopped. Somebody across the cove is definitely sulking.' },
+      hook: 'Captain, the boys reckon they can out-sing your crew. Shanty battle on deck, tonight. Loser does the dishes.',
+      beats: [{ text: 'Lanterns on the deck, a fiddle on a barrel, and two crews glaring at each other across the mainmast.', lines: ['Stormcaller: “Two crews, one shanty, zero mercy.”', 'Cutlass: “I’ll take the low notes.”'] }],
+      ends: [[0, 'Hit the notes to roast the other crew in song.']],
+      play: { href: '../pirate-shanty/index.html', label: 'Play Sea shanties' }, back: 'The singing has stopped. Somebody on the losing side is definitely sulking over the dishes.' },
 
-    { id: 'plank', clue: 'Sails on the horizon. Pink ones. That can only be Evangeline.', level: 1, kind: 'plot', title: 'Walk the Plank', bg: 'rival', cast: ['cutlass', 'ruby'],
+    { id: 'plank', lead: 'Through the spyglass Ruby marked where the chest went down: the bay by the twin rocks, where fishermen say something glows at night.', clue: 'Sails on the horizon. Pink ones. That can only be Evangeline.', level: 1, kind: 'plot', title: 'Walk the Plank', bg: 'rival', cast: ['cutlass', 'ruby'],
       hook: 'A shadow falls across the deck. Evangeline’s ship has come alongside, and her girl pirates are swinging aboard!',
       accept: 'Draw swords',
       beats: [
@@ -312,6 +410,30 @@ window.SOULMATES_QUEST = {
       ],
       ends: [[0, 'Oro joins the crew. He knows the eastern seas, and he knows the way to an old master in the jungle who knows the Pirate King’s secrets.']] },
 
+    { id: 'pkboard', level: 2, kind: 'plot', visitor: 'pirateking', title: 'The Pirate King Comes Aboard', bg: 'here', requires: ['oro'], cast: ['ruby', 'cutlass', 'pirateking', 'oro', 'monsoon'],
+      clue: 'A black ship with a dragon on its sail is alongside, Captain. Its captain wants to talk. Its cannons look like they want to talk too.',
+      greet: 'So this is the little ship that dares to sail my seas.',
+      hook: 'The Pirate King himself has stepped aboard: crimson coat, golden crown, and below in his galley, a hundred oarsmen in chains.',
+      accept: 'Stand your ground', storm: 'Run along, then. My fleet will find you.',
+      lead: 'The Pirate King’s sailors are in chains. One of them whispered as he went over the side: “Free us, and we’ll never fight for him again.”',
+      beats: [
+        { text: 'The Pirate King doesn’t look at the ship. He looks through it, as if it were already his.',
+          lines: ['The Pirate King: “Turn back, Captain. The Dragon Seal stays with me.”', 'Oro: “He keeps it on his flagship. I told you.”', 'The Pirate King: “And you, boy, talk too much.”', 'Ruby: “We’re not turning back.”'],
+          choices: [
+            { label: 'Ask why his sailors are in chains', score: 2, reply: ['The Pirate King: “Because free men argue. Chained men row.”', 'Oro’s fists clench.'] },
+            { label: 'Step between him and Oro', score: 2, reply: ['Ruby: “You talk to me, not my brother.”', 'The Pirate King: “Brave. Foolish, but brave.”'] },
+            { label: 'Challenge him to a duel', score: 1, reply: ['The Pirate King laughs. “I don’t fight, Captain. I have people for that.”'] },
+          ] },
+        { text: 'He raises one ringed hand. His crews swarm up the sides of the ship.',
+          lines: ['The Pirate King: “Teach them some manners.”', 'Cutlass: “Everyone, to the rail!”'] },
+        { game: 'repel', mustWin: true, how: 'The Pirate King’s crews are climbing up the side, and there are a lot of them. Run along the deck with ← → and knock them back into the sea with Space (or tap one). Cut the ropes while the hooks are still clanking. Four aboard and they take the ship.',
+          opts: { hero: 'ruby', foe: 'eastern', count: 14, crew: ['oro', 'cutlass', 'monsoon'], title: 'Repel the Pirate King’s crews!',
+                  win: 'The last of his crews tumbles into the sea. Some of them, Ruby notices, wear iron cuffs on their wrists.' } },
+        { text: 'His crews scramble back to their boats. The Pirate King strolls back to his own ship, in no hurry at all.', gone: ['pirateking'],
+          lines: ['The Pirate King: “Next time, Captain, I bring the whole fleet.”', 'Oro: “Good. Saves us looking for it.”'] },
+      ],
+      ends: [[0, 'The Pirate King is gone, but he will be back with every ship he has. And some of his sailors don’t want to be there at all.']] },
+
     { id: 'rafting', clue: 'The map points up a jungle river. Nobody who’s gone up it likes to talk about it.', level: 2, kind: 'plot', title: 'River Rafting in the Jungle', bg: 'river', cast: ['ruby', 'cutlass'],
       hook: 'The old master lives upriver, deep in the jungle. The only way there is by raft, and Oro says the river is “a bit lively.”',
       accept: 'Push off',
@@ -327,7 +449,7 @@ window.SOULMATES_QUEST = {
       failText: 'The river wins this time. Ruby and Cutlass wash up downstream, soggy and arguing. Try the river again.',
       ends: [[0, 'Soaked to the bone, they climb the last hill to a little stone house in the mist. An old man sits outside with a board game laid out, as if he’s been waiting for them.']] },
 
-    { id: 'boardgame', clue: 'An old man on the hill says he’ll only talk to someone who can beat him at his game.', level: 2, kind: 'plot', title: 'The Old Master’s Game', bg: 'temple', cast: ['ruby', 'cutlass'],
+    { id: 'boardgame', lead: 'The old master told them the Pirate King’s secret: his crews obey him only because he holds their freedom in chains. Free them, and he stands alone.', clue: 'An old man on the hill says he’ll only talk to someone who can beat him at his game.', level: 2, kind: 'plot', title: 'The Old Master’s Game', bg: 'temple', cast: ['ruby', 'cutlass'],
       hook: 'The wise old master will share the Pirate King’s secrets, but only with someone who will play him at Go, the old stone game of black and white.',
       accept: 'Sit down to play',
       beats: [
@@ -342,6 +464,25 @@ window.SOULMATES_QUEST = {
           lines: ['The old master: “You play with a good heart. So I will tell you.”', 'The old master: “The Pirate King keeps the Dragon Seal on his flagship. His crews obey him only because he holds their freedom in chains. Free them, and he stands alone.”', 'The old master: “He will not expect you to fight with swords. Fight with whatever is at hand.”'] },
       ],
       ends: [[0, 'The old master bows. Ruby and Cutlass bow back. Now they know the Pirate King’s secret: free those in servitude, and he stands alone.']] },
+
+    { id: 'blockade', level: 2, kind: 'plot', title: 'Running the Blockade', bg: 'eastern', cast: ['ruby', 'cutlass', 'monsoon', 'oro'],
+      clue: 'Three of the Pirate King’s warships are blocking the strait, Captain. We can’t get past without a fight.',
+      hook: 'The Pirate King’s warships block the only way through the strait. Their black sails all carry his dragon.',
+      accept: 'Run out the guns',
+      lead: 'Behind the blockade, Ruby spotted his flagship: the Dragon Seal glints in a golden box on the high deck, and the chained sailors are singing a sad song at the oars.',
+      beats: [
+        { text: 'The warships turn broadside on. Every gun port opens at once.',
+          lines: ['Monsoon: “Cannons loaded, Captain. All of them.”', 'Oro: “Aim for the masts. If they can’t sail, they can’t follow.”', 'Cutlass: “And mind the oar decks. Those sailors didn’t choose this.”'],
+          choices: [
+            { label: 'Aim for the masts', score: 2, reply: ['Monsoon: “Masts it is.” He licks his thumb and holds it up to the wind.'] },
+            { label: 'Go straight through the middle', score: 1, reply: ['Oro: “Bold. I like it.”', 'Cutlass: “I don’t.”'] },
+            { label: 'Hoist every sail and hope', score: 1, reply: ['Monsoon: “Wind’s with us, Captain. Mostly.”'] },
+          ] },
+        { game: 'cannons', mustWin: true, how: 'A warship sails to and fro across the strait. Aim with ← → and fire with Space, leading the ship so the ball lands where it’s going. When their gunners fire, duck behind the rail with ↓.',
+          opts: { foe: 'The Pirate King’s warship', sails: '#3a2a2a', flag: '#c0302a', banner: 'dragon', need: 7, hull: 5, gunner: 'monsoon', title: 'Run the blockade!',
+                  win: 'The warship’s masts come crashing down and it drifts out of the way. The strait is open, and beyond it lies the Pirate King’s flagship.' } },
+      ],
+      ends: [[0, 'The blockade is broken. Beyond it the whole of the Pirate King’s fleet is waiting, and his flagship flies the dragon banner.']] },
 
     { id: 'mopwar', clue: 'The Pirate King’s fleet is on the horizon, Captain. All of it.', level: 2, kind: 'plot', final: true, item: 2, title: 'The Mop War', bg: 'eastern', cast: ['ruby', 'cutlass', 'oro', 'crispin', 'scarlett', 'tempest', 'jade', 'monsoon', 'bones'],
       hook: 'The Pirate King’s fleet blocks the horizon. His flagship flies a dragon banner. The crews have barrels, rigging, and mops!',

@@ -49,6 +49,7 @@ function makeKit(canvas, api, done) {
 
   const k = {
     W, H, g, field, keys, pointer, rand, clamp, pick, reduceMotion, t: 0,
+    name: key => api.name(key), pirate: key => api.pirate(key),
     hit: name => pressed.has(name),
     clicked: () => pointer.clicked,
     setControls(list, label) {
@@ -129,8 +130,8 @@ function makeKit(canvas, api, done) {
   return k;
 }
 
-// Runs a game in the canvas. Returns a stop() function. onEnd({ won, score, text }).
-window.runSoulmatesGame = (name, canvas, api, onEnd) => {
+// Runs a game in the canvas. Returns a stop() function. onEnd({ won, score, text }). opts: the beat's `opts` (who you fight, etc.).
+window.runSoulmatesGame = (name, canvas, api, onEnd, opts = {}) => {
   const make = GAMES[name];
   let finished = false, raf = 0, last = performance.now();
   const k = makeKit(canvas, api, result => { finished = true; cancelAnimationFrame(raf); setTimeout(() => onEnd(result), 700); });
@@ -140,7 +141,7 @@ window.runSoulmatesGame = (name, canvas, api, onEnd) => {
     canvas.width = Math.round(W * K); canvas.height = Math.round(FRAME_H * K); k.field.width = Math.round(W * K); k.field.height = Math.round(H * K); k.scale = K;
   };
   resize();
-  const game = make(k);
+  const game = make(k, opts);
   const frame = now => {
     const dt = Math.min(.05, (now - last) / 1000); last = now; k.t += dt;
     if (canvas.width !== Math.round(W * k.scale)) resize();
@@ -1175,6 +1176,250 @@ GAMES.mopwar = k => {
       k.text('♥'.repeat(Math.max(0, hp)) + '♡'.repeat(Math.max(0, 6 - hp)), 20, 52, { align: 'left', size: 22, color: '#ff8fa0' });
       k.text(`Freed ${prisoners.filter(p => p.freed).length} / 3 · Mopped ${defeated}`, W - 20, 26, { align: 'right', size: 18 });
       k.text('← → move · Space mop · ↑ at the barrels to roll one · hold ↓ by the chained sailors to free them', W / 2, H - 14, { size: 14 });
+      pop.draw();
+    },
+  };
+};
+
+// ===================== REPEL BOARDERS =====================
+// The villain's gang throws grappling hooks over the far rail and climbs up. Run along the deck and knock them back
+// into the sea before they get aboard. Crewmates pitch in now and then. When enough are gone, the boss climbs up himself.
+// opts: { hero, foe: 'goons' | 'girls' | 'eastern', boss (a crew key with art), bossName, count, night, crew: [keys], title, win, lose }
+GAMES.repel = (k, o = {}) => {
+  k.setControls(['left', 'right', 'act'], o.hero === 'cutlass' ? 'Swing!' : 'Shove!');
+  const g = k.g, pop = popups(k);
+  const hero = o.hero || 'ruby', NEED = o.count || 12, MAX_IN = 4, BOSS_NEED = o.boss ? 3 : 0, RAIL = 250;
+  const POINTS = [110, 255, 400, 560, 705, 850];
+  const LOOKS = {
+    goons: [{ coat: '#3b3b4f', sash: '#b88a2a', hat: '#1c1c28' }, { coat: '#4a3b2f', sash: '#b88a2a', hat: '#2a1c14', skin: '#c58c5c' }, { coat: '#2f3d4a', hat: null, hair: '#1a1410', sash: '#b88a2a' }],
+    girls: [{ coat: '#c25a7c', hair: '#5a2a1a', hat: null, sash: '#f3e6cc' }, { coat: '#8a4a8a', hair: '#e2c27a', hat: '#3a1f2a', sash: '#ffd0de' }, { coat: '#d47a8a', hair: '#1a0f1a', hat: null, sash: '#f3e6cc', skin: '#c58c5c' }],
+    eastern: [{ coat: '#8a2a2a', hat: '#2a2a2a', sash: '#d2a24c', skin: '#d8a878' }, { coat: '#5a2a2a', hat: null, hair: '#141010', sash: '#d2a24c', skin: '#c89868' }, { coat: '#6a3a1a', hat: '#3a2a1a', sash: '#d2a24c', skin: '#d8a878' }],
+  };
+  const looks = LOOKS[o.foe] || LOOKS.goons;
+  const LOOT = o.foe === 'girls' ? ['Pinched a map!', 'Took Jade’s poem!', 'Grabbed the good teacups!'] : o.foe === 'eastern' ? ['Took the anchor chain!', 'Grabbed a cannonball!', 'Stole the compass box!'] : ['Grabbed the rum! (There’s no rum.)', 'Pinched Odessa’s pie!', 'Took a cannonball!'];
+  let x = W / 2, tx = null, face = 1, swing = 0, cool = 0, knocked = 0, aboard = 0, cuts = 0, spawn = 1.2, climbers = [], runners = [], boss = null, bossHits = 0, phase = 'gang', helpT = rand(6, 8), over = false;
+  const climbTime = () => Math.max(2.1, 3.3 - knocked * .07);
+  const freePoint = () => { const free = POINTS.filter(px => !climbers.some(c => c.x === px)); return free.length ? pick(free) : null; };
+  function addClimber(isBoss) {
+    const px = freePoint(); if (px == null) return;
+    const c = { x: px, hook: .6, p: 0, dur: isBoss ? 2.2 : climbTime() * rand(.9, 1.15), look: pick(looks), boss: isBoss, fall: 0 };
+    climbers.push(c); if (isBoss) boss = c;
+  }
+  function knock(c, by) {
+    c.fall = .01;
+    if (c.boss) {
+      bossHits++; k.shake = .5;
+      pop.add(bossHits >= BOSS_NEED ? 'SPLASH!' : pick(['He’s coming back!', 'Not so fast!', 'Back you go!']), c.x, RAIL - 120, '#ffd27a', 28);
+      if (bossHits >= BOSS_NEED) { phase = 'won'; boss = null; }
+      else setTimeout(() => { if (phase === 'boss') addClimber(true); }, 700);
+      return;
+    }
+    knocked++;
+    pop.add(by ? pick(['Got one!', 'Overboard!', 'Shove!']) : pick(['SPLASH!', 'Overboard!', 'Bye bye!', 'Into the drink!']), c.x, RAIL - 100, by ? '#c8f5a0' : '#fff2a8');
+    if (knocked >= NEED && phase === 'gang') {
+      phase = BOSS_NEED ? 'bossIntro' : 'won';
+      if (BOSS_NEED) { pop.add(`${o.bossName || 'The boss'} is climbing up ${o.foe === 'girls' ? 'herself' : 'himself'}!`, W / 2, 90, '#ffd27a', 28); setTimeout(() => { phase = 'boss'; addClimber(true); }, 1400); }
+    }
+  }
+  function endGame(won) {
+    if (over) return; over = true;
+    k.end(won ? { won: true, score: clamp(5 - aboard + (cuts >= 3 ? 1 : 0), 2, 5), text: o.win || `Every last one of them is back in the sea. ${aboard ? `${aboard} got aboard for a moment, but` : 'Not one of them got aboard, and'} the crew cheer from the rigging.` }
+                : { won: false, score: 0, text: o.lose || 'Too many of them got aboard! The crew chase them off with mops, but the gang got what they came for.' });
+  }
+  return {
+    update(dt) {
+      pop.update(dt);
+      if (phase === 'won') { if (!climbers.some(c => c.fall)) endGame(true); }
+      // moving along the deck
+      const dx = (k.keys.right ? 1 : 0) - (k.keys.left ? 1 : 0);
+      if (dx) { tx = null; x = clamp(x + dx * 520 * dt, 60, W - 60); face = dx; }
+      if (k.clicked()) { tx = clamp(k.pointer.x, 60, W - 60); }
+      if (tx != null) { const d = tx - x; x += Math.sign(d) * Math.min(Math.abs(d), 560 * dt); if (Math.abs(d) > 2) face = Math.sign(d); else { tx = null; if (k.pointer.y < RAIL + 40) act(); } }
+      swing = Math.max(0, swing - dt); cool = Math.max(0, cool - dt);
+      function act() {
+        if (cool > 0) return; swing = .25; cool = .22;
+        const c = climbers.filter(c => !c.fall && Math.abs(c.x - x) < 85).sort((a, b) => b.p - a.p)[0];
+        if (!c) { cool = .6; pop.add('Whoosh! Missed', x, RAIL + 30, '#bcd', 16); return; }   // flailing at thin air costs a moment
+        if (c.hook > 0) { c.fall = .01; cuts++; pop.add('Rope cut!', c.x, RAIL - 40, '#c8f5a0'); if (c.boss) { setTimeout(() => { if (phase === 'boss') addClimber(true); }, 500); boss = null; } return; }
+        knock(c);
+      }
+      if (k.hit('act')) act();
+      // the gang
+      if (phase === 'gang') {
+        spawn -= dt;
+        const most = knocked > NEED * .5 ? 3 : 2;
+        if (spawn <= 0 && climbers.filter(c => !c.fall).length < most) { addClimber(false); spawn = Math.max(.75, 1.7 - knocked * .06) * rand(.8, 1.2); }
+        // a crewmate helps out now and then, at the far end from the captain
+        helpT -= dt;
+        if (helpT <= 0 && (o.crew || []).length) {
+          helpT = rand(7, 10);
+          const c = climbers.filter(c => !c.fall && c.hook <= 0 && Math.abs(c.x - x) > 200).sort((a, b) => b.p - a.p)[0];
+          if (c) { const who = pick(o.crew); c.helper = who; knock(c, who); pop.add(`${k.name(who)}!`, c.x, RAIL - 140, '#c8f5a0', 18); }
+        }
+      }
+      climbers.forEach(c => {
+        if (c.fall) { c.fall += dt; return; }
+        if (c.hook > 0) { c.hook -= dt; return; }
+        c.p += dt / c.dur;
+        if (c.p >= 1) {
+          c.gone = true; aboard++; k.shake = .4;
+          runners.push({ x: c.x, look: c.look, boss: c.boss, t: 0, dir: c.x < W / 2 ? -1 : 1, say: c.boss ? 'Ha! Back you go yourself!' : pick(LOOT) });
+          pop.add(c.boss ? `${o.bossName || 'The boss'} got aboard!` : 'They got aboard!', c.x, RAIL - 60, '#ff9c8a');
+          if (c.boss) { boss = null; setTimeout(() => { if (phase === 'boss') addClimber(true); }, 1500); }
+          if (aboard >= MAX_IN) endGame(false);
+        }
+      });
+      climbers = climbers.filter(c => !c.gone && !(c.fall > 1));
+      runners.forEach(r => { r.t += dt; }); runners = runners.filter(r => r.t < 1.6);
+    },
+    draw() {
+      // sky and sea beyond the far rail, the rail, and the deck we stand on
+      const sky = g.createLinearGradient(0, 0, 0, RAIL);
+      sky.addColorStop(0, o.night ? '#0d1730' : '#8cc4e6'); sky.addColorStop(.55, o.night ? '#1d2c50' : '#cfe6f2'); sky.addColorStop(.56, o.night ? '#0f2238' : '#2f7d98'); sky.addColorStop(1, o.night ? '#091626' : '#1c5470');
+      g.fillStyle = sky; g.fillRect(0, 0, W, RAIL);
+      if (o.night) { g.fillStyle = '#f3ecd0'; g.beginPath(); g.arc(800, 50, 22, 0, 7); g.fill(); for (let i = 0; i < 40; i++) { g.fillStyle = `rgba(255,255,255,${.3 + .3 * Math.sin(k.t * 2 + i)})`; g.fillRect((i * 137) % W, (i * 53) % 120, 2, 2); } }
+      for (let i = 0; i < 8; i++) { g.fillStyle = o.night ? 'rgba(160,190,230,.15)' : 'rgba(255,255,255,.25)'; g.fillRect(((i * 150 + k.t * 30) % (W + 100)) - 50, 160 + (i % 3) * 26, 40, 3); }
+      // the climbers: only what's above the rail shows
+      g.save(); g.beginPath(); g.rect(0, 0, W, RAIL - 10); g.clip();
+      climbers.forEach(c => {
+        const foot = RAIL + 150 - c.p * 150 + (c.fall ? c.fall * c.fall * 600 : 0), h = c.boss ? 185 : 150, alpha = c.fall ? clamp(1 - c.fall, 0, 1) : 1;
+        if (c.hook > 0 && !c.fall) return;
+        if (c.boss && k.pirate(o.boss)?.img_) k.sprite(o.boss, c.x, foot, h, false, alpha, c.fall ? c.fall * 2 : Math.sin(k.t * 6) * .03);
+        else k.figure(c.x, foot, h, { ...c.look, alpha, flip: c.x > W / 2 });
+      });
+      g.restore();
+      // grappling hooks on the rail
+      climbers.forEach(c => {
+        if (c.fall && c.hook > 0) return;
+        g.strokeStyle = '#c9ccd2'; g.lineWidth = 4; g.beginPath(); g.arc(c.x, RAIL - 16, 9, Math.PI * .1, Math.PI * .9, true); g.stroke();
+        g.beginPath(); g.moveTo(c.x, RAIL - 25); g.lineTo(c.x, RAIL - 8); g.stroke();
+        if (c.hook > 0) k.text('clank!', c.x, RAIL - 46, { size: 14, color: '#e8e8e8' });
+      });
+      g.fillStyle = '#5b3d22'; g.fillRect(0, RAIL - 12, W, 22); g.fillStyle = '#87613b'; g.fillRect(0, RAIL - 16, W, 6);
+      for (let i = 0; i < 13; i++) { g.fillStyle = '#4a3020'; g.fillRect(i * 80 + 10, RAIL - 12, 8, 22); }
+      g.fillStyle = o.night ? '#4a3420' : '#9a7048'; g.fillRect(0, RAIL + 10, W, H); g.fillStyle = 'rgba(0,0,0,.12)'; for (let i = 0; i < 7; i++) g.fillRect(0, RAIL + 28 + i * 24, W, 2);
+      if (o.night) { g.fillStyle = 'rgba(10,16,40,.28)'; g.fillRect(0, 0, W, H); }
+      // anyone who made it aboard, dashing off with something
+      runners.forEach(r => {
+        const rx = r.x + r.dir * r.t * 260, a = clamp(1.6 - r.t, 0, 1);
+        if (r.boss && k.pirate(o.boss)?.img_) k.sprite(o.boss, rx, RAIL + 70, 150, r.dir < 0, a); else k.figure(rx, RAIL + 70, 120, { ...r.look, alpha: a, flip: r.dir < 0 });
+        if (r.t < 1) k.text(r.say, r.x, RAIL + 40 - r.t * 20, { size: 16, color: '#ffd9a8' });
+      });
+      // the captain
+      k.sprite(hero, x, 412, 175, face < 0, 1, swing > 0 ? face * .25 * Math.sin(swing / .25 * Math.PI) : 0);
+      if (swing > 0) { g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 4; g.beginPath(); g.arc(x, RAIL + 60, 70, -Math.PI * .8, -Math.PI * .2); g.stroke(); }
+      // reach marker
+      g.fillStyle = 'rgba(255,240,180,.18)'; g.fillRect(x - 85, RAIL - 12, 170, 22);
+      const title = o.title || 'Repel the boarders!';
+      k.text(title, 20, 26, { align: 'left', size: 24, font: 'display' });
+      if (phase === 'gang') k.bar(20, 44, 220, 18, knocked / NEED, '#7fc97f', `${knocked} / ${NEED} overboard`);
+      else if (BOSS_NEED) k.bar(20, 44, 220, 18, bossHits / BOSS_NEED, '#ffc25a', `${o.bossName || 'Boss'}: ${bossHits} / ${BOSS_NEED}`);
+      k.text(`Got aboard: ${aboard} / ${MAX_IN}`, W - 20, 26, { align: 'right', size: 18, color: aboard >= 3 ? '#ff9c8a' : '#fff8ea' });
+      k.text('← → to run along the deck. Space (or tap a climber) to knock them off. Cut ropes before they climb!', W / 2, H - 12, { size: 15 });
+      pop.draw();
+    },
+  };
+};
+
+// ===================== BROADSIDES: a cannon battle =====================
+// The villain's ship sails back and forth on the horizon. Slide the aim along the water and fire: the ball takes
+// a moment to fly, so aim where the ship is going. When their gunners shout, duck behind the rail.
+// opts: { foe (the ship's name), sails, flag, banner: 'bunting' | 'dragon' | 'hearts', need, hull, gunner, title, win, lose }
+GAMES.cannons = (k, o = {}) => {
+  k.setControls(['left', 'right', 'down', 'act'], 'Fire!');
+  const g = k.g, pop = popups(k);
+  const NEED = o.need || 6, HULL = o.hull || 5, SEA = 190, FLY = .95;
+  let aim = W / 2, sx = 200, sv = 70, turn = rand(2, 4), hits = 0, hull = HULL, reload = 0, balls = [], duck = 0, incoming = null, nextShot = 3.2, splashes = [], smoke = [], over = false, sink = 0;
+  function endGame(won) {
+    if (over) return; over = true;
+    k.end(won ? { won: true, score: clamp(hull, 2, 5), text: o.win || `Their mast cracks and the flag comes down. ${o.foe || 'The enemy ship'} limps away.` }
+              : { won: false, score: 0, text: o.lose || 'Our hull is full of holes! The crew bail with buckets as the enemy sails off laughing.' });
+  }
+  return {
+    update(dt) {
+      pop.update(dt);
+      if (sink) { sink += dt; if (sink > 1.6) endGame(true); }
+      // the enemy ship changes speed and direction now and then
+      turn -= dt; if (turn <= 0) { turn = rand(1.8, 3.6); sv = (Math.random() < .5 ? -1 : 1) * rand(60, 130 + hits * 12); }
+      sx += sv * dt; if (sx < 150 || sx > W - 150) { sv = -sv; sx = clamp(sx, 150, W - 150); }
+      // aiming
+      const dx = (k.keys.right ? 1 : 0) - (k.keys.left ? 1 : 0);
+      aim = clamp(aim + dx * 440 * dt, 40, W - 40);
+      if (k.pointer.down && k.pointer.y < 300) aim = clamp(aim + Math.sign(k.pointer.x - aim) * Math.min(Math.abs(k.pointer.x - aim), 600 * dt), 40, W - 40);
+      reload = Math.max(0, reload - dt); duck = Math.max(0, duck - dt);
+      const fire = k.hit('act') || (k.clicked() && k.pointer.y < 300);
+      if (fire && !sink) {
+        if (duck > 0) pop.add('Not while ducking!', W / 2, 300, '#ffd9a8', 18);
+        else if (reload > 0) pop.add('Reloading…', W / 2, 300, '#ffd9a8', 18);
+        else { balls.push({ x: aim, t: 0 }); reload = .75; k.shake = .25; smoke.push({ x: W / 2, y: 330, t: 0 }); }
+      }
+      if (k.hit('down') || (k.clicked() && k.pointer.y >= 330)) { duck = .9; }
+      balls.forEach(b => {
+        b.t += dt;
+        if (b.t >= FLY && !b.done) {
+          b.done = true;
+          if (Math.abs(b.x - sx) < 90 && !sink) { hits++; k.shake = .4; pop.add(pick(['BOOM!', 'Direct hit!', 'Right in the hull!', 'There goes a sail!']), sx, SEA - 110, '#ffd27a', 26); smoke.push({ x: sx + rand(-40, 40), y: SEA - 40, t: 0, big: true }); if (hits >= NEED) sink = .01; }
+          else { splashes.push({ x: b.x, t: 0 }); pop.add('Splash!', b.x, SEA - 30, '#bde', 18); }
+        }
+      });
+      balls = balls.filter(b => !b.done);
+      // they shoot back
+      if (!sink) {
+        if (!incoming) { nextShot -= dt; if (nextShot <= 0) { incoming = { t: 0, land: Math.max(.95, 1.35 - hits * .05) }; smoke.push({ x: sx, y: SEA - 20, t: 0 }); } }
+        else {
+          incoming.t += dt;
+          if (incoming.t >= incoming.land) {
+            if (duck > 0) pop.add(pick(['Missed us!', 'Ha! Too high!', 'Whoosh!']), W / 2, 250, '#c8f5a0', 24);
+            else { hull--; k.shake = .8; pop.add(pick(['Ouch! Hull hit!', 'They got the galley!', 'Splinters!']), W / 2, 250, '#ff9c8a', 26); if (hull <= 0) endGame(false); }
+            incoming = null; nextShot = rand(2.4, 3.8);
+          }
+        }
+      }
+      splashes.forEach(s => s.t += dt); splashes = splashes.filter(s => s.t < .8);
+      smoke.forEach(s => s.t += dt); smoke = smoke.filter(s => s.t < 1.4);
+    },
+    draw() {
+      const sky = g.createLinearGradient(0, 0, 0, SEA); sky.addColorStop(0, '#7fb3d9'); sky.addColorStop(1, '#d6ecf5'); g.fillStyle = sky; g.fillRect(0, 0, W, SEA);
+      const sea = g.createLinearGradient(0, SEA, 0, H); sea.addColorStop(0, '#2f7d98'); sea.addColorStop(1, '#123e58'); g.fillStyle = sea; g.fillRect(0, SEA, W, H - SEA);
+      for (let i = 0; i < 14; i++) { g.fillStyle = 'rgba(255,255,255,.22)'; g.fillRect(((i * 97 + k.t * 25) % (W + 60)) - 30, SEA + 10 + (i % 5) * 26, 30 + (i % 3) * 10, 3); }
+      // the enemy ship
+      const bob = Math.sin(k.t * 1.6) * 3, y = SEA + 14 + bob + sink * 40, tilt = sink ? Math.min(.35, sink * .25) : Math.sin(k.t * 1.2) * .02, dir = sv < 0 ? -1 : 1;
+      g.save(); g.translate(sx, y); g.rotate(tilt * dir); g.scale(dir * .78, .78);
+      g.fillStyle = '#4a2c17'; g.beginPath(); g.moveTo(-120, -30); g.lineTo(120, -30); g.lineTo(95, 6); g.lineTo(-100, 6); g.closePath(); g.fill();
+      g.fillStyle = '#6b4423'; g.fillRect(-118, -40, 236, 12); g.fillStyle = '#1c1008'; for (let i = 0; i < 6; i++) g.fillRect(-90 + i * 34, -24, 12, 9);
+      [-55, 5, 62].forEach((mx, i) => {
+        const mh = i === 1 ? 150 : 120;
+        g.fillStyle = '#3a2412'; g.fillRect(mx - 3, -40 - mh, 6, mh);
+        if (!(hits > i * 2 + 1)) { g.fillStyle = o.sails || '#f3e6cc'; g.beginPath(); g.moveTo(mx - 34, -40 - mh + 18); g.quadraticCurveTo(mx + 8, -40 - mh / 2, mx - 34, -52); g.lineTo(mx + 34, -52); g.quadraticCurveTo(mx + 48, -40 - mh / 2, mx + 34, -40 - mh + 18); g.closePath(); g.fill(); }
+        else { g.fillStyle = 'rgba(243,230,204,.5)'; g.fillRect(mx - 20, -40 - mh + 30, 26, 18); }
+        if (o.banner === 'dragon' && i === 1 && !sink) { k.text('🐉', mx, -40 - mh / 2 - 10, { size: 30, stroke: null }); }
+        if (o.banner === 'hearts' && i !== 1 && hits <= i * 2 + 1) k.text('♥', mx, -40 - mh / 2 - 10, { size: 26, color: '#c2305a', stroke: null });
+      });
+      if (!sink) { g.fillStyle = o.flag || '#1a1a1a'; g.fillRect(5, -40 - 150 - 22, 34, 20); }
+      if (o.banner === 'bunting') { g.strokeStyle = '#d6a92a'; g.lineWidth = 2; g.beginPath(); g.moveTo(-55, -150); g.quadraticCurveTo(-25, -120, 5, -180); g.quadraticCurveTo(35, -125, 62, -150); g.stroke();
+        ['#ffb6c8', '#fff', '#ffe08a', '#ffb6c8', '#fff', '#ffe08a'].forEach((c, i) => { g.fillStyle = c; const bx = -48 + i * 19, by = -142 + Math.abs(i - 2.5) * -6 + 8; g.beginPath(); g.moveTo(bx - 5, by); g.lineTo(bx + 5, by); g.lineTo(bx, by + 10); g.fill(); }); }
+      g.restore();
+      k.text(o.foe || 'The enemy ship', sx, SEA + 34 + bob, { size: 15, color: '#fff8ea' });
+      splashes.forEach(s => { g.fillStyle = `rgba(255,255,255,${.9 - s.t})`; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(s.x - 20 + i * 8, SEA + 8 - Math.sin(s.t * 4 + i) * 30 * (1 - s.t), 5, 0, 7); g.fill(); } });
+      smoke.forEach(s => { g.fillStyle = `rgba(${s.big ? '60,50,40' : '230,230,230'},${.6 * (1 - s.t / 1.4)})`; g.beginPath(); g.arc(s.x, s.y - s.t * 40, (s.big ? 30 : 18) + s.t * 30, 0, 7); g.fill(); });
+      // cannonballs in flight, shrinking toward the horizon
+      balls.forEach(b => { const p = b.t / FLY, bx = W / 2 + (b.x - W / 2) * p, by = 330 - p * (330 - SEA) - Math.sin(p * Math.PI) * 120; g.fillStyle = '#1a1a1a'; g.beginPath(); g.arc(bx, by, 10 - p * 6, 0, 7); g.fill(); });
+      if (incoming) { const p = incoming.t / incoming.land; g.fillStyle = '#1a1a1a'; g.beginPath(); g.arc(sx + (W / 2 - sx) * p, SEA - 30 - Math.sin(p * Math.PI) * 140 + p * 200, 4 + p * 14, 0, 7); g.fill();
+        k.text('INCOMING! Duck! (↓)', W / 2, 120, { size: 30, color: '#ff9c8a', font: 'display' }); }
+      // the aim marker on the water
+      g.strokeStyle = reload > 0 ? 'rgba(255,255,255,.4)' : '#ffd27a'; g.lineWidth = 3; g.beginPath(); g.ellipse(aim, SEA + 10, 26, 8, 0, 0, 7); g.stroke();
+      g.beginPath(); g.moveTo(aim, SEA - 30); g.lineTo(aim, SEA - 4); g.stroke();
+      // our rail, the cannon, the gunner and the captain
+      const crouch = duck > 0 ? 40 : 0;
+      if (o.gunner && k.pirate(o.gunner)?.img_) k.sprite(o.gunner, 210, 420 + crouch, 170);
+      k.sprite('ruby', 780, 420 + crouch, 175, true);
+      g.fillStyle = '#2b2b30'; g.save(); g.translate(W / 2, 360); g.rotate((aim - W / 2) / W * .8); k.rr(-16, -70, 32, 80, 10); g.fill(); g.restore();
+      g.fillStyle = '#5b3d22'; g.fillRect(0, 360, W, 60); g.fillStyle = '#87613b'; g.fillRect(0, 354, W, 10);
+      k.text(o.title || 'Broadsides!', 20, 26, { align: 'left', size: 24, font: 'display' });
+      k.bar(20, 44, 220, 18, hits / NEED, '#ffc25a', `Hits: ${hits} / ${NEED}`);
+      k.bar(W - 240, 18, 220, 18, hull / HULL, hull > 2 ? '#7fc97f' : '#e0705a', `Our hull: ${hull} / ${HULL}`);
+      if (reload > 0) k.bar(W / 2 - 50, 392, 100, 12, 1 - reload / .75, '#fff2a8');
+      k.text('← → to aim (lead the ship!). Space to fire. ↓ to duck when they shoot back.', W / 2, H - 10, { size: 15 });
       pop.draw();
     },
   };

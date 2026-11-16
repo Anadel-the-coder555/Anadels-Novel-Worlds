@@ -52,10 +52,15 @@ const PIRATES = {
   clement:     { name: 'Clement “Goldtooth”', img: 'clement.png', size: 1.03, face: [.5, .09, .13], station: [.55, 505, 'study'], villain: true,
                  taunts: ['Well, well. Captain Ruby’s little crew.', 'Lovely maps. I’ll be borrowing them.', 'Join you? I’d sooner kiss a jellyfish.', 'This ship will be mine. Enjoy it while it lasts.', 'Run along now. The grown-ups are plotting.'],
                  walk: { img: 'clement-walk.png', frames: 8, fw: 264, fh: 420, ax: 132, cycle: 150 } },
+  // no painted art yet: these two are drawn by paintVillain() below (swap in a .png in `img` any time)
+  evangeline:  { name: 'Captain Evangeline', paint: 'evangeline', size: 1, face: [.5, .085, .12], station: [.5, 480], villain: true,
+                 taunts: ['Captain Ruby. Your ship is so… brown.', 'My girls never miss. Remember that.', 'Pretty chart. Shame if it went swimming.', 'I’d offer you tea, but you’d only spill it.', 'Tick tock, Captain. I’m always one step ahead.'] },
+  pirateking:  { name: 'The Pirate King', paint: 'pirateking', size: 1.08, face: [.5, .085, .12], station: [.5, 480], villain: true,
+                 taunts: ['Turn back. This is the last kindness I offer.', 'A thousand ships answer to me. How many answer to you?', 'Your little brother talks too much.', 'The eastern seas are mine. Every wave of them.', 'Bow, and I may let you keep your mops.'] },
 };
 const CAPTAINS = ['ruby', 'cutlass'];
 const CREW = ['bones', 'absalom', 'scarlett', 'crispin', 'jade', 'monsoon', 'stormcaller', 'marietta', 'oro', 'tempest', 'arabella', 'odessa', 'hazel'];
-const VILLAINS = ['clement'];
+const VILLAINS = ['clement', 'evangeline', 'pirateking'];
 // where the crew wander off to when nobody's looking (the island and the treasure hunt's places are only for episodes)
 const WANDER_ROOMS = ['deck', 'upper', 'below', 'hall', 'hallLeft', 'dining', 'bedroom', 'study'];
 // What each crewmate might say when you stop to talk (when they've no game idea or news to bring up, or the dice say chat):
@@ -306,7 +311,7 @@ function talk() {
   if (!near) return;
   const k = near, s = st[k], v = PIRATES[k];
   s.target = null; s.stroll = false; s.facing = Math.sign(st[lead].x - s.x) || 1;
-  if (v.villain) { s.taunt = ((s.taunt ?? 0) + 1) % v.taunts.length; s.say = v.taunts[s.taunt]; s.sayT = 2.6; return; }
+  if (v.villain) { if (quest.visiting(k)) return; s.taunt = ((s.taunt ?? 0) + 1) % v.taunts.length; s.say = v.taunts[s.taunt]; s.sayT = 2.6; return; }
   const t = quest.topics(k);
   if (t.remind) { s.say = t.remind; s.sayT = 4; return; }
   // what they bring up is down to chance: their game idea, a clue, a pointer to someone else, or plain chat.
@@ -424,7 +429,7 @@ function update(dt) {
     s.target = clamp(s.x + (Math.random() * 2 - 1) * 280, 70, worldW - 70); s.stroll = true;
   });
   // a crewmate walking up to the captain (with an idea or a clue), or strolling
-  if (mode === 'free') CREW.forEach(k => {
+  if (mode === 'free') [...CREW, ...VILLAINS].forEach(k => {
     const s = st[k]; if (s.target == null || s.room !== room) return;
     if (s.stroll && k === near) { s.target = null; s.stroll = false; s.moving = false; return; }   // they stop when you come over
     const d = s.target - s.x, step = Math.min(Math.abs(d), WALK * (s.stroll ? .5 : 1.2) * roomScale() * dt);
@@ -434,6 +439,7 @@ function update(dt) {
       if (!s.stroll) s.facing = Math.sign(st[lead].x - s.x) || 1;
       s.stroll = false;
       if (s.sayLater) { s.say = s.sayLater; s.sayT = 7; s.sayLater = null; }
+      if (s.leaving) { s.leaving = false; s.room = 'hidden'; }   // a visitor who stormed off the ship
     }
   });
 
@@ -914,7 +920,7 @@ function startStageGame() {
     endStageGame();
     ep.gameResult = result; ep.stage = 'result'; showStory();
     $('storyActions').querySelector('button.primary')?.focus({ preventScroll: true });
-  });
+  }, scene.opts);
 }
 function endStageGame() {
   stopStageGame(); stopStageGame = () => {};
@@ -991,6 +997,14 @@ const questApi = {
     if (Math.abs(spot - s.x) < 30) { s.target = null; s.facing = Math.sign(L.x - s.x) || 1; s.say = line; s.sayT = 7; s.sayLater = null; return; }   // already beside her
     s.target = spot; s.say = line; s.sayT = 0; s.sayLater = line;
   },
+  // where the captain is standing right now (a visitor's episode plays out on the spot)
+  here: () => ({ room, at: st.ruby.x / worldW, w: worldW }),
+  // a visitor who's been told "later" turns on their heel and leaves the way they came
+  leave(key, line) {
+    const s = st[key]; if (!s || s.room !== room) { if (s) s.room = 'hidden'; return; }
+    s.target = s.x < st[lead].x ? 30 : worldW - 30; s.stroll = false; s.leaving = true;
+    if (line) { s.say = line; s.sayT = 3; s.sayLater = null; }
+  },
   // who brings news of the plot: someone in the same room if possible
   messenger() {
     const crew = crewHere().filter(k => st[k].room !== 'hidden'), here = crew.filter(k => st[k].room === room);
@@ -998,6 +1012,52 @@ const questApi = {
     return list[Math.floor(Math.random() * list.length)] || null;
   },
 };
+
+// ---- stand-in art for villains without a painting: a full-length figure drawn once, as a picture ----
+function paintVillain(kind) {
+  const c = document.createElement('canvas'); c.width = 360; c.height = 1000;
+  const g = c.getContext('2d'), cx = 180;
+  const P = kind === 'evangeline'
+    ? { coat: '#b8436a', coat2: '#7a2446', trim: '#f2c6d4', skin: '#f0c9a8', hair: '#2a1418', hat: '#3a1424', feather: '#ffd0de', boots: '#2a1418', sash: '#f3e6cc', long: true }
+    : { coat: '#8a1c1c', coat2: '#4a0e0e', trim: '#e0b040', skin: '#d9a878', hair: '#141010', hat: '#1a1210', feather: '#e0b040', boots: '#1a1210', sash: '#e0b040', beard: true, crown: true };
+  const shade = (y0, y1, a, b) => { const gr = g.createLinearGradient(0, y0, 0, y1); gr.addColorStop(0, a); gr.addColorStop(1, b); return gr; };
+  // boots and legs
+  g.fillStyle = P.boots; g.beginPath(); g.roundRect(cx - 62, 760, 50, 230, 14); g.roundRect(cx + 12, 760, 50, 230, 14); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(cx - 54, 780, 8, 180); g.fillRect(cx + 20, 780, 8, 180);
+  // long coat, flaring out
+  g.fillStyle = shade(250, 900, P.coat, P.coat2);
+  g.beginPath(); g.moveTo(cx - 70, 250); g.lineTo(cx + 70, 250); g.quadraticCurveTo(cx + 92, 520, cx + 120, 880); g.lineTo(cx + 18, 860); g.lineTo(cx, 560); g.lineTo(cx - 18, 860); g.lineTo(cx - 120, 880); g.quadraticCurveTo(cx - 92, 520, cx - 70, 250); g.fill();
+  g.strokeStyle = P.trim; g.lineWidth = 6; g.beginPath(); g.moveTo(cx - 18, 860); g.lineTo(cx, 560); g.lineTo(cx + 18, 860); g.stroke();
+  g.beginPath(); g.moveTo(cx - 120, 880); g.lineTo(cx - 18, 860); g.moveTo(cx + 18, 860); g.lineTo(cx + 120, 880); g.stroke();
+  // shirt front, sash and buttons
+  g.fillStyle = '#f6efe2'; g.beginPath(); g.moveTo(cx - 34, 260); g.lineTo(cx + 34, 260); g.lineTo(cx + 14, 520); g.lineTo(cx - 14, 520); g.fill();
+  g.fillStyle = P.sash; g.fillRect(cx - 78, 470, 156, 34); g.fillStyle = 'rgba(0,0,0,.15)'; g.fillRect(cx - 78, 496, 156, 8);
+  g.fillStyle = P.trim; for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(cx - 46, 300 + i * 40, 6, 0, 7); g.arc(cx + 46, 300 + i * 40, 6, 0, 7); g.fill(); }
+  // arms (one hand on a sword hilt)
+  g.fillStyle = shade(250, 600, P.coat, P.coat2);
+  g.beginPath(); g.roundRect(cx - 108, 262, 42, 300, 20); g.roundRect(cx + 66, 262, 42, 280, 20); g.fill();
+  g.fillStyle = P.trim; g.fillRect(cx - 108, 520, 42, 16); g.fillRect(cx + 66, 500, 42, 16);
+  g.fillStyle = P.skin; g.beginPath(); g.arc(cx - 87, 568, 20, 0, 7); g.arc(cx + 87, 548, 20, 0, 7); g.fill();
+  g.fillStyle = '#c9ccd2'; g.fillRect(cx + 96, 560, 10, 300); g.fillStyle = P.trim; g.fillRect(cx + 78, 548, 46, 12);
+  // neck, hair behind, head
+  g.fillStyle = P.skin; g.fillRect(cx - 16, 210, 32, 56);
+  g.fillStyle = P.hair;
+  if (P.long) { g.beginPath(); g.moveTo(cx - 52, 130); g.quadraticCurveTo(cx - 90, 300, cx - 60, 400); g.lineTo(cx + 60, 400); g.quadraticCurveTo(cx + 90, 300, cx + 52, 130); g.fill(); }
+  else { g.beginPath(); g.ellipse(cx, 150, 52, 62, 0, 0, 7); g.fill(); }
+  g.fillStyle = P.skin; g.beginPath(); g.ellipse(cx, 160, 44, 56, 0, 0, 7); g.fill();
+  g.fillStyle = 'rgba(200,90,90,.25)'; g.beginPath(); g.arc(cx - 24, 178, 10, 0, 7); g.arc(cx + 24, 178, 10, 0, 7); g.fill();
+  g.fillStyle = '#1a1010'; g.beginPath(); g.ellipse(cx - 16, 156, 5, 6, 0, 0, 7); g.ellipse(cx + 16, 156, 5, 6, 0, 0, 7); g.fill();
+  g.strokeStyle = '#1a1010'; g.lineWidth = 4; g.beginPath(); g.moveTo(cx - 28, 140); g.lineTo(cx - 6, 146); g.moveTo(cx + 28, 140); g.lineTo(cx + 6, 146); g.stroke();   // a scheming brow
+  if (P.beard) { g.fillStyle = P.hair; g.beginPath(); g.moveTo(cx - 40, 172); g.quadraticCurveTo(cx, 270, cx + 40, 172); g.quadraticCurveTo(cx, 200, cx - 40, 172); g.fill(); }
+  else { g.strokeStyle = '#9a2a4a'; g.lineWidth = 5; g.beginPath(); g.moveTo(cx - 14, 192); g.quadraticCurveTo(cx + 2, 198, cx + 16, 188); g.stroke(); }   // a sly smile
+  // the hat
+  g.fillStyle = P.hat; g.beginPath(); g.ellipse(cx, 112, 96, 22, -.06, 0, 7); g.fill();
+  g.beginPath(); g.moveTo(cx - 56, 112); g.quadraticCurveTo(cx, 20, cx + 56, 112); g.fill();
+  g.fillStyle = P.trim; g.fillRect(cx - 54, 98, 108, 8);
+  if (P.crown) { g.fillStyle = '#e0b040'; g.beginPath(); g.moveTo(cx - 34, 70); g.lineTo(cx - 24, 40); g.lineTo(cx - 10, 64); g.lineTo(cx, 30); g.lineTo(cx + 10, 64); g.lineTo(cx + 24, 40); g.lineTo(cx + 34, 70); g.fill(); }
+  g.strokeStyle = P.feather; g.lineWidth = 10; g.lineCap = 'round'; g.beginPath(); g.moveTo(cx + 40, 96); g.quadraticCurveTo(cx + 110, 60, cx + 120, 0); g.stroke();
+  return c.toDataURL('image/png');
+}
 
 // ---- loop ----
 let last = 0;
@@ -1013,6 +1073,7 @@ function loadImg(src) { asked++; return new Promise((res, rej) => { const i = ne
 (async () => {
   resize();
   try { await Promise.race([document.fonts.load('18px "IM Fell English"'), new Promise(r => setTimeout(r, 1500))]); } catch (e) {}
+  Object.values(PIRATES).forEach(p => { if (p.paint && !p.img) p.img = paintVillain(p.paint); });
   await Promise.all([...Object.values(ROOMS).map(async r => { r.img_ = await loadImg(r.img); r.w = r.img_.width * BG_H * (r.zoom || 1) / r.img_.height; if (r.floorBack) { r.fb = toWorld(r, r.floorBack); r.ff = toWorld(r, r.floorFront); r.railW = toWorld(r, r.rail); } }), ...Object.values(PIRATES).map(async p => { p.img_ = await loadImg(p.img); if (p.walk) p.walkImg = await loadImg(p.walk.img); if (p.fight) await Promise.all(Object.values(p.fight).map(async f => { f.img_ = await loadImg(f.img); })); })]);
   distantShip = await loadImg('distant-ship.png');
   worldW = ROOMS.deck.w;
